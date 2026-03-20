@@ -1,0 +1,44 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { prisma } from '@/lib/prisma'
+import { auth } from '@/lib/auth'
+import { z } from 'zod'
+
+const ProjectSchema = z.object({
+  projectName: z.string().min(1),
+  builderName: z.string().min(1),
+  microMarket: z.string().min(1),
+  minPrice: z.number().positive(),
+  maxPrice: z.number().positive(),
+  pricePerSqft: z.number().positive(),
+  availableUnits: z.number().int().positive(),
+  possessionDate: z.string(),
+  reraNumber: z.string().min(1),
+  latitude: z.number(),
+  longitude: z.number(),
+  constructionStatus: z.string().min(1),
+  unitTypes: z.array(z.string()),
+  amenities: z.array(z.string()),
+})
+
+export async function POST(req: NextRequest) {
+  const session = await auth()
+  if (session?.user?.email !== process.env.ADMIN_EMAIL) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  const body = await req.json()
+  const parsed = ProjectSchema.safeParse(body)
+  if (!parsed.success) {
+    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })
+  }
+
+  const d = parsed.data
+  const project = await prisma.project.create({
+    data: {
+      ...d,
+      possessionDate: new Date(d.possessionDate),
+    },
+  })
+
+  return NextResponse.json(project, { status: 201 })
+}
