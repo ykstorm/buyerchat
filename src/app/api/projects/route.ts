@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
+import { computeUrgencySignals } from '@/lib/urgency-signals'
 
 const QuerySchema = z.object({
   microMarket: z.string().optional(),
@@ -50,9 +51,27 @@ export async function GET(req: NextRequest) {
       constructionStatus: true,
       unitTypes: true,
       isActive: true,
+      priceHistory: {
+        orderBy: { recordedAt: 'desc' },
+        take: 2,
+        select: { pricePerSqft: true }
+      },
+      siteVisits: {
+        select: { id: true }
+      }
     },
     orderBy: { createdAt: 'desc' },
   })
 
-  return NextResponse.json(projects)
+  const projectsWithSignals = projects.map(p => ({
+    ...p,
+    urgencySignals: computeUrgencySignals({
+      availableUnits: p.availableUnits,
+      possessionDate: p.possessionDate,
+      priceHistory: p.priceHistory,
+      siteVisits: p.siteVisits,
+    })
+  }))
+
+  return NextResponse.json(projectsWithSignals)
 }
