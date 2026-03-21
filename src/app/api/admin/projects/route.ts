@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth'
 import { z } from 'zod'
+import { sanitizeAdminInput } from '@/lib/sanitize'
 
 const ProjectSchema = z.object({
   projectName: z.string().min(1),
@@ -33,10 +34,23 @@ export async function POST(req: NextRequest) {
   }
 
   const d = parsed.data
+
   const project = await prisma.project.create({
     data: {
-      ...d,
+      projectName: sanitizeAdminInput(d.projectName),
+      builderName: d.builderName,
+      microMarket: sanitizeAdminInput(d.microMarket),
+      minPrice: d.minPrice,
+      maxPrice: d.maxPrice,
+      pricePerSqft: d.pricePerSqft,
+      availableUnits: d.availableUnits,
       possessionDate: new Date(d.possessionDate),
+      reraNumber: d.reraNumber,
+      latitude: d.latitude,
+      longitude: d.longitude,
+      constructionStatus: sanitizeAdminInput(d.constructionStatus),
+      unitTypes: d.unitTypes,
+      amenities: d.amenities.map(a => sanitizeAdminInput(a)),
     },
   })
 
