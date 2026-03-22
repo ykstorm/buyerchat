@@ -17,6 +17,7 @@ export async function POST(req: NextRequest) {
   if (!session?.user?.id) {
     return NextResponse.json({ error: 'Please sign in first' }, { status: 401 })
   }
+  try {
 
   const body = await req.json()
   const parsed = VisitSchema.safeParse(body)
@@ -79,3 +80,7 @@ if (existing) {
     { status: 201 }
   )
 }
+catch (err) {
+  console.error('Visit request error:', err)
+  return NextResponse.json({ error: 'Failed to create visit request' }, { status: 500 })
+}}

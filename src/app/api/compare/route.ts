@@ -13,6 +13,7 @@ export async function POST(req: NextRequest) {
 if (!rateLimit(ip, 20, 60 * 1000)) {
   return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
 }
+try {
   const parsed = CompareSchema.safeParse(body)
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })
@@ -47,4 +48,7 @@ if (!rateLimit(ip, 20, 60 * 1000)) {
   })
 
   return NextResponse.json(projects)
-}
+}catch (err) {
+  console.error('Compare error:', err)
+  return NextResponse.json({ error: 'Failed to compare projects' }, { status: 500 })
+}}

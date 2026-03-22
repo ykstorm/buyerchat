@@ -7,7 +7,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params
-
+try {
   const project = await prisma.project.findUnique({
     where: { id },
     select: {
@@ -69,3 +69,7 @@ export async function GET(
     urgencySignals,
   })
 }
+catch (err) {
+  console.error('Project fetch error:', err)
+  return NextResponse.json({ error: 'Failed to fetch project' }, { status: 500 })
+}}

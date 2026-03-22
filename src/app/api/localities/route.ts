@@ -7,10 +7,13 @@ export async function GET(req: NextRequest) {
   if (!rateLimit(ip, 10, 60 * 1000)) {
     return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
   }
-
+try {
   const localities = await prisma.locality.findMany({
     orderBy: { name: 'asc' },
   })
 
   return NextResponse.json(localities)
-}
+}catch (err) {
+  console.error('Localities fetch error:', err)
+  return NextResponse.json({ error: 'Failed to fetch localities' }, { status: 500 })
+}}

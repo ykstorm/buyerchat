@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
   if (session?.user?.email !== process.env.ADMIN_EMAIL) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
-
+try {
   const body = await req.json()
   const parsed = BuilderSchema.safeParse(body)
   if (!parsed.success) {
@@ -56,3 +56,7 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json(builder, { status: 201 })
 }
+catch (err) {
+  console.error('Admin error:', err)
+  return NextResponse.json({ error: 'Operation failed' }, { status: 500 })
+}}

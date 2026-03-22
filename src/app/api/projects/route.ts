@@ -14,7 +14,8 @@ export async function GET(req: NextRequest) {
   const unitType = searchParams.get('unitType')
   const status = searchParams.get('status')
   const sort = searchParams.get('sort') ?? 'newest'
-
+  try {
+  
   const projects = await prisma.project.findMany({
     where: {
       isActive: true,
@@ -78,6 +79,10 @@ export async function GET(req: NextRequest) {
       (gradeOrder[b.builder?.grade ?? 'F'] ?? 5)
     )
   }
-
+  
   return NextResponse.json(response)
+}catch (err) {
+  console.error('Projects fetch error:', err)
+  return NextResponse.json({ error: 'Failed to fetch projects' }, { status: 500 })
+}
 }

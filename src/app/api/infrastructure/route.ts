@@ -22,6 +22,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })
   }
 
+  try {
   const infrastructure = await prisma.infrastructure.findMany({
     where: {
       ...(parsed.data.type && { type: parsed.data.type }),
@@ -30,4 +31,7 @@ export async function GET(req: NextRequest) {
   })
 
   return NextResponse.json(infrastructure)
-}
+}catch (err) {
+  console.error('Infrastructure fetch error:', err)
+  return NextResponse.json({ error: 'Failed to fetch infrastructure' }, { status: 500 })
+}}

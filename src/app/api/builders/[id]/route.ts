@@ -6,7 +6,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params
-
+try {
   const builder = await prisma.builder.findUnique({
     where: { id },
     select: {
@@ -41,4 +41,7 @@ export async function GET(
   }
 
   return NextResponse.json(builder)
-}
+}catch (err) {
+  console.error('Builder fetch error:', err)
+  return NextResponse.json({ error: 'Failed to fetch builder' }, { status: 500 })
+}}
