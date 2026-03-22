@@ -15,13 +15,11 @@ export async function GET(
       brandName: true,
       totalTrustScore: true,
       grade: true,
-      partnerStatus: true,
       deliveryScore: true,
       reraScore: true,
       qualityScore: true,
       financialScore: true,
       responsivenessScore: true,
-      commissionRatePct: true,
       projects: {
         select: {
           id: true,
@@ -34,7 +32,7 @@ export async function GET(
         },
         where: { isActive: true },
       },
-      // contactEmail and contactPhone deliberately excluded
+      // partnerStatus, commissionRatePct, contactEmail, contactPhone — NEVER public
     },
   })
 

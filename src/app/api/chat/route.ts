@@ -53,14 +53,19 @@ export async function POST(req: NextRequest) {
   }
 
   // Injection detection — VULN-01 prompt injection
-  const lowerMsg = latestMsg.toLowerCase()
-  const hasInjection = INJECTION_KEYWORDS.some(kw => lowerMsg.includes(kw))
-  if (hasInjection) {
-    return NextResponse.json(
-      { error: 'I can only help with South Bopal and Shela property questions.' },
-      { status: 400 }
-    )
-  }
+  const normalized = latestMsg
+  .normalize('NFKC')
+  .replace(/[\u200B-\u200D\uFEFF]/g, '')
+  .replace(/\s+/g, ' ')
+  .toLowerCase()
+
+const hasInjection = INJECTION_KEYWORDS.some(kw => normalized.includes(kw))
+if (hasInjection) {
+  return NextResponse.json(
+    { error: 'I can only help with South Bopal and Shela property questions.' },
+    { status: 400 }
+  )
+}
 
   // Sanitize user message
   const sanitizedMsg = sanitizeAdminInput(latestMsg)
@@ -73,8 +78,7 @@ export async function POST(req: NextRequest) {
   const systemPrompt = buildSystemPrompt(context)
 
   // Session ID for logging
-  const sessionId = body.sessionId ?? randomUUID()
-
+  const sessionId = randomUUID()
   const result = streamText({
     model: openai('gpt-4o'),
     system: systemPrompt,
@@ -104,13 +108,15 @@ export async function POST(req: NextRequest) {
         })
 
         // Alert on critical violations
-        const isCritical = violations.some(v =>
-          v.includes('HALLUCINATION') || v.includes('CONTACT_LEAK')
-        )
-        if (isCritical) {
+      // Alert on critical violations
+      const isCritical = violations.some(v =>
+        v.includes('HALLUCINATION') || v.includes('CONTACT_LEAK')
+      )
+      if (isCritical) {
+        if (process.env.ADMIN_EMAIL && process.env.FROM_EMAIL) {
           await resend.emails.send({
-            to: process.env.ADMIN_EMAIL!,
-            from: process.env.FROM_EMAIL!,
+            to: process.env.ADMIN_EMAIL,
+            from: process.env.FROM_EMAIL,
             subject: `CRITICAL: BuyerChat AI violation — ${violations[0]}`,
             text: [
               `Session: ${sessionId}`,
@@ -119,12 +125,15 @@ export async function POST(req: NextRequest) {
               `AI response (first 500 chars): ${text.slice(0, 500)}`,
             ].join('\n')
           })
+        } else {
+          console.error('ADMIN_EMAIL or FROM_EMAIL not set — alert not sent:', violations)
         }
-      } catch (err) {
-        console.error('onFinish error:', err)
       }
+    } catch (err) {
+      console.error('onFinish error:', err)
     }
-  })
+  }
+})
 
   return result.toTextStreamResponse()
 }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
+import { rateLimit } from '@/lib/rate-limit'
 
 const CompareSchema = z.object({
   ids: z.array(z.string()).min(1).max(3),
@@ -8,6 +9,10 @@ const CompareSchema = z.object({
 
 export async function POST(req: NextRequest) {
   const body = await req.json()
+  const ip = req.headers.get('x-forwarded-for') ?? '127.0.0.1'
+if (!rateLimit(ip, 20, 60 * 1000)) {
+  return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
+}
   const parsed = CompareSchema.safeParse(body)
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })

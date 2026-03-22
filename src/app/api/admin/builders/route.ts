@@ -44,6 +44,13 @@ export async function POST(req: NextRequest) {
 
   const builder = await prisma.builder.create({
     data: { ...d, totalTrustScore, grade },
+    select: {
+      id: true,
+      builderName: true,
+      brandName: true,
+      totalTrustScore: true,
+      grade: true,
+    }
   })
   invalidateContextCache()
 

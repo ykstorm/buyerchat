@@ -39,6 +39,15 @@ export async function POST(req: NextRequest) {
   const visitToken = generateVisitToken()
   const scheduledDate = new Date(visitScheduledDate)
 
+const existing = await prisma.siteVisit.findFirst({
+  where: { userId: session.user.id, projectId, visitCompleted: false }
+})
+if (existing) {
+  return NextResponse.json(
+    { error: 'You already have a pending visit for this project.' },
+    { status: 409 }
+  )
+}
   // Save visit to DB
   const visit = await prisma.siteVisit.create({
     data: {
@@ -65,5 +74,8 @@ export async function POST(req: NextRequest) {
     `
   })
 
-  return NextResponse.json({ visitToken, visit }, { status: 201 })
+  return NextResponse.json(
+    { visitId: visit.id, message: 'Visit booked. Check your email for your visit token.' },
+    { status: 201 }
+  )
 }

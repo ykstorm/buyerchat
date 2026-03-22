@@ -20,7 +20,7 @@ export function checkResponse(
   // CHECK 1 — Hallucination: project name in response not in database
   const propertyKeywords = [
     'phase', 'heights', 'park', 'residency', 'greens', 'tower',
-    'garden', 'ville', 'enclave', 'plaza', 'square', 'valley', 'nagar'
+    'garden', 'ville', 'enclave', 'plaza', 'square', 'valley','homes', 'estate', 'manor', 'suites', 'lifestyle', 'living', 'nagar'
   ]
   const candidates = aiResponse.match(/[A-Z][a-zA-Z]+(\s[A-Z][a-zA-Z]+){1,4}/g) ?? []
   const hallucinated = candidates.filter(name => {
@@ -67,7 +67,7 @@ export function checkResponse(
   // CHECK 5 — Out-of-area response
   const outOfArea = [
     'satellite', 'prahlad nagar', 'bopal gaon', 'vastrapur',
-    'maninagar', 'new ranip', 'chandkheda', 'sg highway'
+    'maninagar', 'new ranip', 'chandkheda',
   ]
   const mentionedOutOfArea = outOfArea.filter(a => lower.includes(a))
   if (mentionedOutOfArea.length > 0) {

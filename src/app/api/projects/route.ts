@@ -63,15 +63,15 @@ export async function GET(req: NextRequest) {
     orderBy: { createdAt: 'desc' },
   })
 
-  const projectsWithSignals = projects.map(p => ({
+  const projectsWithSignals = projects.map(({ priceHistory, siteVisits, ...p }) => ({
     ...p,
     urgencySignals: computeUrgencySignals({
       availableUnits: p.availableUnits,
       possessionDate: p.possessionDate,
-      priceHistory: p.priceHistory,
-      siteVisits: p.siteVisits,
+      priceHistory,
+      siteVisits,
     })
   }))
-
+  
   return NextResponse.json(projectsWithSignals)
 }

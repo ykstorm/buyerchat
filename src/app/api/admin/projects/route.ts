@@ -20,7 +20,10 @@ const ProjectSchema = z.object({
   constructionStatus: z.string().min(1),
   unitTypes: z.array(z.string()),
   amenities: z.array(z.string()),
-})
+}).refine(
+  d => d.maxPrice >= d.minPrice,
+  { message: 'maxPrice must be >= minPrice', path: ['maxPrice'] }
+)
 
 export async function POST(req: NextRequest) {
   const session = await auth()
@@ -39,7 +42,7 @@ export async function POST(req: NextRequest) {
   const project = await prisma.project.create({
     data: {
       projectName: sanitizeAdminInput(d.projectName),
-      builderName: d.builderName,
+      builderName: sanitizeAdminInput(d.builderName),
       microMarket: sanitizeAdminInput(d.microMarket),
       minPrice: d.minPrice,
       maxPrice: d.maxPrice,

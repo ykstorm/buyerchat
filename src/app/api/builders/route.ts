@@ -9,16 +9,14 @@ export async function GET() {
       brandName: true,
       totalTrustScore: true,
       grade: true,
-      partnerStatus: true,
       deliveryScore: true,
       reraScore: true,
       qualityScore: true,
       financialScore: true,
       responsivenessScore: true,
-      // contactEmail and contactPhone deliberately excluded
+      // partnerStatus, commissionRatePct, contactEmail, contactPhone — NEVER public
     },
     orderBy: { totalTrustScore: 'desc' },
   })
-
   return NextResponse.json(builders)
 }
