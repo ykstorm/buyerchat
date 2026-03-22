@@ -43,7 +43,7 @@ export async function buildContextPayload() {
           take: 2,
           select: { pricePerSqft: true, recordedAt: true }
         },
-        siteVisits: { select: { id: true } }
+        siteVisits: { select: { id: true, createdAt: true } }
       }
     }),
     prisma.locality.findMany(),

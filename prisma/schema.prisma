@@ -1,73 +1,74 @@
 generator client {
   provider = "prisma-client-js"
-  
 }
 
 datasource db {
-  provider  = "postgresql"
+  provider = "postgresql"
 }
 
 model Project {
-  id                String   @id @default(cuid())
-  projectName       String
-  builderName       String
-  microMarket       String
-  minPrice          Float
-  maxPrice          Float
-  pricePerSqft      Float
-  availableUnits    Int
-  possessionDate    DateTime
-  reraNumber        String   @unique
-  amenities         String[]
-  latitude          Float
-  longitude         Float
-  constructionStatus String
-  unitTypes         String[]
-  isActive          Boolean  @default(true)
-  locationScore       Float    @default(50)
-amenitiesScore      Float    @default(50)
-infrastructureScore Float    @default(50)
-demandScore         Float    @default(50)
-builderGradeScore   Float    @default(50)
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-  builder           Builder  @relation(fields: [builderName], references: [builderName])
-  priceHistory      PriceHistory[]
-  siteVisits        SiteVisit[]
-  deals             Deal[]
+  id                  String         @id @default(cuid())
+  projectName         String
+  builderName         String
+  microMarket         String
+  minPrice            Float
+  maxPrice            Float
+  pricePerSqft        Float
+  availableUnits      Int
+  possessionDate      DateTime
+  reraNumber          String         @unique
+  amenities           String[]
+  latitude            Float
+  longitude           Float
+  constructionStatus  String
+  unitTypes           String[]
+  isActive            Boolean        @default(true)
+  locationScore       Float          @default(50)
+  amenitiesScore      Float          @default(50)
+  infrastructureScore Float          @default(50)
+  demandScore         Float          @default(50)
+  builderGradeScore   Float          @default(50)
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+  builder             Builder        @relation(fields: [builderName], references: [builderName])
+  priceHistory        PriceHistory[]
+  siteVisits          SiteVisit[]
+  deals               Deal[]
+  savedBy             SavedProject[]
 }
 
 model Builder {
-  id                    String    @id @default(cuid())
-  builderName           String    @unique
-  brandName             String
-  deliveryScore         Float     // out of 20
-  reraScore             Float     // out of 20
-  qualityScore          Float     // out of 20
-  financialScore        Float     // out of 15
-  responsivenessScore   Float     // out of 15
-  totalTrustScore       Float     // out of 100
-  grade                 String    // A-F
-  partnerStatus         Boolean   @default(false)
-  commissionRatePct     Float     @default(1.5)
-  contactEmail          String
-  contactPhone          String
-  createdAt             DateTime  @default(now())
-  updatedAt             DateTime  @updatedAt
-  projects              Project[]
+  id                  String    @id @default(cuid())
+  builderName         String    @unique
+  brandName           String
+  deliveryScore       Float
+  reraScore           Float
+  qualityScore        Float
+  financialScore      Float
+  responsivenessScore Float
+  totalTrustScore     Float
+  grade               String
+  partnerStatus       Boolean   @default(false)
+  commissionRatePct   Float     @default(1.5)
+  contactEmail        String
+  contactPhone        String
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  projects            Project[]
 }
 
 model User {
-  id            String     @id @default(cuid())
+  id            String         @id @default(cuid())
   name          String?
-  email         String?    @unique
+  email         String?        @unique
   emailVerified DateTime?
   image         String?
-  createdAt     DateTime   @default(now())
+  createdAt     DateTime       @default(now())
   accounts      Account[]
   sessions      Session[]
   siteVisits    SiteVisit[]
-   chatSessions  ChatSession[]
+  chatSessions  ChatSession[]
+  savedProjects SavedProject[]
 }
 
 model Account {
@@ -105,17 +106,17 @@ model PriceHistory {
 }
 
 model Locality {
-  id            String   @id @default(cuid())
-  name          String   @unique
-  yoyGrowthPct  Float
-  demandScore   Float
+  id              String   @id @default(cuid())
+  name            String   @unique
+  yoyGrowthPct    Float
+  demandScore     Float
   avgPricePerSqft Float
-  updatedAt     DateTime @updatedAt
+  updatedAt       DateTime @updatedAt
 }
 
 model Infrastructure {
   id             String   @id @default(cuid())
-  name           String
+  name           String   @unique
   type           String
   priceImpactPct Float
   sourceUrl      String
@@ -140,27 +141,28 @@ model BuyerDemand {
 }
 
 model SiteVisit {
-  id                  String    @id @default(cuid())
-  visitToken          String    @unique
-  userId              String
-  projectId           String
-  otpVerified         Boolean   @default(false)
-  visitScheduledDate  DateTime
-  visitCompleted      Boolean   @default(false)
-  createdAt           DateTime  @default(now())
-  user                User      @relation(fields: [userId], references: [id])
-  project             Project   @relation(fields: [projectId], references: [id])
+  id                 String   @id @default(cuid())
+  visitToken         String   @unique
+  userId             String
+  projectId          String
+  otpVerified        Boolean  @default(false)
+  visitScheduledDate DateTime
+  visitCompleted     Boolean  @default(false)
+  createdAt          DateTime @default(now())
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project            Project  @relation(fields: [projectId], references: [id])
 }
 
 model Deal {
-  id                String   @id @default(cuid())
-  projectId         String
-  commissionAmt     Float
-  attributionToken  String   @unique
-  closedAt          DateTime
-  createdAt         DateTime @default(now())
-  project           Project  @relation(fields: [projectId], references: [id])
+  id               String   @id @default(cuid())
+  projectId        String
+  commissionAmt    Float
+  attributionToken String   @unique
+  closedAt         DateTime
+  createdAt        DateTime @default(now())
+  project          Project  @relation(fields: [projectId], references: [id])
 }
+
 model ChatSession {
   id                   String   @id @default(cuid())
   sessionId            String   @unique
@@ -174,4 +176,15 @@ model ChatSession {
   violations           String[]
   createdAt            DateTime @default(now())
   user                 User?    @relation(fields: [userId], references: [id])
+}
+
+model SavedProject {
+  id        String   @id @default(cuid())
+  userId    String
+  projectId String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project   Project  @relation(fields: [projectId], references: [id])
+
+  @@unique([userId, projectId])
 }

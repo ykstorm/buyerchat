@@ -19,7 +19,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })
   }
 
-  // Check project exists
   const project = await prisma.project.findUnique({
     where: { id: parsed.data.projectId },
     select: { id: true }
@@ -28,7 +27,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Project not found' }, { status: 404 })
   }
 
-  return NextResponse.json({ saved: true, projectId: parsed.data.projectId })
+  try {
+    const saved = await prisma.savedProject.create({
+      data: {
+        userId: session.user.id,
+        projectId: parsed.data.projectId,
+      }
+    })
+    return NextResponse.json({ saved: true, id: saved.id })
+  } catch {
+    return NextResponse.json({ error: 'Already saved' }, { status: 409 })
+  }
 }
 
 export async function GET(req: NextRequest) {
@@ -37,5 +46,23 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Please sign in first' }, { status: 401 })
   }
 
-  return NextResponse.json({ savedProjects: [] })
+  const saved = await prisma.savedProject.findMany({
+    where: { userId: session.user.id },
+    include: {
+      project: {
+        select: {
+          id: true,
+          projectName: true,
+          builderName: true,
+          microMarket: true,
+          minPrice: true,
+          maxPrice: true,
+          unitTypes: true,
+        }
+      }
+    },
+    orderBy: { createdAt: 'desc' }
+  })
+
+  return NextResponse.json({ savedProjects: saved })
 }

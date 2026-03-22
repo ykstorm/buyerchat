@@ -1,17 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { rateLimit } from '@/lib/rate-limit'
 import { z } from 'zod'
 
 const QuerySchema = z.object({
-  locality: z.string().optional(),
   type: z.string().optional(),
 })
 
 export async function GET(req: NextRequest) {
-  const { searchParams } = new URL(req.url)
+  const ip = req.headers.get('x-forwarded-for') ?? '127.0.0.1'
+  if (!rateLimit(ip, 10, 60 * 1000)) {
+    return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
+  }
 
+  const { searchParams } = new URL(req.url)
   const parsed = QuerySchema.safeParse({
-    locality: searchParams.get('locality') ?? undefined,
     type: searchParams.get('type') ?? undefined,
   })
 
@@ -19,11 +22,9 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })
   }
 
-  const { type } = parsed.data
-
   const infrastructure = await prisma.infrastructure.findMany({
     where: {
-      ...(type && { type }),
+      ...(parsed.data.type && { type: parsed.data.type }),
     },
     orderBy: { priceImpactPct: 'desc' },
   })
