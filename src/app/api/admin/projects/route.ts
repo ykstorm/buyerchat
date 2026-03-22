@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth'
 import { z } from 'zod'
 import { sanitizeAdminInput } from '@/lib/sanitize'
+import { invalidateContextCache } from '@/lib/context-cache'
 
 const ProjectSchema = z.object({
   projectName: z.string().min(1),
@@ -53,6 +54,6 @@ export async function POST(req: NextRequest) {
       amenities: d.amenities.map(a => sanitizeAdminInput(a)),
     },
   })
-
+  invalidateContextCache()
   return NextResponse.json(project, { status: 201 })
 }

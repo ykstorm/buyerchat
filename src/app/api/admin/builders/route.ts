@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth'
 import { z } from 'zod'
+import { invalidateContextCache } from '@/lib/context-cache'
 
 const BuilderSchema = z.object({
   builderName: z.string().min(1),
@@ -44,6 +45,7 @@ export async function POST(req: NextRequest) {
   const builder = await prisma.builder.create({
     data: { ...d, totalTrustScore, grade },
   })
+  invalidateContextCache()
 
   return NextResponse.json(builder, { status: 201 })
 }
