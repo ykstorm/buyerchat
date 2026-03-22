@@ -151,14 +151,14 @@ model Deal {
   id                String   @id @default(cuid())
   projectId         String
   commissionAmt     Float
-  attributionToken  String
+  attributionToken  String   @unique
   closedAt          DateTime
   createdAt         DateTime @default(now())
   project           Project  @relation(fields: [projectId], references: [id])
 }
 model ChatSession {
   id                   String   @id @default(cuid())
-  sessionId            String
+  sessionId            String   @unique
   userId               String?
   userMessage          String
   aiResponse           String   @db.Text
