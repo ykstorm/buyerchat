@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { computeUrgencySignals } from '@/lib/urgency-signals'
 
 export async function GET(
   req: NextRequest,
@@ -31,14 +32,21 @@ export async function GET(
           brandName: true,
           totalTrustScore: true,
           grade: true,
-          // partnerStatus, commissionRatePct — NEVER public
+          deliveryScore: true,
+          reraScore: true,
+          qualityScore: true,
+          financialScore: true,
+          responsivenessScore: true,
         }
       },
       priceHistory: {
         orderBy: { recordedAt: 'desc' },
         take: 5,
         select: { pricePerSqft: true, recordedAt: true }
-      }
+      },
+      siteVisits: {
+        select: { id: true, createdAt: true }
+      },
     },
   })
 
@@ -46,5 +54,18 @@ export async function GET(
     return NextResponse.json({ error: 'Project not found' }, { status: 404 })
   }
 
-  return NextResponse.json(project)
+  const { priceHistory, siteVisits, ...rest } = project
+
+  const urgencySignals = computeUrgencySignals({
+    availableUnits: project.availableUnits,
+    possessionDate: project.possessionDate,
+    priceHistory,
+    siteVisits,
+  })
+
+  return NextResponse.json({
+    ...rest,
+    priceHistory,
+    urgencySignals,
+  })
 }

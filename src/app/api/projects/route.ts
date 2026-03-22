@@ -1,38 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { z } from 'zod'
 import { computeUrgencySignals } from '@/lib/urgency-signals'
-
-const QuerySchema = z.object({
-  microMarket: z.string().optional(),
-  unitType: z.string().optional(),
-  minPrice: z.coerce.number().optional(),
-  maxPrice: z.coerce.number().optional(),
-})
+import { rateLimit } from '@/lib/rate-limit'
 
 export async function GET(req: NextRequest) {
-  const { searchParams } = new URL(req.url)
-
-  const parsed = QuerySchema.safeParse({
-    microMarket: searchParams.get('microMarket') ?? undefined,
-    unitType: searchParams.get('unitType') ?? undefined,
-    minPrice: searchParams.get('minPrice') ?? undefined,
-    maxPrice: searchParams.get('maxPrice') ?? undefined,
-  })
-
-  if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })
+  const ip = req.headers.get('x-forwarded-for') ?? '127.0.0.1'
+  if (!rateLimit(ip, 30, 60 * 1000)) {
+    return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
   }
 
-  const { microMarket, unitType, minPrice, maxPrice } = parsed.data
+  const { searchParams } = new URL(req.url)
+  const microMarket = searchParams.get('microMarket')
+  const unitType = searchParams.get('unitType')
+  const status = searchParams.get('status')
+  const sort = searchParams.get('sort') ?? 'newest'
 
   const projects = await prisma.project.findMany({
     where: {
       isActive: true,
-      ...(microMarket && { microMarket }),
-      ...(unitType && { unitTypes: { has: unitType } }),
-      ...(minPrice && { minPrice: { gte: minPrice } }),
-      ...(maxPrice && { maxPrice: { lte: maxPrice } }),
+      ...(microMarket && microMarket !== 'all' && { microMarket }),
+      ...(status && status !== 'all' && { constructionStatus: status }),
+      ...(unitType && unitType !== 'all' && {
+        unitTypes: { has: unitType }
+      }),
     },
     select: {
       id: true,
@@ -45,25 +35,32 @@ export async function GET(req: NextRequest) {
       availableUnits: true,
       possessionDate: true,
       reraNumber: true,
-      amenities: true,
-      latitude: true,
-      longitude: true,
-      constructionStatus: true,
       unitTypes: true,
-      isActive: true,
+      constructionStatus: true,
+      builder: {
+        select: {
+          grade: true,
+          totalTrustScore: true,
+          brandName: true,
+        }
+      },
       priceHistory: {
         orderBy: { recordedAt: 'desc' },
         take: 2,
-        select: { pricePerSqft: true }
+        select: { pricePerSqft: true, recordedAt: true }
       },
       siteVisits: {
-        select: { id: true }
-      }
+        select: { id: true, createdAt: true }
+      },
     },
-    orderBy: { createdAt: 'desc' },
+    orderBy: sort === 'price-asc'
+      ? { minPrice: 'asc' }
+      : sort === 'price-desc'
+      ? { minPrice: 'desc' }
+      : { createdAt: 'desc' },
   })
 
-  const projectsWithSignals = projects.map(({ priceHistory, siteVisits, ...p }) => ({
+  const response = projects.map(({ priceHistory, siteVisits, ...p }) => ({
     ...p,
     urgencySignals: computeUrgencySignals({
       availableUnits: p.availableUnits,
@@ -72,6 +69,15 @@ export async function GET(req: NextRequest) {
       siteVisits,
     })
   }))
-  
-  return NextResponse.json(projectsWithSignals)
+
+  // Sort by trust grade if requested
+  if (sort === 'trust') {
+    const gradeOrder: Record<string, number> = { A: 1, B: 2, C: 3, D: 4, F: 5 }
+    response.sort((a, b) =>
+      (gradeOrder[a.builder?.grade ?? 'F'] ?? 5) -
+      (gradeOrder[b.builder?.grade ?? 'F'] ?? 5)
+    )
+  }
+
+  return NextResponse.json(response)
 }
