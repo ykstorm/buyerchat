@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma'
 import { getCachedContext, setCachedContext } from '@/lib/context-cache'
 import { computeUrgencySignals } from '@/lib/urgency-signals'
+import type { BuilderAIContext } from '@/lib/types/builder-ai-context'
 
 export async function buildContextPayload() {
   const cached = getCachedContext()

@@ -24,6 +24,11 @@ model Project {
   constructionStatus String
   unitTypes         String[]
   isActive          Boolean  @default(true)
+  locationScore       Float    @default(50)
+amenitiesScore      Float    @default(50)
+infrastructureScore Float    @default(50)
+demandScore         Float    @default(50)
+builderGradeScore   Float    @default(50)
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
   builder           Builder  @relation(fields: [builderName], references: [builderName])
