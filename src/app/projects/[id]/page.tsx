@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-
+import { VisitBookingModal } from '@/components/VisitBookingModal'
 interface ProjectDetail {
   id: string
   projectName: string
@@ -113,8 +113,8 @@ function LoadingState() {
   )
 }
 
-function SpotlightCTACard({ project }: { project: ProjectDetail }) {
-  const router = useRouter()
+function SpotlightCTACard({ project, onBookVisit }: { project: ProjectDetail; onBookVisit: () => void }) {
+    const router = useRouter()
   const ref = useRef<HTMLDivElement>(null)
   const [pos, setPos] = useState({ x: 0, y: 0 })
   const [opacity, setOpacity] = useState(0)
@@ -162,8 +162,7 @@ function SpotlightCTACard({ project }: { project: ProjectDetail }) {
             className="mt-5 w-full bg-[#3de8a0] text-[#09090b] rounded-full py-3.5 font-sans font-semibold text-sm hover:shadow-[0_0_28px_rgba(61,232,160,0.30)] transition-all duration-300"
             whileHover={{ scale: 1.01 }}
             whileTap={{ scale: 0.98 }}
-            onClick={() => console.log('Book site visit')}
-          >
+            onClick={onBookVisit}          >
             Book Site Visit
           </motion.button>
           <p
@@ -227,6 +226,7 @@ function ScoreBar({
 
 function ProjectDetailClient({ project }: { project: ProjectDetail }) {
   const [mounted, setMounted] = useState(false)
+  const [isModalOpen, setIsModalOpen] = useState(false)
 
   useEffect(() => {
     setMounted(true)
@@ -485,7 +485,7 @@ function ProjectDetailClient({ project }: { project: ProjectDetail }) {
               variants={fadeUp}
               transition={{ ...transition, delay: 0.48 }}
             >
-              <SpotlightCTACard project={project} />
+              <SpotlightCTACard project={project} onBookVisit={() => setIsModalOpen(true)} />
             </motion.div>
 
             <motion.div
@@ -522,6 +522,13 @@ function ProjectDetailClient({ project }: { project: ProjectDetail }) {
           </div>
         </div>
       </div>
+      <VisitBookingModal
+        projectId={project.id}
+        projectName={project.projectName} 
+        builderName={project.builderName}
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+      />
     </div>
   )
 }
