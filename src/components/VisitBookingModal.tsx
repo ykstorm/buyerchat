@@ -233,7 +233,7 @@ export function VisitBookingModal({ projectId, projectName, builderName, isOpen,
           />
 
           <motion.div
-            className="relative z-10 w-full max-w-lg rounded-2xl border border-white/10 bg-[#0f0f14] shadow-2xl overflow-hidden"
+className="relative z-10 w-full max-w-lg rounded-2xl border border-white/10 bg-[#0f0f14] shadow-2xl overflow-hidden max-h-[90vh] flex flex-col"
             variants={modalVariants}
             onClick={e => e.stopPropagation()}
           >
@@ -244,7 +244,7 @@ export function VisitBookingModal({ projectId, projectName, builderName, isOpen,
               <motion.div
                 className="h-full bg-gradient-to-r from-[#3de8a0] to-[#60a5fa]"
                 animate={{ width: step === 1 ? "33.33%" : step === 2 ? "66.66%" : "100%" }}
-                transition={{ duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
+                transition={{ duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] as const }}
               />
             </div>
 
@@ -284,7 +284,7 @@ export function VisitBookingModal({ projectId, projectName, builderName, isOpen,
             </div>
 
             {/* Content */}
-            <div className="px-6 pb-2 min-h-[400px]">
+            <div className="px-6 pb-2 overflow-y-auto flex-1">
               <AnimatePresence mode="wait">
 
                 {/* STEP 1 — Schedule */}
