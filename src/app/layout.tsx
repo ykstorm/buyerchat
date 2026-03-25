@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Playfair_Display, DM_Sans } from 'next/font/google'
 import './globals.css'
 import Navbar from '@/components/Navbar'
+import ChatWidgetWrapper from '@/components/ChatWidgetWrapper'
 
 const playfair = Playfair_Display({
   subsets: ['latin'],
@@ -29,10 +30,12 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={`${playfair.variable} ${dmSans.variable}`}>
-      <body className="bg-[#09090b] antialiased">
-        <Navbar />
-        {children}
-      </body>
+   <body className="bg-[#09090b] antialiased">
+  <Navbar />
+  {children}
+  <ChatWidgetWrapper />
+</body>
+      
     </html>
   )
 }
