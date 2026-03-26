@@ -11,6 +11,27 @@ const VisitSchema = z.object({
   projectId: z.string().min(1),
   visitScheduledDate: z.string(),
 })
+export async function GET(req: NextRequest) {
+  const session = await auth()
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+  try {
+    const visits = await prisma.siteVisit.findMany({
+      where: { userId: session.user.id },
+      include: {
+        project: {
+          select: { projectName: true, builderName: true }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    })
+    return NextResponse.json(visits)
+  } catch (err) {
+    console.error('Visits fetch error:', err)
+    return NextResponse.json({ error: 'Failed to fetch visits' }, { status: 500 })
+  }
+}
 
 export async function POST(req: NextRequest) {
   const session = await auth()
@@ -67,9 +88,9 @@ if (existing) {
     subject: `Site Visit Confirmed — ${project.projectName}`,
     html: `
       <h2>Your site visit is confirmed!</h2>
-      <p><strong>Project:</strong> ${project.projectName}</p>
-      <p><strong>Builder:</strong> ${project.builderName}</p>
-      <p><strong>Date:</strong> ${scheduledDate.toDateString()}</p>
+     <h3 className="text-[#e0e0ea] font-medium">{visit.project?.projectName}</h3>
+<p className="text-[#636380] text-sm">{visit.project?.builderName}</p>
+<p className="text-[#636380] text-xs mt-1">{new Date(visit.visitScheduledDate).toLocaleDateString()}</p>
       <p><strong>Your visit token:</strong> ${visitToken}</p>
       <p>Please bring this token to your site visit.</p>
     `
