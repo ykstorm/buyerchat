@@ -35,6 +35,7 @@ model Project {
   siteVisits          SiteVisit[]
   deals               Deal[]
   savedBy             SavedProject[]
+  
 }
 
 model Builder {
@@ -55,6 +56,8 @@ model Builder {
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
   projects            Project[]
+  agreementSigned   Boolean @default(false)
+commissionRate    Float   @default(1.5)
 }
 
 model User {
@@ -151,17 +154,10 @@ model SiteVisit {
   createdAt          DateTime @default(now())
   user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   project            Project  @relation(fields: [projectId], references: [id])
+  builderAcknowledged Boolean  @default(false)
+leadRegisteredAt    DateTime?
 }
 
-model Deal {
-  id               String   @id @default(cuid())
-  projectId        String
-  commissionAmt    Float
-  attributionToken String   @unique
-  closedAt         DateTime
-  createdAt        DateTime @default(now())
-  project          Project  @relation(fields: [projectId], references: [id])
-}
 
 model ChatSession {
   id                   String   @id @default(cuid())
@@ -176,6 +172,15 @@ model ChatSession {
   violations           String[]
   createdAt            DateTime @default(now())
   user                 User?    @relation(fields: [userId], references: [id])
+  buyerStage        String   @default("intent_capture")
+buyerPersona      String?
+buyerBudget       Int?
+buyerConfig       String?
+buyerPurpose      String?
+qualificationDone Boolean  @default(false)
+projectsDisclosed String[]
+lastMessageAt     DateTime @updatedAt
+messages          ChatMessageLog[]
 }
 
 model SavedProject {
@@ -187,4 +192,40 @@ model SavedProject {
   project   Project  @relation(fields: [projectId], references: [id])
 
   @@unique([userId, projectId])
+}
+model ChatMessageLog {
+  id          String      @id @default(cuid())
+  sessionId   String
+  session     ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  role        String
+  content     String      @db.Text
+  tokensUsed  Int?
+  responseMs  Int?
+  violations  String[]
+  createdAt   DateTime    @default(now())
+}
+model Deal {
+  id               String    @id @default(cuid())
+  dealNumber       String    @unique
+  sessionId        String?
+  projectId        String?
+  project          Project?  @relation(fields: [projectId], references: [id])
+  builderBrandName String
+  buyerName        String
+  dealValue        Float
+  commissionRate   Float     @default(1.5)
+  commissionAmount Float
+  invoiceDate      DateTime  @default(now())
+  paymentStatus    String    @default("pending")
+  paymentDate      DateTime?
+  createdAt        DateTime  @default(now())
+}
+model MarketAlert {
+  id          String   @id @default(cuid())
+  type        String
+  title       String
+  description String
+  projectName String?
+  createdAt   DateTime @default(now())
+  isRead      Boolean  @default(false)
 }
