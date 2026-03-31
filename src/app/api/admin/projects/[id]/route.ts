@@ -1,55 +1,37 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth'
-import { z } from 'zod'
+import { prisma } from '@/lib/prisma'
 import { sanitizeAdminInput } from '@/lib/sanitize'
-import { invalidateContextCache } from '@/lib/context-cache'
 
-const ProjectSchema = z.object({
-  projectName: z.string().min(1),
-  builderName: z.string().min(1),
-  microMarket: z.string().min(1),
-  minPrice: z.number().positive(),
-  maxPrice: z.number().positive(),
-  pricePerSqft: z.number().positive(),
-  availableUnits: z.number().int().positive(),
-  possessionDate: z.string(),
-  reraNumber: z.string().min(1),
-  latitude: z.number(),
-  longitude: z.number(),
-  constructionStatus: z.string().min(1),
-  unitTypes: z.array(z.string()),
-  amenities: z.array(z.string()),
-}).refine(
-  d => d.maxPrice >= d.minPrice,
-  { message: 'maxPrice must be >= minPrice', path: ['maxPrice'] }
-)
-
-export async function GET(req: NextRequest) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const session = await auth()
     if (session?.user?.email !== process.env.ADMIN_EMAIL) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
-    const projects = await prisma.project.findMany({
-      include: { builder: { select: { brandName: true, grade: true, totalTrustScore: true } } },
-      orderBy: { createdAt: 'desc' }
+    const { id } = await params
+    const project = await prisma.project.findUnique({
+      where: { id },
+      include: { builder: { select: { brandName: true, grade: true, totalTrustScore: true } } }
     })
-    return NextResponse.json(projects)
+    if (!project) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+    return NextResponse.json(project)
   } catch (err) {
-    console.error('Projects GET error:', err)
+    console.error('Project GET error:', err)
     return NextResponse.json({ error: 'Failed to fetch' }, { status: 500 })
   }
 }
 
-export async function POST(req: NextRequest) {
+export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const session = await auth()
     if (session?.user?.email !== process.env.ADMIN_EMAIL) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
+    const { id } = await params
     const body = await req.json()
-    const project = await prisma.project.create({
+    const project = await prisma.project.update({
+      where: { id },
       data: {
         projectName: sanitizeAdminInput(body.projectName),
         builderName: sanitizeAdminInput(body.builderName),
@@ -70,9 +52,24 @@ export async function POST(req: NextRequest) {
         isActive: body.isActive ?? true,
       }
     })
-    return NextResponse.json(project, { status: 201 })
+    return NextResponse.json(project)
   } catch (err) {
-    console.error('Project POST error:', err)
-    return NextResponse.json({ error: 'Failed to create' }, { status: 500 })
+    console.error('Project PUT error:', err)
+    return NextResponse.json({ error: 'Failed to update' }, { status: 500 })
+  }
+}
+
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    const session = await auth()
+    if (session?.user?.email !== process.env.ADMIN_EMAIL) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+    const { id } = await params
+    await prisma.project.delete({ where: { id } })
+    return NextResponse.json({ success: true })
+  } catch (err) {
+    console.error('Project DELETE error:', err)
+    return NextResponse.json({ error: 'Failed to delete' }, { status: 500 })
   }
 }

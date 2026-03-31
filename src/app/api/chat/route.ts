@@ -89,9 +89,9 @@ if (hasInjection) {
       try {
         const projectNames = context.projects.map((p: any) => p.name)
         const { passed, violations } = checkResponse(text, projectNames, intent)
-
+    
         // Save chat session
-        await prisma.chatSession.create({
+        const savedSession = await prisma.chatSession.create({
           data: {
             sessionId,
             userId: session?.user?.id ?? null,
@@ -106,34 +106,62 @@ if (hasInjection) {
             violations,
           }
         })
-
+    
+        // Log messages to ChatMessageLog
+        await prisma.chatMessageLog.create({
+          data: { sessionId: savedSession.id, role: 'user', content: sanitizedMsg }
+        })
+        await prisma.chatMessageLog.create({
+          data: {
+            sessionId: savedSession.id,
+            role: 'assistant',
+            content: text,
+            tokensUsed: usage.totalTokens,
+          }
+        })
+    
+        // Extract buyer signals and update session metadata
+        const budgetMatch = sanitizedMsg.match(/(\d+)\s*(lakh|L|Cr|crore)/i)
+        const configMatch = sanitizedMsg.match(/([234])\s*bhk/i)
+        const investorMatch = /invest|rental|resale|returns|roi/i.test(sanitizedMsg)
+        const familyMatch = /family|school|kids|children|end.use|self.use/i.test(sanitizedMsg)
+        await prisma.chatSession.update({
+          where: { id: savedSession.id },
+          data: {
+            lastMessageAt: new Date(),
+            ...(budgetMatch && { buyerBudget: parseInt(budgetMatch[1]) * (budgetMatch[2].toLowerCase().startsWith('cr') ? 10000000 : 100000) }),
+            ...(configMatch && { buyerConfig: configMatch[1] + 'BHK' }),
+            ...(investorMatch && { buyerPersona: 'investor' }),
+            ...(familyMatch && !investorMatch && { buyerPersona: 'family' }),
+          }
+        })
+    
         // Alert on critical violations
-      // Alert on critical violations
-      const isCritical = violations.some(v =>
-        v.includes('HALLUCINATION') || v.includes('CONTACT_LEAK')
-      )
-      if (isCritical) {
-        if (process.env.ADMIN_EMAIL && process.env.FROM_EMAIL) {
-          await resend.emails.send({
-            to: process.env.ADMIN_EMAIL,
-            from: process.env.FROM_EMAIL,
-            subject: `CRITICAL: BuyerChat AI violation — ${violations[0]}`,
-            text: [
-              `Session: ${sessionId}`,
-              `Violations: ${violations.join(' | ')}`,
-              `User message: ${sanitizedMsg}`,
-              `AI response (first 500 chars): ${text.slice(0, 500)}`,
-            ].join('\n')
-          })
-        } else {
-          console.error('ADMIN_EMAIL or FROM_EMAIL not set — alert not sent:', violations)
+        const isCritical = violations.some(v =>
+          v.includes('HALLUCINATION') || v.includes('CONTACT_LEAK')
+        )
+        if (isCritical) {
+          if (process.env.ADMIN_EMAIL && process.env.FROM_EMAIL) {
+            await resend.emails.send({
+              to: process.env.ADMIN_EMAIL,
+              from: process.env.FROM_EMAIL,
+              subject: `CRITICAL: BuyerChat AI violation — ${violations[0]}`,
+              text: [
+                `Session: ${sessionId}`,
+                `Violations: ${violations.join(' | ')}`,
+                `User message: ${sanitizedMsg}`,
+                `AI response (first 500 chars): ${text.slice(0, 500)}`,
+              ].join('\n')
+            })
+          } else {
+            console.error('ADMIN_EMAIL or FROM_EMAIL not set — alert not sent:', violations)
+          }
         }
+      } catch (err) {
+        console.error('onFinish error:', err)
       }
-    } catch (err) {
-      console.error('onFinish error:', err)
     }
-  }
-})
-
-  return result.toTextStreamResponse()
-}
+    })
+    
+      return result.toTextStreamResponse()
+    }

@@ -1,33 +1,20 @@
-import { auth } from '@/lib/auth'
+// src/app/admin/layout.tsx
 import { redirect } from 'next/navigation'
+import { auth } from '@/lib/auth'
+import AdminNavClient from '@/components/admin/AdminNavClient'
 
-export default async function AdminLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const session = await auth()
-
-  if (!session || session.user?.email !== process.env.ADMIN_EMAIL) {
-    redirect('/auth/signin')
+  if (!session?.user || session.user.email !== process.env.ADMIN_EMAIL) {
+    redirect('/')
   }
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', fontFamily: 'Arial, sans-serif' }}>
-      {/* Sidebar */}
-      <div style={{ width: '220px', background: '#111', color: '#fff', padding: '24px 16px' }}>
-        <h2 style={{ color: '#3de8a0', marginBottom: '32px', fontSize: '16px' }}>BuyerChat Admin</h2>
-        <nav style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <a href="/admin" style={{ color: '#ccc', textDecoration: 'none', padding: '8px 12px', borderRadius: '6px' }}>Dashboard</a>
-          <a href="/admin/projects" style={{ color: '#ccc', textDecoration: 'none', padding: '8px 12px', borderRadius: '6px' }}>Projects</a>
-          <a href="/admin/builders" style={{ color: '#ccc', textDecoration: 'none', padding: '8px 12px', borderRadius: '6px' }}>Builders</a>
-        </nav>
-      </div>
-
-      {/* Main content */}
-      <div style={{ flex: 1, padding: '32px', background: '#f9f9f9' }}>
+    <div className="min-h-screen bg-[#F0F4F8]">
+      <AdminNavClient userName={session.user.name ?? 'Admin'} />
+      <main className="ml-14 mt-12 p-5 min-h-screen">
         {children}
-      </div>
+      </main>
     </div>
   )
 }
