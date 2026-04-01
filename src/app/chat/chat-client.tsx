@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useCallback, useEffect, FormEvent } from 'react'
+import { useSearchParams, useRouter } from 'next/navigation'
 import ChatSidebar from '@/components/chat/ChatSidebar'
 import ChatCenter, { type Message } from '@/components/chat/ChatCenter'
 import ChatRightPanel from '@/components/chat/ChatRightPanel'
@@ -23,10 +24,16 @@ export default function ChatClient({
 }: {
   projects: ProjectType[]; userId: string | null
 }) {
+  const searchParams = useSearchParams()
+  const router = useRouter()
+  const urlSessionId = searchParams.get('session')
+
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [loadingSession, setLoadingSession] = useState(false)
   const [artifact, setCurrentArtifact] = useState<Artifact | null>(null)
+  const [sessionId, setSessionId] = useState<string | null>(null)
 
   useEffect(() => {
     const handler = (e: Event) => {
@@ -55,6 +62,7 @@ export default function ChatClient({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           messages: [...history, { role: 'user', content: userContent }],
+          sessionId,
         }),
       })
 
@@ -64,6 +72,9 @@ export default function ChatClient({
         ))
         return
       }
+
+      const newSessionId = res.headers.get('x-session-id')
+      if (newSessionId) setSessionId(newSessionId)
 
       setMessages(prev => [...prev, { id: assistantId, role: 'assistant', content: '' }])
       const reader = res.body.getReader()
@@ -115,25 +126,36 @@ export default function ChatClient({
   }, [sendMessage])
 
   const newChat = useCallback(() => {
+    router.push('/chat')
     setMessages([])
     setInput('')
     setCurrentArtifact(null)
-  }, [])
+    setSessionId(null)
+  }, [router])
 
-  const loadSession = useCallback(async (sessionId: string) => {
-    try {
-      const res = await fetch(`/api/chat-sessions/${sessionId}`)
-      if (!res.ok) return
-      const data = await res.json()
-      const loaded: Message[] = (data.messages ?? []).map((m: any) => ({
-        id: uid(),
-        role: m.role,
-        content: m.content
-      }))
-      setMessages(loaded)
-      setCurrentArtifact(null)
-    } catch {}
-  }, [])
+  const loadSession = useCallback((id: string) => {
+    router.push(`/chat?session=${id}`)
+  }, [router])
+
+  useEffect(() => {
+    if (!urlSessionId) return
+    const load = async () => {
+      setLoadingSession(true)
+      setMessages([])
+      try {
+        const res = await fetch(`/api/chat-sessions/${urlSessionId}`)
+        if (!res.ok) return
+        const data = await res.json()
+        const loaded: Message[] = (data.messages ?? []).map((m: any) => ({
+          id: uid(), role: m.role, content: m.content
+        }))
+        setMessages(loaded)
+        setSessionId(urlSessionId)
+      } catch {}
+      finally { setLoadingSession(false) }
+    }
+    load()
+  }, [urlSessionId])
 
   return (
     <div className="flex h-screen bg-[#FAFAF8] overflow-hidden">
@@ -161,6 +183,7 @@ export default function ChatClient({
         handleSubmit={handleSubmit}
         isLoading={isLoading}
         append={append}
+        loadingSession={loadingSession}
       />
 
       <ChatRightPanel artifact={artifact} setCurrentArtifact={setCurrentArtifact} />

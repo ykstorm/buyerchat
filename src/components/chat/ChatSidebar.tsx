@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { motion } from 'framer-motion'
 import Link from 'next/link'
 
 type SessionItem = {
@@ -53,8 +54,8 @@ export default function ChatSidebar({
       {/* Header */}
       <div className="px-4 py-4 border-b border-[#E7E5E4]">
         <div className="flex items-center justify-between mb-3">
-          <span style={{ fontFamily: 'var(--font-playfair)' }} className="text-[17px] font-semibold text-[#1C1917]">
-            AaiGhar
+          <span className="text-[15px] font-semibold text-[#1C1917] tracking-tight">
+            BuyerChat
           </span>
           <button type="button" onClick={onClose} className="lg:hidden text-[#A8A29E] hover:text-[#1C1917]">✕</button>
         </div>
@@ -64,28 +65,33 @@ export default function ChatSidebar({
       </div>
 
       {/* Past chats */}
-      <div className="flex-1 overflow-y-auto px-2 py-2">
+      <div className="flex-1 overflow-y-auto px-2 py-2 scrollbar-none">
         {sessions.length > 0 && (
           <p className="text-[10px] font-medium text-[#A8A29E] uppercase tracking-wider px-2 mb-2">Recent chats</p>
         )}
         {sessions.map(s => (
-          <div key={s.id} className="px-2 py-2 rounded-lg hover:bg-[#E7E5E4] cursor-pointer group mb-0.5" onClick={() => onLoadSession(s.id)}>
+          <motion.div
+            key={s.id}
+            onClick={() => onLoadSession(s.id)}
+            whileHover={{ x: 2 }}
+            transition={{ duration: 0.15 }}
+            className="px-2 py-2.5 rounded-lg hover:bg-[#ECEAE7] cursor-pointer mb-0.5 group"
+          >
             <div className="flex items-center justify-between mb-1">
               <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${STAGE_COLORS[s.buyerStage] ?? 'bg-[#F4F4F5] text-[#52525B]'}`}>
                 {STAGE_LABELS[s.buyerStage] ?? s.buyerStage}
               </span>
               <span className="text-[10px] text-[#A8A29E]">{timeAgo(s.lastMessageAt)}</span>
             </div>
-            <p className="text-[12px] text-[#52525B] truncate">
-              {s.firstMessage ? s.firstMessage.slice(0, 45) : 'New conversation'}
+            <p className="text-[12px] text-[#1C1917] font-medium truncate leading-snug">
+              {s.firstMessage ? s.firstMessage.slice(0, 40) : 'New conversation'}
             </p>
             {(s.buyerBudget || s.buyerConfig) && (
               <p className="text-[10px] text-[#A8A29E] mt-0.5">
-                {s.buyerConfig && `${s.buyerConfig}`}
-                {s.buyerBudget && ` · ₹${Math.round(s.buyerBudget / 100000)}L`}
+                {s.buyerConfig}{s.buyerBudget ? ` · ₹${Math.round(s.buyerBudget/100000)}L` : ''}
               </p>
             )}
-          </div>
+          </motion.div>
         ))}
         {sessions.length === 0 && userId && (
           <p className="text-[12px] text-[#A8A29E] px-2 py-4 text-center">No past chats yet</p>

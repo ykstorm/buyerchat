@@ -33,7 +33,7 @@ export function VisitBooking({ projectId, projectName }: VisitBookingProps) {
     if (!selectedDate || status === "loading") return
     setStatus("loading")
     try {
-      const res = await fetch("/api/visits", {
+      const res = await fetch("/api/visit-requests", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -41,8 +41,15 @@ export function VisitBooking({ projectId, projectName }: VisitBookingProps) {
           visitScheduledDate: selectedDate.toISOString(),
         }),
       })
+      if (res.status === 409) {
+        const data = await res.json()
+        setToken(data.visitToken ?? "Already booked")
+        setStatus("success")
+        return
+      }
       if (!res.ok) throw new Error("failed")
-      setToken("AG-" + Math.floor(1000 + Math.random() * 9000))
+      const data = await res.json()
+      setToken(data.visitToken ?? "AG-" + Math.floor(1000 + Math.random() * 9000))
       setStatus("success")
     } catch {
       setStatus("error")

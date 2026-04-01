@@ -9,7 +9,10 @@
       "Bash(npx prisma:*)",
       "Bash(npm install:*)",
       "Bash(curl -X POST http://localhost:3000/api/admin/clear-cache)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)"
     ]
   }
 }

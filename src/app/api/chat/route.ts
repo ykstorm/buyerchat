@@ -34,6 +34,7 @@ export async function POST(req: NextRequest) {
   const session = await auth()
   const body = await req.json()
   const messages = body.messages
+  const incomingSessionId: string | null = body.sessionId ?? null
 
   if (!messages || !Array.isArray(messages)) {
     return NextResponse.json({ error: 'Invalid request' }, { status: 400 })
@@ -92,8 +93,22 @@ if (hasInjection) {
     } catch (e) { console.error('Decision engine failed:', e) }
   }
 
-  // Session ID for logging
-  const sessionId = randomUUID()
+  // Create or find ChatSession upfront so we can return its ID in response headers
+  let chatSession = incomingSessionId
+    ? await prisma.chatSession.findUnique({ where: { id: incomingSessionId } })
+    : null
+  if (!chatSession) {
+    chatSession = await prisma.chatSession.create({
+      data: {
+        sessionId: randomUUID(),
+        userId: session?.user?.id ?? null,
+        userMessage: sanitizedMsg,
+        aiResponse: '',
+        intent,
+      }
+    })
+  }
+
   const result = streamText({
     model: openai('gpt-4o'),
     system: buildSystemPrompt(context, decisionCard),
@@ -105,17 +120,16 @@ if (hasInjection) {
         const projectNames = context.projects.map((p: any) => p.name)
         const { passed, violations } = checkResponse(text, projectNames, intent)
     
-        // Save chat session
-        const savedSession = await prisma.chatSession.create({
+        // Update chat session with full response data
+        const savedSession = await prisma.chatSession.update({
+          where: { id: chatSession!.id },
           data: {
-            sessionId,
-            userId: session?.user?.id ?? null,
             userMessage: sanitizedMsg,
             aiResponse: text,
             intent,
             tokensUsed: usage.totalTokens,
             projectsMentioned: context.projects
-              .filter((p: any) => text.toLowerCase().includes((p.projectName ?? '').toLowerCase()))
+              .filter((p: any) => text.toLowerCase().includes((p.name ?? '').toLowerCase()))
               .map((p: any) => p.id),
             responsePassedChecks: passed,
             violations,
@@ -178,5 +192,11 @@ if (hasInjection) {
     }
     })
     
-      return result.toTextStreamResponse()
+  const stream = result.toTextStreamResponse()
+  return new Response(stream.body, {
+    headers: {
+      'Content-Type': 'text/plain; charset=utf-8',
+      'x-session-id': chatSession.id,
     }
+  })
+}

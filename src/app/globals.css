@@ -33,3 +33,6 @@ body {
   animation: shimmer 2s linear infinite;
   background-size: 200% 100%;
 }
+
+.scrollbar-none { scrollbar-width: none; }
+.scrollbar-none::-webkit-scrollbar { display: none; }

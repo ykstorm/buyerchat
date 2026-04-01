@@ -69,19 +69,21 @@ const existing = await prisma.siteVisit.findFirst({
 })
 if (existing) {
   return NextResponse.json(
-    { error: 'You already have a pending visit for this project.' },
+    { visitToken: existing.visitToken },
     { status: 409 }
   )
 }
   // Save visit to DB
-  // TODO: add buyerName, buyerPhone, buyerEmail to SiteVisit schema then include body.buyerName/buyerPhone/buyerEmail here
-  const visit = await prisma.siteVisit.create({
+  const siteVisit = await prisma.siteVisit.create({
     data: {
       visitToken,
       userId: session.user.id,
       projectId,
       visitScheduledDate: scheduledDate,
       otpVerified: false,
+      buyerName: parsed.data.buyerName,
+      buyerPhone: parsed.data.buyerPhone,
+      buyerEmail: parsed.data.buyerEmail,
     }
   })
 
@@ -92,16 +94,16 @@ if (existing) {
     subject: `Site Visit Confirmed — ${project.projectName}`,
     html: `
       <h2>Your site visit is confirmed!</h2>
-     <h3 className="text-[#e0e0ea] font-medium">{visit.project?.projectName}</h3>
-<p className="text-[#636380] text-sm">{visit.project?.builderName}</p>
-<p className="text-[#636380] text-xs mt-1">{new Date(visit.visitScheduledDate).toLocaleDateString()}</p>
+      <p><strong>Project:</strong> ${project.projectName}</p>
+      <p><strong>Builder:</strong> ${project.builderName}</p>
+      <p><strong>Date:</strong> ${new Date(visitScheduledDate).toLocaleDateString('en-IN')}</p>
       <p><strong>Your visit token:</strong> ${visitToken}</p>
       <p>Please bring this token to your site visit.</p>
     `
   })
 
   return NextResponse.json(
-    { visitId: visit.id, message: 'Visit booked. Check your email for your visit token.' },
+    { success: true, visitToken: siteVisit.visitToken },
     { status: 201 }
   )
 }
