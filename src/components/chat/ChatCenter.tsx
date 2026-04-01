@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion'
 import { FormEvent } from 'react'
+import ReactMarkdown from 'react-markdown'
 
 export type Message = {
   id: string
@@ -89,13 +90,16 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
         </div>
       ) : (
         /* Messages */
-        <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+        <motion.div
+          className="flex-1 overflow-y-auto px-4 py-4 space-y-4"
+          variants={{ hidden: {}, show: { transition: { staggerChildren: 0.04 } } }}
+          initial="hidden"
+          animate="show"
+        >
           {messages.map((msg) => (
             <motion.div
               key={msg.id}
-              initial={{ y: 12, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ duration: 0.2 }}
+              variants={{ hidden: { y: 10, opacity: 0 }, show: { y: 0, opacity: 1, transition: { duration: 0.2 } } }}
               className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start gap-2'}`}
             >
               {msg.role === 'assistant' && (
@@ -108,7 +112,11 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
                   ? 'bg-[#F0EFEC] text-[#1C1917] max-w-[70%]'
                   : 'bg-white border-l-2 border-[#1B4F8A] text-[#1C1917]'
               }`}>
-                {msg.content}
+                {msg.role === 'assistant'
+                  ? <div className="prose prose-sm max-w-none text-[#1C1917] [&>p]:mb-2 [&>p:last-child]:mb-0">
+                      <ReactMarkdown>{msg.content}</ReactMarkdown>
+                    </div>
+                  : msg.content}
               </div>
             </motion.div>
           ))}
@@ -125,11 +133,15 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
               </div>
             </div>
           )}
-        </div>
+        </motion.div>
       )}
 
       {/* Input bar */}
-      <div className="border-t border-[#E7E5E4] bg-[#FAFAF8] px-4 py-3">
+      <motion.div
+        className="border-t border-[#E7E5E4] bg-[#FAFAF8] px-4 py-3"
+        animate={isLoading ? { scale: [1, 1.005, 1] } : {}}
+        transition={{ repeat: Infinity, duration: 1.8, ease: 'easeInOut' }}
+      >
         <form onSubmit={handleSubmit} className="flex gap-2">
           <input
             value={input}
@@ -146,7 +158,7 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
             →
           </button>
         </form>
-      </div>
+      </motion.div>
     </div>
   )
 }

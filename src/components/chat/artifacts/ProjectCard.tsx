@@ -1,5 +1,7 @@
 'use client'
 
+import { motion } from 'framer-motion'
+
 type ProjectType = {
   id: string; projectName: string; builderName: string
   pricePerSqft: number; minPrice: number; maxPrice: number
@@ -8,47 +10,69 @@ type ProjectType = {
 }
 
 export default function ProjectCard({ project }: { project: ProjectType }) {
-  const possession = new Date(project.possessionDate).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })
-  const formatL = (n: number) => Math.round(n / 100000)
+  const possession = project.possessionDate
+    ? new Date(project.possessionDate).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })
+    : 'TBD'
+  const formatL = (n: number | null | undefined) => n ? Math.round(n / 100000) : '—'
 
   return (
-    <div className="bg-white rounded-xl border border-[#E7E5E4] p-5">
-      <div className="mb-4">
-        <h2 style={{ fontFamily: 'var(--font-playfair)' }} className="text-[16px] font-semibold text-[#1C1917]">
+    <motion.div
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ type: 'spring', stiffness: 300, damping: 28 }}
+      className="bg-white rounded-2xl border border-[#E7E5E4] overflow-hidden shadow-sm"
+    >
+      <div className="h-1 bg-gradient-to-r from-[#1B4F8A] to-[#2563EB]" />
+
+      <div className="p-5">
+        {/* Name + builder */}
+        <h2
+          style={{ fontFamily: 'var(--font-playfair)', fontSize: '17px' }}
+          className="font-semibold text-[#1C1917] leading-snug"
+        >
           {project.projectName}
         </h2>
-        <p className="text-[12px] text-[#78716C] mt-0.5">{project.builderName}</p>
-      </div>
+        <p className="text-[12px] text-[#78716C] mt-1">{project.builderName}</p>
 
-      <div className="mb-4">
-        <p style={{ fontFamily: 'var(--font-mono)' }} className="text-[22px] font-semibold text-[#1B4F8A]">
-          ₹{project.pricePerSqft.toLocaleString('en-IN')}/sqft
+        <div className="my-4 h-px bg-[#F4F3F0]" />
+
+        {/* Price */}
+        <p
+          style={{ fontFamily: 'var(--font-mono)', fontSize: '24px' }}
+          className="font-bold text-[#1B4F8A] leading-none"
+        >
+          {project.pricePerSqft ? `₹${project.pricePerSqft.toLocaleString('en-IN')}/sqft` : 'Price on request'}
         </p>
-        <p className="text-[12px] text-[#A8A29E] mt-0.5">
-          ₹{formatL(project.minPrice)}L – ₹{formatL(project.maxPrice)}L all-in range
+        <p className="text-[11px] text-[#A8A29E] mt-0.5">
+          {project.minPrice && project.maxPrice
+            ? `₹${formatL(project.minPrice)}L – ₹${formatL(project.maxPrice)}L all-in range`
+            : 'Price on request'}
         </p>
-      </div>
 
-      <div className="grid grid-cols-2 gap-2 mb-4">
-        {[
-          { label: 'Possession', value: possession },
-          { label: 'Status', value: project.constructionStatus },
-          { label: 'Location', value: project.microMarket },
-        ].map(item => (
-          <div key={item.label} className="bg-[#F8FAFC] rounded-lg px-3 py-2">
-            <p className="text-[10px] text-[#A8A29E]">{item.label}</p>
-            <p className="text-[12px] font-medium text-[#1C1917] truncate">{item.value}</p>
-          </div>
-        ))}
-      </div>
+        {/* Pills */}
+        <div className="flex gap-2 mt-4">
+          <span className="bg-[#F4F3F0] text-[#78716C] text-[11px] px-2.5 py-1 rounded-full">
+            {possession}
+          </span>
+          <span className="bg-[#E6F1FB] text-[#0C447C] text-[11px] px-2.5 py-1 rounded-full">
+            {project.constructionStatus}
+          </span>
+        </div>
 
-      <button
-        type="button"
-        className="w-full bg-[#1B4F8A] text-white rounded-xl py-3 text-[13px] font-medium hover:bg-[#163d6b] transition-colors"
-        onClick={() => alert('Visit booking coming soon')}
-      >
-        Book OTP-verified visit →
-      </button>
-    </div>
+        {/* Location */}
+        <p className="text-[12px] text-[#78716C] mt-3">• {project.microMarket}</p>
+
+        {/* CTA */}
+        <button
+          type="button"
+          onClick={() => window.dispatchEvent(new CustomEvent('book-visit', {
+            detail: { projectId: project.id, projectName: project.projectName }
+          }))}
+          className="w-full mt-4 bg-[#1B4F8A] hover:bg-[#163d6e] text-white text-sm font-medium py-2.5 rounded-xl transition-colors"
+        >
+          Book OTP-verified visit →
+        </button>
+      </div>
+    </motion.div>
   )
 }

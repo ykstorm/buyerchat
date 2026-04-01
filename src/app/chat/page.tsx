@@ -12,5 +12,12 @@ export default async function ChatPage() {
       possessionDate: true, constructionStatus: true, microMarket: true
     }
   })
-  return <ChatClient projects={projects} userId={session?.user?.id ?? null} />
+  return (
+    <>
+      <style>{`body { background: #FAFAF8 !important; }`}</style>
+      <div className="fixed inset-0 z-50 bg-[#FAFAF8]">
+        <ChatClient projects={projects} userId={session?.user?.id ?? null} />
+      </div>
+    </>
+  )
 }

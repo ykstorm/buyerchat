@@ -2,12 +2,15 @@
 import { prisma } from '@/lib/prisma'
 import { formatLakh, daysBetween, getStageLabel, getUrgency } from '@/lib/admin-utils'
 import Link from 'next/link'
+import AnimatedNumber from '@/components/admin/AnimatedNumber'
 
 function MetricCard({ label, value, sub, color }: { label: string; value: string | number; sub?: string; color?: string }) {
   return (
     <div className="bg-white border border-black/[0.08] rounded-lg p-3">
       <p className="text-[11px] text-[#52525B] mb-1">{label}</p>
-      <p className="text-[22px] font-medium" style={{ color: color ?? '#1A1A2E' }}>{value}</p>
+      <p className="text-[22px] font-medium" style={{ color: color ?? '#1A1A2E' }}>
+        {typeof value === 'number' ? <AnimatedNumber value={value} /> : value}
+      </p>
       {sub && <p className="text-[10px] text-[#71717A] mt-0.5">{sub}</p>}
     </div>
   )

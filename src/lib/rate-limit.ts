@@ -1,6 +1,6 @@
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>()
 
-export function rateLimit(ip: string, limit: number, windowMs: number): boolean {
+export async function rateLimit(ip: string, limit: number, windowMs: number): Promise<boolean> {
   const now = Date.now()
   const entry = rateLimitMap.get(ip)
 

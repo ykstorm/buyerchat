@@ -5,7 +5,11 @@
       "Bash(wc:*)",
       "Bash(ls /c/Users/pc/Documents/buyerchat/src/lib/*.ts)",
       "Bash(xargs -I {} basename {})",
-      "Bash(node -e \"const p = require\\(''''C:/Users/pc/Documents/buyerchat/node_modules/ai/package.json''''\\); console.log\\(JSON.stringify\\(Object.keys\\(p.exports || {}\\), null, 2\\)\\)\")"
+      "Bash(node -e \"const p = require\\(''''C:/Users/pc/Documents/buyerchat/node_modules/ai/package.json''''\\); console.log\\(JSON.stringify\\(Object.keys\\(p.exports || {}\\), null, 2\\)\\)\")",
+      "Bash(npx prisma:*)",
+      "Bash(npm install:*)",
+      "Bash(curl -X POST http://localhost:3000/api/admin/clear-cache)",
+      "Bash(ls:*)"
     ]
   }
 }

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, FormEvent } from 'react'
+import { useState, useCallback, useEffect, FormEvent } from 'react'
 import ChatSidebar from '@/components/chat/ChatSidebar'
 import ChatCenter, { type Message } from '@/components/chat/ChatCenter'
 import ChatRightPanel from '@/components/chat/ChatRightPanel'
@@ -11,6 +11,9 @@ type ProjectType = {
   possessionDate: Date | string; constructionStatus: string
   microMarket: string
 }
+
+type ArtifactType = 'project_card' | 'visit_booking'
+type Artifact = { type: ArtifactType; data: ProjectType }
 
 let idCounter = 0
 const uid = () => `msg-${++idCounter}-${Date.now()}`
@@ -23,7 +26,17 @@ export default function ChatClient({
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  const [artifact, setArtifact] = useState<ProjectType | null>(null)
+  const [artifact, setCurrentArtifact] = useState<Artifact | null>(null)
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const { projectId, projectName } = (e as CustomEvent).detail
+      const project = projects.find(p => p.id === projectId)
+      if (project) setCurrentArtifact({ type: 'visit_booking', data: project })
+    }
+    window.addEventListener('book-visit', handler)
+    return () => window.removeEventListener('book-visit', handler)
+  }, [projects])
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   const sendMessage = useCallback(async (userContent: string) => {
@@ -32,7 +45,7 @@ export default function ChatClient({
     const userMsg: Message = { id: uid(), role: 'user', content: userContent }
     const assistantId = uid()
 
-    setMessages(prev => [...prev, userMsg, { id: assistantId, role: 'assistant', content: '' }])
+    setMessages(prev => [...prev, userMsg])
     setIsLoading(true)
 
     try {
@@ -52,6 +65,7 @@ export default function ChatClient({
         return
       }
 
+      setMessages(prev => [...prev, { id: assistantId, role: 'assistant', content: '' }])
       const reader = res.body.getReader()
       const decoder = new TextDecoder()
       let full = ''
@@ -67,10 +81,13 @@ export default function ChatClient({
       }
 
       // Detect project artifact
-      const found = projects.find(p =>
-        full.toLowerCase().includes(p.projectName.toLowerCase())
-      )
-      if (found) setArtifact(found)
+      const lower = full.toLowerCase()
+      const found = projects.find(p => lower.includes(p.projectName.toLowerCase()))
+      if (found && /book.*visit|visit.*book|schedule.*visit/i.test(full)) {
+        setCurrentArtifact({ type: 'visit_booking', data: found })
+      } else if (found) {
+        setCurrentArtifact({ type: 'project_card', data: found })
+      }
     } catch {
       setMessages(prev => prev.map(m =>
         m.id === assistantId ? { ...m, content: 'Network error. Please try again.' } : m
@@ -97,6 +114,27 @@ export default function ChatClient({
     sendMessage(content)
   }, [sendMessage])
 
+  const newChat = useCallback(() => {
+    setMessages([])
+    setInput('')
+    setCurrentArtifact(null)
+  }, [])
+
+  const loadSession = useCallback(async (sessionId: string) => {
+    try {
+      const res = await fetch(`/api/chat-sessions/${sessionId}`)
+      if (!res.ok) return
+      const data = await res.json()
+      const loaded: Message[] = (data.messages ?? []).map((m: any) => ({
+        id: uid(),
+        role: m.role,
+        content: m.content
+      }))
+      setMessages(loaded)
+      setCurrentArtifact(null)
+    } catch {}
+  }, [])
+
   return (
     <div className="flex h-screen bg-[#FAFAF8] overflow-hidden">
       {/* Mobile hamburger */}
@@ -112,6 +150,8 @@ export default function ChatClient({
         open={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
         userId={userId}
+        onNewChat={newChat}
+        onLoadSession={loadSession}
       />
 
       <ChatCenter
@@ -123,7 +163,7 @@ export default function ChatClient({
         append={append}
       />
 
-      <ChatRightPanel artifact={artifact} />
+      <ChatRightPanel artifact={artifact} setCurrentArtifact={setCurrentArtifact} />
     </div>
   )
 }

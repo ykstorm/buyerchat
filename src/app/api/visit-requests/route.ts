@@ -10,6 +10,9 @@ const resend = new Resend(process.env.RESEND_API_KEY)
 const VisitSchema = z.object({
   projectId: z.string().min(1),
   visitScheduledDate: z.string(),
+  buyerName: z.string().optional(),
+  buyerPhone: z.string().optional(),
+  buyerEmail: z.string().optional(),
 })
 export async function GET(req: NextRequest) {
   const session = await auth()
@@ -71,6 +74,7 @@ if (existing) {
   )
 }
   // Save visit to DB
+  // TODO: add buyerName, buyerPhone, buyerEmail to SiteVisit schema then include body.buyerName/buyerPhone/buyerEmail here
   const visit = await prisma.siteVisit.create({
     data: {
       visitToken,

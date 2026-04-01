@@ -34,9 +34,9 @@ function timeAgo(d: string) {
 }
 
 export default function ChatSidebar({
-  open, onClose, userId
+  open, onClose, userId, onNewChat, onLoadSession
 }: {
-  open: boolean; onClose: () => void; userId: string | null
+  open: boolean; onClose: () => void; userId: string | null; onNewChat: () => void; onLoadSession: (sessionId: string) => void
 }) {
   const [sessions, setSessions] = useState<SessionItem[]>([])
 
@@ -58,11 +58,9 @@ export default function ChatSidebar({
           </span>
           <button type="button" onClick={onClose} className="lg:hidden text-[#A8A29E] hover:text-[#1C1917]">✕</button>
         </div>
-        <Link href="/chat">
-          <button type="button" className="w-full bg-[#1B4F8A] text-white text-[12px] font-medium py-2 rounded-lg hover:bg-[#163d6b] transition-colors">
-            + New chat
-          </button>
-        </Link>
+        <button type="button" onClick={onNewChat} className="w-full bg-[#1B4F8A] text-white text-[12px] font-medium py-2 rounded-lg hover:bg-[#163d6b] transition-colors">
+          + New chat
+        </button>
       </div>
 
       {/* Past chats */}
@@ -71,7 +69,7 @@ export default function ChatSidebar({
           <p className="text-[10px] font-medium text-[#A8A29E] uppercase tracking-wider px-2 mb-2">Recent chats</p>
         )}
         {sessions.map(s => (
-          <div key={s.id} className="px-2 py-2 rounded-lg hover:bg-[#E7E5E4] cursor-pointer group mb-0.5">
+          <div key={s.id} className="px-2 py-2 rounded-lg hover:bg-[#E7E5E4] cursor-pointer group mb-0.5" onClick={() => onLoadSession(s.id)}>
             <div className="flex items-center justify-between mb-1">
               <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${STAGE_COLORS[s.buyerStage] ?? 'bg-[#F4F4F5] text-[#52525B]'}`}>
                 {STAGE_LABELS[s.buyerStage] ?? s.buyerStage}

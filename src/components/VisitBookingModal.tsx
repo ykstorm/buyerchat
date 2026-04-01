@@ -192,7 +192,13 @@ export function VisitBookingModal({ projectId, projectName, builderName, isOpen,
       const res = await fetch("/api/visit-requests", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ projectId, visitScheduledDate: scheduledDate.toISOString() })
+        body: JSON.stringify({
+          projectId,
+          visitScheduledDate: scheduledDate.toISOString(),
+          buyerName: bookingData.name ?? '',
+          buyerPhone: bookingData.phone ?? '',
+          buyerEmail: bookingData.email ?? '',
+        })
       })
       if (!res.ok) {
         const data = await res.json()
@@ -532,7 +538,7 @@ className="relative z-10 w-full max-w-lg rounded-2xl border border-white/10 bg-[
                       transition={{ delay: 0.8 }}
                       className="text-xs text-[#454560] mt-4"
                     >
-                      Confirmation sent to +91 {bookingData.phone}
+                      Your visit is booked. Check your email for confirmation details.
                     </motion.p>
                   </motion.div>
                 )}

@@ -155,7 +155,10 @@ model SiteVisit {
   user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   project            Project  @relation(fields: [projectId], references: [id])
   builderAcknowledged Boolean  @default(false)
-leadRegisteredAt    DateTime?
+  leadRegisteredAt    DateTime?
+  buyerName           String?
+  buyerPhone          String?
+  buyerEmail          String?
 }
 
 

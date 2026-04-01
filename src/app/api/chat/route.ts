@@ -5,6 +5,7 @@ import { rateLimit } from '@/lib/rate-limit'
 import { buildContextPayload } from '@/lib/context-builder'
 import { buildSystemPrompt } from '@/lib/system-prompt'
 import { classifyIntent } from '@/lib/intent-classifier'
+import { buildDecisionCard } from '@/lib/decision-engine/decision-card-builder'
 import { checkResponse } from '@/lib/response-checker'
 import { sanitizeAdminInput } from '@/lib/sanitize'
 import { prisma } from '@/lib/prisma'
@@ -23,7 +24,7 @@ const INJECTION_KEYWORDS = [
 export async function POST(req: NextRequest) {
   // Rate limit
   const ip = req.headers.get('x-forwarded-for') ?? '127.0.0.1'
-  if (!rateLimit(ip, 10, 60 * 1000)) {
+  if (!await rateLimit(ip, 10, 60 * 1000)) {
     return NextResponse.json(
       { error: 'Too many requests. Please wait a minute.' },
       { status: 429 }
@@ -74,14 +75,28 @@ if (hasInjection) {
   const intent = classifyIntent(sanitizedMsg)
 
   // Build context
-  const context = await buildContextPayload()
-  const systemPrompt = buildSystemPrompt(context)
+  let context
+  try { context = await buildContextPayload() }
+  catch { return NextResponse.json({ error: 'Service temporarily unavailable.' }, { status: 503 }) }
+  const isComparison = /compare|vs|versus|which is better|which one/i.test(sanitizedMsg)
+  let decisionCard = null
+  if (isComparison) {
+    try {
+      const result = await buildDecisionCard({
+        budget: session?.buyerBudget ?? undefined,
+        persona: session?.buyerPersona ?? undefined,
+        projects: context.projects,
+        userMessage: sanitizedMsg
+      })
+      decisionCard = result
+    } catch (e) { console.error('Decision engine failed:', e) }
+  }
 
   // Session ID for logging
   const sessionId = randomUUID()
   const result = streamText({
     model: openai('gpt-4o'),
-    system: systemPrompt,
+    system: buildSystemPrompt(context, decisionCard),
     messages: cappedMessages,
     temperature: 0.3,
     maxOutputTokens: 500,
@@ -99,9 +114,9 @@ if (hasInjection) {
             aiResponse: text,
             intent,
             tokensUsed: usage.totalTokens,
-            projectsMentioned: projectNames.filter((n: string) =>
-              text.toLowerCase().includes(n.toLowerCase())
-            ),
+            projectsMentioned: context.projects
+              .filter((p: any) => text.toLowerCase().includes((p.projectName ?? '').toLowerCase()))
+              .map((p: any) => p.id),
             responsePassedChecks: passed,
             violations,
           }

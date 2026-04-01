@@ -68,6 +68,8 @@ export async function POST(req: NextRequest) {
         infrastructureScore: Number(body.infrastructureScore ?? 50),
         demandScore: Number(body.demandScore ?? 50),
         isActive: body.isActive ?? true,
+        latitude: Number(body.latitude ?? 23.0225),
+        longitude: Number(body.longitude ?? 72.5714),
       }
     })
     return NextResponse.json(project, { status: 201 })
