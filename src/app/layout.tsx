@@ -20,7 +20,26 @@ const dmSans = DM_Sans({
 
 export const metadata: Metadata = {
   title: 'BuyerChat — Property Intelligence for South Bopal & Shela',
-  description: 'AI-powered real estate assistant. Verified RERA data. Builder trust scores.',
+  description: 'AI-powered property advisor for home buyers in South Bopal and Shela, Ahmedabad. Verified RERA data, builder trust scores, and OTP-verified site visits.',
+  keywords: 'South Bopal flats, Shela property, 3BHK Ahmedabad, property advisor, RERA verified',
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'),
+  openGraph: {
+    title: 'BuyerChat — Find Your Home in South Bopal & Shela',
+    description: 'Tell me your budget and what matters to you. I will do the rest.',
+    url: process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000',
+    siteName: 'BuyerChat',
+    locale: 'en_IN',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'BuyerChat — Property Intelligence',
+    description: 'AI-powered property advisor for South Bopal & Shela, Ahmedabad.',
+  },
+  robots: {
+    index: true,
+    follow: true,
+  }
 }
 
 export default function RootLayout({

@@ -2,12 +2,12 @@
 // All existing guardrails preserved. Psychology layer added on top.
 
 export function buildSystemPrompt(ctx: {
-  projects: any[]
-  localities: any[]
-  infrastructure: any[]
+  projects: unknown[]
+  localities: unknown[]
+  infrastructure: unknown[]
   dataAsOf: string
   locationIntelligence?: string
-}, decisionCard?: any | null): string {
+}, decisionCard?: unknown): string {
 
   const projectJSON = JSON.stringify(ctx.projects, null, 2)
   const localityJSON = JSON.stringify(ctx.localities, null, 2)

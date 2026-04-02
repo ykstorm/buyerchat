@@ -74,16 +74,20 @@ function isPastDate(day: number, month: number, year: number) {
 // ── Confetti particle
 function ConfettiParticle({ delay }: { delay: number }) {
   const colors = ["#3de8a0", "#60a5fa", "#f59e0b", "#f472b6", "#a78bfa"]
-  const color = colors[Math.floor(Math.random() * colors.length)]
-  const x = (Math.random() - 0.5) * 300
-  const rotate = Math.random() * 720 - 360
+  const values = React.useMemo(() => ({
+    color: colors[Math.floor(Math.random() * colors.length)],
+    x: (Math.random() - 0.5) * 300,
+    rotate: Math.random() * 720 - 360,
+    y: -150 - Math.random() * 100,
+    duration: 1.2 + Math.random() * 0.5,
+  }), [])
   return (
     <motion.div
       className="absolute top-1/2 left-1/2 w-2 h-2 rounded-sm pointer-events-none"
-      style={{ background: color }}
+      style={{ background: values.color }}
       initial={{ opacity: 1, x: 0, y: 0, rotate: 0, scale: 1 }}
-      animate={{ opacity: 0, x, y: -150 - Math.random() * 100, rotate, scale: 0 }}
-      transition={{ duration: 1.2 + Math.random() * 0.5, delay, ease: "easeOut" }}
+      animate={{ opacity: 0, x: values.x, y: values.y, rotate: values.rotate, scale: 0 }}
+      transition={{ duration: values.duration, delay, ease: "easeOut" }}
     />
   )
 }

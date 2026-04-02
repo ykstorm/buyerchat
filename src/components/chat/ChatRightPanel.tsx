@@ -35,7 +35,6 @@ export default function ChatRightPanel({
                 <VisitBooking
                   projectId={artifact.data.id}
                   projectName={artifact.data.projectName}
-                  onClose={() => {}}
                 />
               </>
             ) : (

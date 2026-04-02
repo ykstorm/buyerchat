@@ -23,7 +23,7 @@ const INJECTION_PATTERNS = [
     return clean.slice(0, 500).trim()
   }
   
-  export function sanitizeProjectData(data: Record<string, any>): Record<string, any> {
+  export function sanitizeProjectData(data: Record<string, unknown>): Record<string, unknown> {
     const sanitized = { ...data }
     // Sanitize text fields that could reach AI context
     const textFields = ['projectName', 'constructionStatus', 'microMarket']

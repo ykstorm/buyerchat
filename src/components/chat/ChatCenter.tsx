@@ -1,6 +1,6 @@
 'use client'
 
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { FormEvent, useRef, useEffect, useState } from 'react'
 import ReactMarkdown from 'react-markdown'
 

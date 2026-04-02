@@ -81,16 +81,12 @@ if (hasInjection) {
   catch { return NextResponse.json({ error: 'Service temporarily unavailable.' }, { status: 503 }) }
   const isComparison = /compare|vs|versus|which is better|which one/i.test(sanitizedMsg)
   let decisionCard = null
-  if (isComparison) {
+  if (isComparison && context.projects.length >= 2) {
     try {
-      const result = await buildDecisionCard({
-        budget: session?.buyerBudget ?? undefined,
-        persona: session?.buyerPersona ?? undefined,
-        projects: context.projects,
-        userMessage: sanitizedMsg
-      })
-      decisionCard = result
-    } catch (e) { console.error('Decision engine failed:', e) }
+      decisionCard = buildDecisionCard(sanitizedMsg, context.projects[0], context.projects[1])
+    } catch (e) {
+      console.error('Decision engine failed:', e)
+    }
   }
 
   // Create or find ChatSession upfront so we can return its ID in response headers
@@ -176,7 +172,7 @@ if (hasInjection) {
               from: process.env.FROM_EMAIL,
               subject: `CRITICAL: BuyerChat AI violation — ${violations[0]}`,
               text: [
-                `Session: ${sessionId}`,
+                `Session: ${chatSession?.id ?? 'unknown'}`,
                 `Violations: ${violations.join(' | ')}`,
                 `User message: ${sanitizedMsg}`,
                 `AI response (first 500 chars): ${text.slice(0, 500)}`,
