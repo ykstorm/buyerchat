@@ -1,7 +1,6 @@
 import { prisma } from '@/lib/prisma'
 import { formatLakh, daysBetween, formatDate } from '@/lib/admin-utils'
 import RegisterLeadButton from '@/components/admin/RegisterLeadButton'
-import Link from 'next/link'
 
 function MetricCard({ label, value, sub, color }: { label: string; value: string | number; sub?: string; color?: string }) {
   return (
@@ -59,10 +58,6 @@ export default async function RevenuePage() {
           <h1 className="text-[14px] font-medium text-[#1A1A2E]">Revenue / Lead & Commission</h1>
           <p className="text-[12px] text-[#52525B]">OTP lead protection · commission tracking · pipeline</p>
         </div>
-        <Link href="/admin/revenue/register"
-          className="bg-[#0F6E56] text-white text-[11px] font-medium px-3 py-1.5 rounded-lg hover:bg-[#085041] transition-colors">
-          + Register lead
-        </Link>
       </div>
 
       {/* Metrics */}

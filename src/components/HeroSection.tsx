@@ -2,7 +2,6 @@
 
 import { motion, useMotionValue, useTransform, useSpring } from "framer-motion";
 import { useRef, useEffect, useState, MouseEvent } from "react";
-import Link from "next/link";
 
 function Spotlight() {
   const mouseX = useMotionValue(0);
@@ -288,7 +287,7 @@ export default function HeroSection() {
             variants={itemVariants}
             className="mt-9 flex flex-wrap items-center justify-center gap-3"
           >
-            <MagneticButton href="/projects" variant="primary">
+            <MagneticButton href="/chat" variant="primary">
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
               </svg>

@@ -167,7 +167,7 @@ function SpotlightCTACard({ project, onBookVisit }: { project: ProjectDetail; on
           </motion.button>
           <p
             className="mt-3 text-center font-sans text-xs text-[#3de8a0] hover:underline cursor-pointer underline-offset-2"
-            onClick={() => router.push('/?project=' + encodeURIComponent(project.projectName))}
+            onClick={() => router.push('/chat')}
           >
             Ask AI about this project →
           </p>

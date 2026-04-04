@@ -714,8 +714,7 @@ export default function ComparePage() {
                 </p>
                 <button
                   onClick={() => {
-                    const ids = projects.map((p) => p.id).join(",")
-                    router.push(`/?compare=${ids}`)
+                    router.push('/compare')
                   }}
                   className="mt-5 bg-[#3de8a0] text-[#09090b] rounded-full px-8 py-3 font-sans font-semibold text-sm hover:bg-[#2dd891] transition-colors inline-flex items-center gap-2"
                 >

@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { signOut } from 'next-auth/react'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
 
@@ -104,7 +105,7 @@ export default function ChatSidebar({
       {/* Footer */}
       <div className="px-4 py-3 border-t border-[#E7E5E4]">
         {userId ? (
-          <Link href="/api/auth/signout" className="text-[11px] text-[#A8A29E] hover:text-[#1C1917]">Sign out</Link>
+          <button type="button" onClick={() => signOut({ callbackUrl: '/' })} className="text-[11px] text-[#A8A29E] hover:text-[#1C1917]">Sign out</button>
         ) : (
           <Link href="/auth/signin" className="text-[11px] text-[#1B4F8A] font-medium">Sign in</Link>
         )}
