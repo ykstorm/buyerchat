@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { sanitizeAdminInput } from '@/lib/sanitize'
+import { invalidateContextCache } from '@/lib/context-cache'
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -52,6 +53,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         isActive: body.isActive ?? true,
       }
     })
+    await invalidateContextCache()
     return NextResponse.json(project)
   } catch (err) {
     console.error('Project PUT error:', err)

@@ -174,7 +174,7 @@ export function BuilderProfileClient({ builder }: { builder: BuilderProfile }) {
   const verdict = getGradeVerdict(builder.grade)
 
   const scores = [
-    { label: "Delivery Record", score: builder.deliveryScore, max: 20 },
+    { label: "Delivery Record", score: builder.deliveryScore, max: 30 },
     { label: "RERA Compliance", score: builder.reraScore, max: 20 },
     { label: "Build Quality", score: builder.qualityScore, max: 20 },
     { label: "Financial Strength", score: builder.financialScore, max: 15 },

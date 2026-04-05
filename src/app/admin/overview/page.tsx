@@ -4,9 +4,9 @@ import { formatLakh, daysBetween, getStageLabel, getUrgency } from '@/lib/admin-
 import Link from 'next/link'
 import AnimatedNumber from '@/components/admin/AnimatedNumber'
 
-function MetricCard({ label, value, sub, color }: { label: string; value: string | number; sub?: string; color?: string }) {
-  return (
-    <div className="bg-white border border-black/[0.08] rounded-lg p-3">
+function MetricCard({ label, value, sub, color, href }: { label: string; value: string | number; sub?: string; color?: string; href?: string }) {
+  const inner = (
+    <div className={`bg-white border border-black/[0.08] rounded-lg p-3 transition-shadow${href ? ' cursor-pointer hover:shadow-md' : ''}`}>
       <p className="text-[11px] text-[#52525B] mb-1">{label}</p>
       <p className="text-[22px] font-medium" style={{ color: color ?? '#1A1A2E' }}>
         {typeof value === 'number' ? <AnimatedNumber value={value} /> : value}
@@ -14,6 +14,7 @@ function MetricCard({ label, value, sub, color }: { label: string; value: string
       {sub && <p className="text-[10px] text-[#71717A] mt-0.5">{sub}</p>}
     </div>
   )
+  return href ? <Link href={href}>{inner}</Link> : inner
 }
 
 function Badge({ label, color }: { label: string; color: 'green' | 'red' | 'amber' | 'blue' | 'gray' }) {
@@ -229,11 +230,13 @@ export default async function OverviewPage() {
           label="Active buyers"
           value={activeBuyerCount}
           sub={`${urgentSessions.length} need follow-up`}
+          href="/admin/buyers"
         />
         <MetricCard
           label="Projects scored"
           value={projectsLiveCount}
           sub="in database"
+          href="/admin/projects"
         />
         <MetricCard
           label="Commission earned"
@@ -242,18 +245,21 @@ export default async function OverviewPage() {
             ? `${latestDeal.paymentStatus === 'paid' ? 'Paid' : 'Pending'} · ${latestDeal.builderBrandName}`
             : 'No deals yet'}
           color="#0F6E56"
+          href="/admin/revenue"
         />
         <MetricCard
           label="Pipeline value"
           value={pipelineBudgetSum > 0 ? `₹${formatLakh(pipelineBudgetSum)}` : '—'}
           sub={`${activeStageCount} in hot stages`}
           color="#BA7517"
+          href="/admin/revenue"
         />
         <MetricCard
           label="RERA alerts"
           value={reraAlertCount}
           sub="possession < 90 days"
           color={reraAlertCount > 0 ? '#A32D2D' : undefined}
+          href="/admin/intelligence"
         />
       </div>
 
