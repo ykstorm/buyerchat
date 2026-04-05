@@ -26,6 +26,7 @@ export function VisitBooking({ projectId, projectName }: VisitBookingProps) {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle")
   const [token, setToken] = useState("")
+  const [errorMsg, setErrorMsg] = useState('Something went wrong. Try again.')
 
   const pills = getDatePills()
 
@@ -45,6 +46,11 @@ export function VisitBooking({ projectId, projectName }: VisitBookingProps) {
         const data = await res.json()
         setToken(data.visitToken ?? "Already booked")
         setStatus("success")
+        return
+      }
+      if (res.status === 401) {
+        setStatus('error')
+        setErrorMsg('Please sign in to book a site visit.')
         return
       }
       if (!res.ok) throw new Error("failed")
@@ -101,7 +107,7 @@ export function VisitBooking({ projectId, projectName }: VisitBookingProps) {
 
           {/* Error */}
           {status === "error" && (
-            <p className="text-xs text-[#A32D2D] mb-3">Something went wrong. Try again.</p>
+            <p className="text-xs text-[#A32D2D] mb-3">{errorMsg}</p>
           )}
 
           {/* Confirm button */}
