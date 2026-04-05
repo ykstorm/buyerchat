@@ -4,17 +4,28 @@ import { formatLakh, daysBetween, getStageLabel, getUrgency } from '@/lib/admin-
 import Link from 'next/link'
 import AnimatedNumber from '@/components/admin/AnimatedNumber'
 
-function MetricCard({ label, value, sub, color, href }: { label: string; value: string | number; sub?: string; color?: string; href?: string }) {
+function MetricCard({ label, value, sub, color, subColor, href }: { label: string; value: string | number; sub?: string; color?: string; subColor?: string; href?: string }) {
   const inner = (
-    <div className={`bg-white border border-black/[0.08] rounded-lg p-3 transition-shadow${href ? ' cursor-pointer hover:shadow-md' : ''}`}>
-      <p className="text-[11px] text-[#52525B] mb-1">{label}</p>
-      <p className="text-[22px] font-medium" style={{ color: color ?? '#1A1A2E' }}>
+    <div
+      className="bg-white rounded-[10px] p-[12px_14px] transition-shadow"
+      style={{
+        border: '0.5px solid #E0DFDD',
+        ...(href ? { cursor: 'pointer' } : {}),
+      }}
+      onMouseEnter={undefined}
+    >
+      <p className="text-[10px] font-semibold uppercase tracking-wide mb-1.5" style={{ color: '#787878' }}>{label}</p>
+      <p className="font-extrabold leading-[1.1] mb-1" style={{ fontSize: 26, color: color ?? '#1B3A6B' }}>
         {typeof value === 'number' ? <AnimatedNumber value={value} /> : value}
       </p>
-      {sub && <p className="text-[10px] text-[#71717A] mt-0.5">{sub}</p>}
+      {sub && <p className="text-[9px]" style={{ color: subColor ?? '#B0B0AC' }}>{sub}</p>}
     </div>
   )
-  return href ? <Link href={href}>{inner}</Link> : inner
+  return href ? (
+    <Link href={href} className="block hover:[&>div]:shadow-[0_2px_8px_rgba(0,0,0,0.08)]">
+      {inner}
+    </Link>
+  ) : inner
 }
 
 function Badge({ label, color }: { label: string; color: 'green' | 'red' | 'amber' | 'blue' | 'gray' }) {
@@ -225,11 +236,12 @@ export default async function OverviewPage() {
       )}
 
       {/* 5 Metric Cards */}
-      <div className="grid grid-cols-5 gap-2.5 mb-4">
+      <div className="mb-4" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 8 }}>
         <MetricCard
           label="Active buyers"
           value={activeBuyerCount}
-          sub={`${urgentSessions.length} need follow-up`}
+          sub={urgentSessions.length > 0 ? `${urgentSessions.length} need follow-up` : 'All caught up'}
+          subColor={urgentSessions.length > 0 ? '#C0392B' : '#B0B0AC'}
           href="/admin/buyers"
         />
         <MetricCard
@@ -244,21 +256,20 @@ export default async function OverviewPage() {
           sub={latestDeal
             ? `${latestDeal.paymentStatus === 'paid' ? 'Paid' : 'Pending'} · ${latestDeal.builderBrandName}`
             : 'No deals yet'}
-          color="#0F6E56"
+          color="#0C6B54"
           href="/admin/revenue"
         />
         <MetricCard
           label="Pipeline value"
           value={pipelineBudgetSum > 0 ? `₹${formatLakh(pipelineBudgetSum)}` : '—'}
           sub={`${activeStageCount} in hot stages`}
-          color="#BA7517"
           href="/admin/revenue"
         />
         <MetricCard
           label="RERA alerts"
           value={reraAlertCount}
           sub="possession < 90 days"
-          color={reraAlertCount > 0 ? '#A32D2D' : undefined}
+          color={reraAlertCount > 0 ? '#C0392B' : '#1B3A6B'}
           href="/admin/intelligence"
         />
       </div>
