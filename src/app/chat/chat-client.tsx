@@ -20,9 +20,9 @@ let idCounter = 0
 const uid = () => `msg-${++idCounter}-${Date.now()}`
 
 export default function ChatClient({
-  projects, userId
+  projects, userId, userName, userImage
 }: {
-  projects: ProjectType[]; userId: string | null
+  projects: ProjectType[]; userId: string | null; userName: string | null; userImage: string | null
 }) {
   const searchParams = useSearchParams()
   const router = useRouter()
@@ -172,6 +172,8 @@ export default function ChatClient({
         open={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
         userId={userId}
+        userName={userName}
+        userImage={userImage}
         onNewChat={newChat}
         onLoadSession={loadSession}
       />

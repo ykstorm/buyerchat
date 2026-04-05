@@ -36,9 +36,9 @@ function timeAgo(d: string) {
 }
 
 export default function ChatSidebar({
-  open, onClose, userId, onNewChat, onLoadSession
+  open, onClose, userId, userName, userImage, onNewChat, onLoadSession
 }: {
-  open: boolean; onClose: () => void; userId: string | null; onNewChat: () => void; onLoadSession: (sessionId: string) => void
+  open: boolean; onClose: () => void; userId: string | null; userName: string | null; userImage: string | null; onNewChat: () => void; onLoadSession: (sessionId: string) => void
 }) {
   const [sessions, setSessions] = useState<SessionItem[]>([])
 
@@ -105,7 +105,11 @@ export default function ChatSidebar({
       {/* Footer */}
       <div className="px-4 py-3 border-t border-[#E7E5E4]">
         {userId ? (
-          <button type="button" onClick={() => signOut({ callbackUrl: '/' })} className="text-[11px] text-[#A8A29E] hover:text-[#1C1917]">Sign out</button>
+          <div className="flex items-center gap-2">
+            {userImage && <img src={userImage} className="w-6 h-6 rounded-full" alt="" />}
+            <span className="text-[11px] text-[#1C1917] truncate">{userName ?? 'You'}</span>
+            <button type="button" onClick={() => signOut({ callbackUrl: '/' })} className="text-[11px] text-[#A8A29E] hover:text-[#1C1917] ml-auto">Sign out</button>
+          </div>
         ) : (
           <Link href="/auth/signin" className="text-[11px] text-[#1B4F8A] font-medium">Sign in</Link>
         )}

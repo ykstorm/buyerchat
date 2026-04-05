@@ -22,7 +22,7 @@ export default async function ChatPage() {
             <div className="w-5 h-5 border-2 border-[#E7E5E4] border-t-[#1C1917] rounded-full animate-spin" />
           </div>
         }>
-          <ChatClient projects={projects} userId={session?.user?.id ?? null} />
+          <ChatClient projects={projects} userId={session?.user?.id ?? null} userName={session?.user?.name ?? null} userImage={session?.user?.image ?? null} />
         </Suspense>
       </div>
     </>
