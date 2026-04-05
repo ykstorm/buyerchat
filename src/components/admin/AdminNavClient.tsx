@@ -53,27 +53,6 @@ export default function AdminNavClient({ userName }: { userName: string }) {
 
   return (
     <>
-      {/* Topbar */}
-      <header className="fixed top-0 left-0 right-0 h-12 bg-[#1F3864] z-50 flex items-center px-4 gap-3">
-        {/* Mobile hamburger */}
-        <button
-          type="button"
-          className="lg:hidden text-white mr-1"
-          onClick={() => setMobileOpen(o => !o)}
-          aria-label="Toggle menu"
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
-          </svg>
-        </button>
-        <div className="flex items-center gap-1">
-          <span className="font-sans text-base font-medium text-white">Buyer</span>
-          <span className="font-sans text-base font-medium text-[#5DCAA5]">Chat</span>
-          <span className="font-sans text-base font-medium text-[#B5D4F4] ml-1">Admin</span>
-        </div>
-        <span className="font-sans text-xs text-[#B5D4F4] ml-auto">{userName}</span>
-      </header>
-
       {/* Desktop sidebar */}
       <div className="hidden lg:block fixed left-0 top-12 bottom-0 z-40">
         {sidebar}

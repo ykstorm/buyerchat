@@ -216,7 +216,7 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
       )}
 
       {/* Input bar */}
-      <div className="border-t border-[#EEECE8] bg-[#FAFAF8] px-4 py-3">
+      <div className="border-t border-[#EEECE8] bg-[#FAFAF8] px-4 py-3 sticky bottom-0" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
         <form onSubmit={handleSubmit} className="flex gap-2 items-center">
           <input
             value={input}
