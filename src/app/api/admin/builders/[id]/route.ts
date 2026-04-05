@@ -13,7 +13,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     const body = await req.json()
 
     if (body.builderName || body.brandName) {
-      const projectCount = await prisma.project.count({ where: { builderId: id } })
+      const projectCount = await prisma.project.count({ where: { builder: { id } } })
       if (projectCount > 0) {
         return NextResponse.json(
           { error: 'Cannot rename builder with active projects. Update individual projects instead.' },
@@ -53,7 +53,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   }
   try {
     const { id } = await params
-    const projectCount = await prisma.project.count({ where: { builderId: id } })
+    const projectCount = await prisma.project.count({ where: { builder: { id } } })
     if (projectCount > 0) {
       return NextResponse.json(
         { error: 'Cannot delete builder with active projects.' },
