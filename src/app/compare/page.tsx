@@ -689,7 +689,7 @@ export default function ComparePage() {
                         {project.builder?.brandName ?? project.builderName}
                       </p>
                       <Link
-                        href={`/builders/${project.id}`}
+                        href={`/projects/${project.id}`}
                         className="font-sans text-[10px] text-[#3de8a0] mt-2 hover:underline"
                       >
                         View builder profile

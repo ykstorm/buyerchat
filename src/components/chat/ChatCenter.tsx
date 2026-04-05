@@ -3,12 +3,22 @@
 import { motion } from 'framer-motion'
 import { FormEvent, useRef, useEffect, useState } from 'react'
 import ReactMarkdown from 'react-markdown'
+import ProjectCard from './artifacts/ProjectCard'
+import { VisitBooking } from './artifacts/VisitBooking'
 
 export type Message = {
   id: string
   role: 'user' | 'assistant'
   content: string
 }
+
+type ProjectType = {
+  id: string; projectName: string; builderName: string
+  pricePerSqft: number; minPrice: number; maxPrice: number
+  possessionDate: Date | string; constructionStatus: string
+  microMarket: string
+}
+type Artifact = { type: 'project_card' | 'visit_booking'; data: ProjectType }
 
 type Props = {
   messages: Message[]
@@ -18,6 +28,7 @@ type Props = {
   isLoading: boolean
   append: (msg: { role: 'user'; content: string }) => void
   loadingSession?: boolean
+  artifact?: Artifact | null
 }
 
 const STARTERS = [
@@ -27,7 +38,7 @@ const STARTERS = [
   "I'm confused — help me decide",
 ]
 
-export default function ChatCenter({ messages, input, handleInputChange, handleSubmit, isLoading, append, loadingSession }: Props) {
+export default function ChatCenter({ messages, input, handleInputChange, handleSubmit, isLoading, append, loadingSession, artifact }: Props) {
   const bottomRef = useRef<HTMLDivElement>(null)
   const [mouse, setMouse] = useState({ x: 0, y: 0 })
 
@@ -36,7 +47,7 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
   }, [messages, isLoading])
 
   return (
-    <div className="flex-1 flex flex-col h-full overflow-hidden bg-[#FAFAF8]">
+    <div className="flex flex-col h-full relative overflow-hidden bg-[#FAFAF8]">
       {loadingSession ? (
         <div className="flex-1 flex items-center justify-center">
           <motion.div
@@ -154,7 +165,7 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
         </div>
 
       ) : (
-        <div className="flex-1 overflow-y-auto px-5 py-6 space-y-1">
+        <div className="flex-1 overflow-y-auto px-5 py-6 space-y-1 pb-0 lg:pb-0">
           {messages.map((msg, i) => {
             const prevMsg = messages[i - 1]
             const isGrouped = prevMsg?.role === msg.role
@@ -215,8 +226,20 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
         </div>
       )}
 
+      {/* Mobile artifact card — renders above input bar in normal flow */}
+      {artifact && (
+        <div className="lg:hidden w-full bg-white border-t border-[#E7E5E4] p-4 flex-shrink-0">
+          <div className="w-10 h-1 bg-[#E7E5E4] rounded-full mx-auto mb-3" />
+          {artifact.type === 'visit_booking' ? (
+            <VisitBooking projectId={artifact.data.id} projectName={artifact.data.projectName} />
+          ) : (
+            <ProjectCard project={artifact.data} />
+          )}
+        </div>
+      )}
+
       {/* Input bar */}
-      <div className="border-t border-[#EEECE8] bg-[#FAFAF8] px-4 py-3 sticky bottom-0" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+      <div className="border-t border-[#EEECE8] bg-[#FAFAF8] px-4 py-3 sticky bottom-0 z-20" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
         <form onSubmit={handleSubmit} className="flex gap-2 items-center">
           <input
             value={input}

@@ -186,6 +186,7 @@ export default function ChatClient({
         isLoading={isLoading}
         append={append}
         loadingSession={loadingSession}
+        artifact={artifact}
       />
 
       <ChatRightPanel artifact={artifact} />

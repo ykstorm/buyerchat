@@ -10,8 +10,8 @@ const resend = new Resend(process.env.RESEND_API_KEY)
 const VisitSchema = z.object({
   projectId: z.string().min(1),
   visitScheduledDate: z.string(),
-  buyerName: z.string().optional(),
-  buyerPhone: z.string().optional(),
+  buyerName: z.string().min(1).max(100).optional(),
+  buyerPhone: z.string().length(10).regex(/^\d{10}$/).optional(),
   buyerEmail: z.string().optional(),
 })
 export async function GET(req: NextRequest) {
@@ -81,8 +81,8 @@ if (existing) {
       projectId,
       visitScheduledDate: scheduledDate,
       otpVerified: false,
-      buyerName: parsed.data.buyerName,
-      buyerPhone: parsed.data.buyerPhone,
+      ...(parsed.data.buyerName && { buyerName: parsed.data.buyerName }),
+      ...(parsed.data.buyerPhone && { buyerPhone: parsed.data.buyerPhone }),
       buyerEmail: parsed.data.buyerEmail,
     }
   })

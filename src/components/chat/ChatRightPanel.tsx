@@ -75,17 +75,6 @@ export default function ChatRightPanel({
         </AnimatePresence>
       </div>
 
-      {/* Mobile bottom sheet — shows when artifact exists */}
-      {artifact && (
-        <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-2xl shadow-[0_-4px_24px_rgba(0,0,0,0.12)] p-4 pb-8 max-h-[70vh] overflow-y-auto">
-          <div className="w-10 h-1 bg-[#E7E5E4] rounded-full mx-auto mb-4" />
-          {artifact.type === 'visit_booking' ? (
-            <VisitBooking projectId={artifact.data.id} projectName={artifact.data.projectName} />
-          ) : (
-            <ProjectCard project={artifact.data} />
-          )}
-        </div>
-      )}
     </>
   )
 }
