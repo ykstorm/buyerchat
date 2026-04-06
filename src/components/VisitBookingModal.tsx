@@ -523,7 +523,7 @@ className="relative z-10 w-full max-w-lg rounded-2xl border border-white/10 bg-[
                       transition={{ delay: 0.5 }}
                       className="text-sm text-[#636380] mb-6 max-w-xs"
                     >
-                      Your site visit request is confirmed. Check your email for the visit token.
+                      Your visit is booked. Check your email for confirmation details.
                     </motion.p>
 
                     <motion.div

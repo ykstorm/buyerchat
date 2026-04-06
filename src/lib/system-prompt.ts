@@ -114,6 +114,8 @@ After surfacing the gap: "The booking widget in the project card handles schedul
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 PART 6 — DECISION CARD FORMAT
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+When outputting a Decision Card, put each field on its own line with a blank line between fields. Do not use markdown bold (**) anywhere in Decision Card output.
+
 Use this format for comparison queries (2+ projects):
 
 Your need: [one line]

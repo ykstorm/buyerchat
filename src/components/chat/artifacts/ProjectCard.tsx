@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { motion } from 'framer-motion'
 
 type ProjectType = {
@@ -12,6 +13,7 @@ type ProjectType = {
 const formatL = (n: number | null | undefined) => n ? Math.round(n / 100000) : null
 
 export default function ProjectCard({ project }: { project: ProjectType }) {
+  const [copied, setCopied] = useState(false)
   const possession = project.possessionDate
     ? new Date(project.possessionDate).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })
     : 'TBD'
@@ -28,6 +30,12 @@ export default function ProjectCard({ project }: { project: ProjectType }) {
 
       {/* Header */}
       <div className="px-5 pt-5 pb-4 border-b border-[#F4F3F0]">
+        <div className="flex items-center gap-2 mb-3">
+          <div className="w-8 h-8 rounded-lg bg-[#1B4F8A] flex items-center justify-center flex-shrink-0">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><polyline points="9 22 9 12 15 12 15 22" fill="white"/></svg>
+          </div>
+          <span className="text-[10px] font-semibold text-[#A8A29E] uppercase tracking-wider">BuyerChat Pick</span>
+        </div>
         <p className="text-[10px] font-medium text-[#A8A29E] uppercase tracking-widest mb-1">
           {project.microMarket ?? 'South Bopal & Shela'}
         </p>
@@ -71,6 +79,23 @@ export default function ProjectCard({ project }: { project: ProjectType }) {
         >
           Book OTP-verified visit →
         </motion.button>
+        <button
+          type="button"
+          onClick={() => {
+            const url = `${window.location.origin}/projects/${project.id}`
+            if (navigator.share) {
+              navigator.share({ title: project.projectName, text: `Check out ${project.projectName} on BuyerChat`, url })
+            } else {
+              navigator.clipboard.writeText(url)
+              setCopied(true)
+              setTimeout(() => setCopied(false), 2000)
+            }
+          }}
+          className="w-full mt-3 py-2 rounded-xl border border-[#E7E5E4] text-[12px] text-[#78716C] hover:bg-[#F4F3F0] transition-colors flex items-center justify-center gap-2"
+        >
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+          {copied ? 'Link copied!' : 'Share project'}
+        </button>
       </div>
     </motion.div>
   )

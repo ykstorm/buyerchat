@@ -264,7 +264,7 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
                 className="absolute top-3 right-3 text-[11px] text-[#A8A29E] hover:text-[#1C1917]">
                 Hide ↓
               </button>
-              <div className="px-4 pb-4 max-h-[50vh] overflow-y-auto">
+              <div className="px-4 pb-4 max-h-[40vh] overflow-y-auto overscroll-contain" style={{ touchAction: 'pan-y' }}>
                 {artifact.type === 'visit_booking'
                   ? <VisitBooking projectId={artifact.data.id} projectName={artifact.data.projectName} />
                   : <ProjectCard project={artifact.data} />}

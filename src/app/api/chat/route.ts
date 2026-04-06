@@ -21,6 +21,19 @@ const INJECTION_KEYWORDS = [
   'you are now', 'override', 'forget your instructions'
 ]
 
+function detectStage(userMsg: string, aiResponse: string): string {
+  const msg = userMsg.toLowerCase()
+  if (/book|visit|otp|schedule/i.test(msg)) return 'visit_trigger'
+  if (/compare|vs|versus|which is better/i.test(msg)) return 'comparison'
+  if (/budget|afford|price|cost|loan/i.test(msg)) return 'qualification'
+  if (/tell me more|details|about|explain/i.test(msg)) return 'project_disclosure'
+  return 'intent_capture'
+}
+
+function detectQualification(userMsg: string, aiResponse: string): boolean {
+  return /budget|afford|lakh|crore|loan|emi/i.test(userMsg)
+}
+
 export async function POST(req: NextRequest) {
   // Rate limit
   const ip = req.headers.get('x-forwarded-for') ?? '127.0.0.1'
@@ -154,6 +167,8 @@ if (hasInjection) {
           where: { id: savedSession.id },
           data: {
             lastMessageAt: new Date(),
+            buyerStage: detectStage(sanitizedMsg, text),
+            qualificationDone: detectQualification(sanitizedMsg, text),
             ...(budgetMatch && { buyerBudget: parseInt(budgetMatch[1]) * (budgetMatch[2].toLowerCase().startsWith('cr') ? 10000000 : 100000) }),
             ...(configMatch && { buyerConfig: configMatch[1] + 'BHK' }),
             ...(investorMatch && { buyerPersona: 'investor' }),

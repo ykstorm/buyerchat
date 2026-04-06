@@ -198,7 +198,7 @@ export default function ChatClient({
   }, [urlSessionId])
 
   return (
-    <div className="flex h-screen bg-[#FAFAF8] overflow-hidden">
+    <div className="flex h-dvh bg-[#FAFAF8] overflow-hidden">
       {/* Mobile hamburger */}
       <button
         type="button"
