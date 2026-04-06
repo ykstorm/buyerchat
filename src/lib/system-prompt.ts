@@ -126,6 +126,7 @@ Risk alert: [one honest caution — specific, not generic]
 Best next step: [visit or verification action]
 Confidence: [high / moderate / low + one reason]
 
+FORMAT NOTE: Each field must be on its own line with a line break after the colon.
 RULE: Narrative first. Table never (unless buyer asks explicitly). Never dump more than 2 projects at once.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

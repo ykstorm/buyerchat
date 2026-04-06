@@ -149,15 +149,18 @@ export default function ChatClient({
 
   const goArtifactBack = () => {
     if (artifactIndex > 0) {
-      setArtifactIndex(i => i - 1)
-      setCurrentArtifact(artifactHistory[artifactIndex - 1])
+      const newIndex = artifactIndex - 1
+      setArtifactIndex(newIndex)
+      setCurrentArtifact(artifactHistory[newIndex])
       setShowArtifact(true)
     }
   }
+
   const goArtifactForward = () => {
     if (artifactIndex < artifactHistory.length - 1) {
-      setArtifactIndex(i => i + 1)
-      setCurrentArtifact(artifactHistory[artifactIndex + 1])
+      const newIndex = artifactIndex + 1
+      setArtifactIndex(newIndex)
+      setCurrentArtifact(artifactHistory[newIndex])
       setShowArtifact(true)
     }
   }
@@ -230,6 +233,8 @@ export default function ChatClient({
         canGoForward={artifactIndex < artifactHistory.length - 1}
         onArtifactBack={goArtifactBack}
         onArtifactForward={goArtifactForward}
+        artifactCurrent={artifactIndex + 1}
+        artifactTotal={artifactHistory.length}
       />
 
       <ChatRightPanel artifact={artifact} />

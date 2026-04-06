@@ -35,6 +35,8 @@ type Props = {
   canGoForward?: boolean
   onArtifactBack?: () => void
   onArtifactForward?: () => void
+  artifactCurrent?: number
+  artifactTotal?: number
 }
 
 const STARTERS = [
@@ -44,7 +46,7 @@ const STARTERS = [
   "I'm confused — help me decide",
 ]
 
-export default function ChatCenter({ messages, input, handleInputChange, handleSubmit, isLoading, append, loadingSession, artifact, showArtifact, onToggleArtifact, canGoBack, canGoForward, onArtifactBack, onArtifactForward }: Props) {
+export default function ChatCenter({ messages, input, handleInputChange, handleSubmit, isLoading, append, loadingSession, artifact, showArtifact, onToggleArtifact, canGoBack, canGoForward, onArtifactBack, onArtifactForward, artifactCurrent, artifactTotal }: Props) {
   const bottomRef = useRef<HTMLDivElement>(null)
   const [mouse, setMouse] = useState({ x: 0, y: 0 })
 
@@ -251,6 +253,11 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
                     className="text-[11px] text-[#78716C] disabled:text-[#D6D3D1] hover:text-[#1C1917] disabled:cursor-not-allowed flex items-center gap-1">
                     Forward →
                   </button>
+                  {artifactTotal && artifactTotal > 1 && (
+                    <span className="ml-auto text-[10px] text-[#A8A29E]">
+                      {artifactCurrent} of {artifactTotal}
+                    </span>
+                  )}
                 </div>
               )}
               <button type="button" onClick={onToggleArtifact}
