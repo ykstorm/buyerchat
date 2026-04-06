@@ -34,12 +34,24 @@ export default function ChatClient({
   const [loadingSession, setLoadingSession] = useState(false)
   const [artifact, setCurrentArtifact] = useState<Artifact | null>(null)
   const [sessionId, setSessionId] = useState<string | null>(null)
+  const [showArtifact, setShowArtifact] = useState(true)
+  const [artifactHistory, setArtifactHistory] = useState<Artifact[]>([])
+  const [artifactIndex, setArtifactIndex] = useState(-1)
+
+  useEffect(() => { if (artifact) setShowArtifact(true) }, [artifact])
 
   useEffect(() => {
     const handler = (e: Event) => {
       const { projectId, projectName } = (e as CustomEvent).detail
       const project = projects.find(p => p.id === projectId)
-      if (project) setCurrentArtifact({ type: 'visit_booking', data: project })
+      if (project) {
+        const newArtifact: Artifact = { type: 'visit_booking', data: project }
+        const newHistory = [...artifactHistory.slice(0, artifactIndex + 1), newArtifact]
+        setArtifactHistory(newHistory)
+        setArtifactIndex(newHistory.length - 1)
+        setCurrentArtifact(newArtifact)
+        setShowArtifact(true)
+      }
     }
     window.addEventListener('book-visit', handler)
     return () => window.removeEventListener('book-visit', handler)
@@ -95,9 +107,19 @@ export default function ChatClient({
       const lower = full.toLowerCase()
       const found = projects.find(p => lower.includes(p.projectName.toLowerCase()))
       if (found && /book.*visit|visit.*book|schedule.*visit/i.test(full)) {
-        setCurrentArtifact({ type: 'visit_booking', data: found })
+        const newArtifact1: Artifact = { type: 'visit_booking', data: found }
+        const newHistory1 = [...artifactHistory.slice(0, artifactIndex + 1), newArtifact1]
+        setArtifactHistory(newHistory1)
+        setArtifactIndex(newHistory1.length - 1)
+        setCurrentArtifact(newArtifact1)
+        setShowArtifact(true)
       } else if (found) {
-        setCurrentArtifact({ type: 'project_card', data: found })
+        const newArtifact2: Artifact = { type: 'project_card', data: found }
+        const newHistory2 = [...artifactHistory.slice(0, artifactIndex + 1), newArtifact2]
+        setArtifactHistory(newHistory2)
+        setArtifactIndex(newHistory2.length - 1)
+        setCurrentArtifact(newArtifact2)
+        setShowArtifact(true)
       }
     } catch {
       setMessages(prev => prev.map(m =>
@@ -124,6 +146,21 @@ export default function ChatClient({
     void role
     sendMessage(content)
   }, [sendMessage])
+
+  const goArtifactBack = () => {
+    if (artifactIndex > 0) {
+      setArtifactIndex(i => i - 1)
+      setCurrentArtifact(artifactHistory[artifactIndex - 1])
+      setShowArtifact(true)
+    }
+  }
+  const goArtifactForward = () => {
+    if (artifactIndex < artifactHistory.length - 1) {
+      setArtifactIndex(i => i + 1)
+      setCurrentArtifact(artifactHistory[artifactIndex + 1])
+      setShowArtifact(true)
+    }
+  }
 
   const newChat = useCallback(() => {
     router.push('/chat')
@@ -187,6 +224,12 @@ export default function ChatClient({
         append={append}
         loadingSession={loadingSession}
         artifact={artifact}
+        showArtifact={showArtifact}
+        onToggleArtifact={() => setShowArtifact(v => !v)}
+        canGoBack={artifactIndex > 0}
+        canGoForward={artifactIndex < artifactHistory.length - 1}
+        onArtifactBack={goArtifactBack}
+        onArtifactForward={goArtifactForward}
       />
 
       <ChatRightPanel artifact={artifact} />

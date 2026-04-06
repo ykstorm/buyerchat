@@ -29,6 +29,12 @@ type Props = {
   append: (msg: { role: 'user'; content: string }) => void
   loadingSession?: boolean
   artifact?: Artifact | null
+  showArtifact?: boolean
+  onToggleArtifact?: () => void
+  canGoBack?: boolean
+  canGoForward?: boolean
+  onArtifactBack?: () => void
+  onArtifactForward?: () => void
 }
 
 const STARTERS = [
@@ -38,7 +44,7 @@ const STARTERS = [
   "I'm confused — help me decide",
 ]
 
-export default function ChatCenter({ messages, input, handleInputChange, handleSubmit, isLoading, append, loadingSession, artifact }: Props) {
+export default function ChatCenter({ messages, input, handleInputChange, handleSubmit, isLoading, append, loadingSession, artifact, showArtifact, onToggleArtifact, canGoBack, canGoForward, onArtifactBack, onArtifactForward }: Props) {
   const bottomRef = useRef<HTMLDivElement>(null)
   const [mouse, setMouse] = useState({ x: 0, y: 0 })
 
@@ -47,7 +53,7 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
   }, [messages, isLoading])
 
   return (
-    <div className="flex flex-col h-full relative overflow-hidden bg-[#FAFAF8]">
+    <div className="flex-1 flex flex-col h-full relative overflow-hidden bg-[#FAFAF8]">
       {loadingSession ? (
         <div className="flex-1 flex items-center justify-center">
           <motion.div
@@ -165,7 +171,7 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
         </div>
 
       ) : (
-        <div className="flex-1 overflow-y-auto px-5 py-6 space-y-1 pb-0 lg:pb-0">
+        <div className="flex-1 overflow-y-auto min-h-0 px-5 py-6 space-y-1 pb-0 lg:pb-0">
           {messages.map((msg, i) => {
             const prevMsg = messages[i - 1]
             const isGrouped = prevMsg?.role === msg.role
@@ -228,18 +234,49 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
 
       {/* Mobile artifact card — renders above input bar in normal flow */}
       {artifact && (
-        <div className="lg:hidden w-full bg-white border-t border-[#E7E5E4] p-4 flex-shrink-0">
-          <div className="w-10 h-1 bg-[#E7E5E4] rounded-full mx-auto mb-3" />
-          {artifact.type === 'visit_booking' ? (
-            <VisitBooking projectId={artifact.data.id} projectName={artifact.data.projectName} />
+        <div className="lg:hidden flex-shrink-0">
+          {showArtifact ? (
+            <div className="bg-white border-t border-[#E7E5E4] relative">
+              <div className="pt-3 pb-1 flex justify-center">
+                <div className="w-10 h-1 rounded-full bg-[#E7E5E4]" />
+              </div>
+              {(canGoBack || canGoForward) && (
+                <div className="flex items-center gap-2 px-4 py-1.5 border-b border-[#F4F3F0]">
+                  <button type="button" onClick={onArtifactBack} disabled={!canGoBack}
+                    className="text-[11px] text-[#78716C] disabled:text-[#D6D3D1] hover:text-[#1C1917] disabled:cursor-not-allowed flex items-center gap-1">
+                    ← Back
+                  </button>
+                  <span className="text-[#E7E5E4]">|</span>
+                  <button type="button" onClick={onArtifactForward} disabled={!canGoForward}
+                    className="text-[11px] text-[#78716C] disabled:text-[#D6D3D1] hover:text-[#1C1917] disabled:cursor-not-allowed flex items-center gap-1">
+                    Forward →
+                  </button>
+                </div>
+              )}
+              <button type="button" onClick={onToggleArtifact}
+                className="absolute top-3 right-3 text-[11px] text-[#A8A29E] hover:text-[#1C1917]">
+                Hide ↓
+              </button>
+              <div className="px-4 pb-4 max-h-[50vh] overflow-y-auto">
+                {artifact.type === 'visit_booking'
+                  ? <VisitBooking projectId={artifact.data.id} projectName={artifact.data.projectName} />
+                  : <ProjectCard project={artifact.data} />}
+              </div>
+            </div>
           ) : (
-            <ProjectCard project={artifact.data} />
+            <button type="button" onClick={onToggleArtifact}
+              className="w-full bg-white border-t border-[#E7E5E4] px-4 py-2.5 flex items-center justify-between text-[12px] font-medium text-[#1C1917] hover:bg-[#F4F3F0]">
+              <span className="truncate">
+                {artifact.type === 'visit_booking' ? `Book visit — ${artifact.data.projectName}` : artifact.data.projectName}
+              </span>
+              <span className="text-[#A8A29E] text-[11px] ml-2">Show ↑</span>
+            </button>
           )}
         </div>
       )}
 
       {/* Input bar */}
-      <div className="border-t border-[#EEECE8] bg-[#FAFAF8] px-4 py-3 sticky bottom-0 z-20" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+      <div className="border-t border-[#EEECE8] bg-[#FAFAF8] px-4 py-3 sticky bottom-0 z-20 flex-shrink-0" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
         <form onSubmit={handleSubmit} className="flex gap-2 items-center">
           <input
             value={input}
