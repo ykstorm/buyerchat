@@ -3,12 +3,12 @@ import { daysBetween, formatLakh, getPersonaLabel, getStageLabel } from '@/lib/a
 import FollowUpCard from '@/components/admin/FollowUpCard'
 import Link from 'next/link'
 
-function MetricCard({ label, value, sub, color }: { label: string; value: number | string; sub?: string; color?: string }) {
+function MetricCard({ label, value, sub, color, subColor }: { label: string; value: string | number; sub?: string; color?: string; subColor?: string }) {
   return (
-    <div className="bg-white border border-black/[0.08] rounded-lg p-3">
-      <p className="text-[11px] text-[#52525B] mb-1">{label}</p>
-      <p className="text-[22px] font-medium" style={{ color: color ?? '#1A1A2E' }}>{value}</p>
-      {sub && <p className="text-[11px] text-[#71717A] mt-0.5">{sub}</p>}
+    <div className="bg-white rounded-[10px] p-[12px_14px]" style={{ border: '0.5px solid #E0DFDD' }}>
+      <p className="text-[10px] font-semibold uppercase tracking-wide mb-1.5" style={{ color: '#787878' }}>{label}</p>
+      <p className="font-extrabold leading-[1.1] mb-1" style={{ fontSize: 26, color: color ?? '#1B3A6B' }}>{value}</p>
+      {sub && <p className="text-[9px]" style={{ color: subColor ?? '#B0B0AC' }}>{sub}</p>}
     </div>
   )
 }
@@ -29,10 +29,15 @@ export default async function FollowUpPage() {
   try {
     sessions = await prisma.chatSession.findMany({
       orderBy: { lastMessageAt: 'asc' },
-      take: 30,
+      take: 50,
+      include: { _count: { select: { messages: true } } }
     })
   } catch (err) {
     console.error('Follow-up fetch error:', err)
+  }
+
+  if (sessions.length === 0) {
+    console.error('Follow-up: no sessions returned from DB')
   }
 
   const now = new Date()
@@ -96,7 +101,7 @@ export default async function FollowUpPage() {
         <div className="col-span-2 space-y-3">
 
           {/* Urgent section */}
-          {urgent.length > 0 && (
+          {urgent.length > 0 ? (
             <div>
               <p className="text-[11px] font-semibold text-[#A32D2D] uppercase tracking-wider mb-2">
                 Urgent — contact today ({urgent.length})
@@ -104,6 +109,11 @@ export default async function FollowUpPage() {
               {urgent.map(session => (
                 <FollowUpCard key={session.id} session={session} />
               ))}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <p className="text-[13px] text-[#52525B]">No urgent follow-ups right now.</p>
+              <p className="text-[11px] text-[#A8A29E] mt-1">Check back after buyers have more conversations.</p>
             </div>
           )}
 
