@@ -23,7 +23,7 @@ export default function ProjectCard({ project }: { project: ProjectType }) {
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ type: 'spring', stiffness: 300, damping: 28 }}
-      className="bg-white rounded-2xl overflow-hidden shadow-sm border border-[#E7E5E4]"
+      className="bg-white rounded-2xl overflow-hidden shadow-luxury-card border-0"
     >
       {/* Top accent */}
       <div className="h-0.5 bg-gradient-to-r from-[#1B4F8A] via-[#2563EB] to-[#1B4F8A]" />

@@ -163,6 +163,11 @@ export default async function IntelligencePage({
 
   // ── RERA helpers ──────────────────────────────────────────────────────────────
 
+  const urgentRera = allProjects.filter(p => {
+    const days = Math.floor((new Date(p.possessionDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+    return days > 0 && days < 180
+  })
+
   function reraStatus(possessionDate: Date) {
     const days = Math.floor((new Date(possessionDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
     if (days < 0)   return { label: 'Overdue',   color: '#A32D2D', bg: '#FCEBEB', days }
@@ -232,6 +237,31 @@ export default async function IntelligencePage({
 
   return (
     <div>
+      {/* ── AI Weekly Summary ──────────────────────────────────────────────────── */}
+      <div className="bg-[#EEF5FD] border border-[#B5D4F4] rounded-xl px-4 py-3 mb-4">
+        <div className="flex items-start justify-between">
+          <div>
+            <p className="text-[11px] font-semibold text-[#0C447C] uppercase tracking-wider mb-1">AI Weekly Summary</p>
+            <p className="text-[13px] font-medium text-[#0C3060] leading-snug">
+              {allProjects.length} projects tracked ·{' '}
+              {marketAlerts.length > 0
+                ? `${marketAlerts.length} market move${marketAlerts.length > 1 ? 's' : ''} detected`
+                : 'no market moves this week'}{' '}
+              · avg price ₹{overallAvg.toLocaleString('en-IN')}/sqft
+            </p>
+            <p className="text-[11px] text-[#185FA5] mt-1">
+              {urgentRera.length > 0
+                ? `${urgentRera.length} project${urgentRera.length > 1 ? 's' : ''} have possession within 180 days — review urgency below.`
+                : 'No possession deadlines within 180 days. Portfolio on track.'}
+              {criticalRera.length > 0 && ` ${criticalRera.length} critical (< 90 days).`}
+            </p>
+          </div>
+          <span className="text-[10px] text-[#5A8BBB] flex-shrink-0 mt-0.5">
+            Week of {now.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+          </span>
+        </div>
+      </div>
+
       {/* ── Top banner ─────────────────────────────────────────────────────────── */}
       <div className="bg-white border border-black/[0.08] rounded-xl px-4 py-3 mb-4 flex items-center justify-between">
         <div className="flex items-center gap-4">
@@ -576,13 +606,44 @@ export default async function IntelligencePage({
         </Card>
       </div>
 
+      {/* ── RERA Urgency Section ───────────────────────────────────────────────── */}
+      {urgentRera.length > 0 && (
+        <div className="bg-[#FAEEDA] border border-[#BA7517]/30 rounded-xl p-4 mb-4">
+          <p className="text-[11px] font-semibold text-[#BA7517] uppercase tracking-wider mb-2">
+            Possession within 180 days — {urgentRera.length} project{urgentRera.length > 1 ? 's' : ''}
+          </p>
+          <div className="space-y-2">
+            {urgentRera.map(p => {
+              const days = Math.floor((new Date(p.possessionDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+              const isRed = days < 90
+              return (
+                <div key={p.id} className="flex items-center justify-between bg-white/60 rounded-lg px-3 py-2">
+                  <div>
+                    <p className="text-[12px] font-medium text-[#1A1A2E]">{p.projectName}</p>
+                    <p className="text-[10px] text-[#52525B]">{p.microMarket} · {p.builderName}</p>
+                  </div>
+                  <div className="text-right flex-shrink-0 ml-4">
+                    <p className="text-[13px] font-semibold font-mono" style={{ color: isRed ? '#A32D2D' : '#BA7517' }}>
+                      {days}d
+                    </p>
+                    <p className="text-[10px] text-[#71717A]">
+                      {new Date(p.possessionDate).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })}
+                    </p>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
       {/* ── All projects table ──────────────────────────────────────────────────── */}
       <Card title={`All Scored Projects — ${allProjects.length} projects`}>
         <div className="overflow-x-auto">
           <table className="w-full text-[12px]">
             <thead>
               <tr className="border-b border-[#F4F4F5]">
-                {['Project', 'Area', 'Price/sqft', 'vs avg', 'Possession', 'Status', ''].map(h => (
+                {['Project', 'Area', 'Price/sqft', 'vs avg', 'Possession', 'Status', 'Trend', ''].map(h => (
                   <th
                     key={h}
                     className="text-left text-[10px] text-[#52525B] font-medium py-2 pr-4 uppercase tracking-wide last:pr-0"
@@ -621,6 +682,31 @@ export default async function IntelligencePage({
                         {status.label}
                       </span>
                     </td>
+                    <td className="py-2.5 pr-4">
+                      {(() => {
+                        const history = phByProject.get(p.id)
+                        const bars = history && history.length >= 2
+                          ? [...history].reverse().map(h => h.pricePerSqft)
+                          : [0.4, 0.6, 0.75, 0.85, 1].map(x => x * p.pricePerSqft)
+                        const min = Math.min(...bars)
+                        const max = Math.max(...bars)
+                        const range = max - min || 1
+                        return (
+                          <div className="flex items-end gap-[2px] h-[18px]">
+                            {bars.slice(-5).map((v, i) => {
+                              const h = Math.max(3, Math.round(((v - min) / range) * 16))
+                              const isLast = i === bars.slice(-5).length - 1
+                              return (
+                                <div
+                                  key={i}
+                                  style={{ height: h, width: 3, backgroundColor: isLast ? '#185FA5' : '#C4D7EE', borderRadius: 1 }}
+                                />
+                              )
+                            })}
+                          </div>
+                        )
+                      })()}
+                    </td>
                     <td className="py-2.5">
                       <PriceLogButton projectId={p.id} projectName={p.projectName} />
                     </td>
@@ -629,7 +715,7 @@ export default async function IntelligencePage({
               })}
               {allProjects.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="py-6 text-center text-[12px] text-[#52525B]">
+                  <td colSpan={8} className="py-6 text-center text-[12px] text-[#52525B]">
                     No projects yet.
                   </td>
                 </tr>

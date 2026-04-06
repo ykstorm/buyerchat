@@ -196,8 +196,8 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
                 <div className={`
                   max-w-[75%] px-4 py-2.5 text-[13.5px] leading-relaxed
                   ${msg.role === 'user'
-                    ? 'bg-[#1C1917] text-[#FAF9F7] rounded-2xl rounded-br-md'
-                    : 'bg-white text-[#1C1917] rounded-2xl rounded-bl-md shadow-[0_1px_4px_rgba(0,0,0,0.06)] border border-[#F0EDE8]'
+                    ? 'bg-[#1C1917] text-[#FAF9F7] rounded-2xl rounded-br-md shadow-luxury-sm'
+                    : 'bg-white text-[#1C1917] rounded-2xl rounded-bl-md shadow-luxury-sm border border-[#F0EDE8]'
                   }
                 `}>
                   {msg.role === 'assistant' ? (
@@ -283,14 +283,14 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
       )}
 
       {/* Input bar */}
-      <div className="border-t border-[#EEECE8] bg-[#FAFAF8] px-4 py-3 sticky bottom-0 z-20 flex-shrink-0" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+      <div className="border-t border-[#EEECE8] bg-[#FAFAF8]/90 backdrop-blur-sm px-4 py-3 sticky bottom-0 z-20 flex-shrink-0" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
         <form onSubmit={handleSubmit} className="flex gap-2 items-center">
           <input
             value={input}
             onChange={handleInputChange}
             placeholder="Ask about properties in South Bopal & Shela..."
             maxLength={800}
-            className="flex-1 bg-white border border-[#E7E5E4] rounded-2xl px-4 py-2.5 text-[13px] text-[#1C1917] placeholder:text-[#C8C4BF] focus:outline-none focus:ring-2 focus:ring-[#1B4F8A]/15 focus:border-[#1B4F8A]/50 transition-all duration-200 shadow-[0_1px_3px_rgba(0,0,0,0.04)]"
+            className="flex-1 bg-white border border-[#E7E5E4] rounded-2xl px-4 py-2.5 text-[13px] text-[#1C1917] placeholder:text-[#C8C4BF] focus:outline-none focus:ring-2 focus:ring-[#1B4F8A]/15 focus:border-[#1B4F8A]/50 transition-all duration-200 shadow-luxury-sm"
           />
           <motion.button
             type="submit"

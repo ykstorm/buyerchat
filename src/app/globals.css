@@ -36,3 +36,73 @@ body {
 
 .scrollbar-none { scrollbar-width: none; }
 .scrollbar-none::-webkit-scrollbar { display: none; }
+
+/* ── Grain texture utility ── */
+.grain {
+  position: relative;
+}
+.grain::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 192px 192px;
+}
+
+/* ── Luxury depth shadows ── */
+.shadow-luxury {
+  box-shadow:
+    0 1px 2px rgba(0,0,0,0.04),
+    0 4px 12px rgba(0,0,0,0.06),
+    0 12px 32px rgba(0,0,0,0.04);
+}
+.shadow-luxury-sm {
+  box-shadow:
+    0 1px 2px rgba(0,0,0,0.04),
+    0 2px 8px rgba(0,0,0,0.06);
+}
+.shadow-luxury-card {
+  box-shadow:
+    0 0 0 0.5px rgba(0,0,0,0.06),
+    0 2px 4px rgba(0,0,0,0.04),
+    0 8px 24px rgba(0,0,0,0.06);
+}
+
+/* ── Japanese minimalist scrollbar ── */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #E7E5E4 transparent;
+}
+::-webkit-scrollbar {
+  width: 3px;
+  height: 3px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #E7E5E4;
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #C8C4BF;
+}
+
+/* ── Warm paper background ── */
+.bg-paper {
+  background-color: #FAFAF8;
+  background-image:
+    radial-gradient(ellipse at 20% 50%, rgba(27,79,138,0.02) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 20%, rgba(15,110,86,0.015) 0%, transparent 50%);
+}
+
+/* ── Text rendering ── */
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}

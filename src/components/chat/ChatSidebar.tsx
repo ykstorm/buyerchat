@@ -115,20 +115,56 @@ function SwipeableSessionItem({ session, onLoad, onClose, menuOpen, setMenuOpen,
           </p>
         )}
 
-        {/* Three-dot menu button */}
         {hoveredSession === session.id && (
-          <button
-            type="button"
-            onMouseDown={e => { e.preventDefault(); e.stopPropagation(); setMenuOpen(menuOpen === session.id ? null : session.id) }}
-            className="absolute right-2 top-1/2 -translate-y-1/2 w-5 h-5 rounded-md hover:bg-[#ECEAE7] flex items-center justify-center text-[#A8A29E] flex-shrink-0"
-          >
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-              <circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/>
-            </svg>
-          </button>
+          <>
+            {/* Desktop: show icons directly */}
+            <div className="hidden lg:flex items-center gap-1 absolute right-2 top-1/2 -translate-y-1/2">
+              <button
+                type="button"
+                onMouseDown={e => { e.preventDefault(); e.stopPropagation() }}
+                onClick={e => { e.stopPropagation(); setRenamingSession(session.id); setRenameValue(session.id.slice(0,8)); }}
+                className="w-5 h-5 rounded flex items-center justify-center text-[#A8A29E] hover:text-[#1C1917] hover:bg-[#ECEAE7] transition-colors"
+                title="Rename"
+              >
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+                  <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                </svg>
+              </button>
+              <button
+                type="button"
+                onMouseDown={async e => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  try {
+                    await fetch(`/api/chat-sessions/${session.id}`, { method: 'DELETE' })
+                    setSessions((prev: any[]) => prev.filter((s: any) => s.id !== session.id))
+                  } catch {}
+                }}
+                className="w-5 h-5 rounded flex items-center justify-center text-[#A8A29E] hover:text-[#A32D2D] hover:bg-[#FEE2E2] transition-colors"
+                title="Delete"
+              >
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <polyline points="3 6 5 6 21 6"/>
+                  <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/>
+                </svg>
+              </button>
+            </div>
+
+            {/* Mobile: three-dot menu button */}
+            <button
+              type="button"
+              className="lg:hidden absolute right-2 top-1/2 -translate-y-1/2 w-5 h-5 rounded flex items-center justify-center text-[#A8A29E]"
+              onMouseDown={e => { e.preventDefault(); e.stopPropagation(); setMenuOpen(menuOpen === session.id ? null : session.id) }}
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                <circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/>
+              </svg>
+            </button>
+          </>
         )}
 
-        {/* Dropdown menu */}
+        {/* Mobile dropdown menu */}
         {menuOpen === session.id && (
           <div
             onMouseDown={e => e.stopPropagation()}
@@ -153,7 +189,7 @@ function SwipeableSessionItem({ session, onLoad, onClose, menuOpen, setMenuOpen,
                 e.preventDefault(); e.stopPropagation()
                 try {
                   await fetch(`/api/chat-sessions/${session.id}`, { method: 'DELETE' })
-                  setSessions((prev: any[]) => prev.filter(x => x.id !== session.id))
+                  setSessions((prev: any[]) => prev.filter((s: any) => s.id !== session.id))
                 } catch {}
                 setMenuOpen(null)
                 setHoveredSession(null)
@@ -276,7 +312,7 @@ export default function ChatSidebar({
   })
 
   const sidebar = (
-    <div className="w-60 h-full bg-[#FAFAF9] border-r border-[#EEECE8] flex flex-col flex-shrink-0 relative">
+    <div className="w-60 h-full bg-[#FAFAF9] border-r border-[#EEECE8] flex flex-col flex-shrink-0 relative grain">
       {/* Grain overlay */}
       <div className="absolute inset-0 opacity-[0.015] pointer-events-none"
         style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 256 256\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noise\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noise)\' opacity=\'1\'/%3E%3C/svg%3E")' }}
@@ -287,7 +323,7 @@ export default function ChatSidebar({
           <span className="text-[15px] font-semibold text-[#1C1917] tracking-tight">BuyerChat</span>
           <button type="button" onClick={onClose} className="lg:hidden text-[#A8A29E] hover:text-[#1C1917]">✕</button>
         </div>
-        <button type="button" onClick={onNewChat} className="w-full bg-[#1B4F8A] text-white text-[12px] font-medium py-2 rounded-lg hover:bg-[#163d6b] transition-all duration-200 shadow-[0_1px_3px_rgba(0,0,0,0.08)] hover:shadow-[0_2px_8px_rgba(27,79,138,0.15)]">
+        <button type="button" onClick={onNewChat} className="w-full bg-[#1B4F8A] text-white text-[12px] font-medium py-2 rounded-lg hover:bg-[#163d6b] transition-all duration-200 shadow-luxury-sm hover:shadow-[0_2px_8px_rgba(27,79,138,0.15)]">
           + New chat
         </button>
       </div>

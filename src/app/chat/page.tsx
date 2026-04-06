@@ -16,7 +16,7 @@ export default async function ChatPage() {
   return (
     <>
       <style>{`body { background: #FAFAF8 !important; }`}</style>
-      <div className="fixed inset-0 z-50 bg-[#FAFAF8]">
+      <div className="fixed inset-0 z-50 bg-paper grain">
         <div
           className="fixed inset-0 pointer-events-none z-0 opacity-[0.025]"
           style={{
