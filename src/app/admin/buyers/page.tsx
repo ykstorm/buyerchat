@@ -356,7 +356,7 @@ export default async function BuyersPage({
                               : 'bg-[#F4F4F5] text-[#1A1A2E] rounded-bl-sm'
                           }`}
                         >
-                          <p>{msg.content}</p>
+                          <p>{msg.content.replace(/\*\*(.*?)\*\*/g, '$1')}</p>
                           <p className={`text-[9px] mt-1 ${isUser ? 'text-white/60 text-right' : 'text-[#71717A]'}`}>
                             {new Date(msg.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
                           </p>

@@ -49,6 +49,8 @@ export default function ChatSidebar({
   const [hoveredSession, setHoveredSession] = useState<string | null>(null)
   const [menuOpen, setMenuOpen] = useState<string | null>(null)
   const [starredProjects, setStarredProjects] = useState<string[]>([])
+  const [renamingSession, setRenamingSession] = useState<string | null>(null)
+  const [renameValue, setRenameValue] = useState('')
 
   useEffect(() => {
     if (!userId) return
@@ -57,6 +59,12 @@ export default function ChatSidebar({
       .then(setSessions)
       .catch(() => {})
   }, [userId])
+
+  useEffect(() => {
+    const close = () => setMenuOpen(null)
+    document.addEventListener('click', close)
+    return () => document.removeEventListener('click', close)
+  }, [])
 
   const filteredSessions = sessions.filter(s =>
     !searchQuery ||
@@ -74,10 +82,7 @@ export default function ChatSidebar({
   })
 
   const sidebar = (
-    <div
-      className="w-60 h-full bg-[#FAFAF9] border-r border-[#EEECE8] flex flex-col flex-shrink-0 relative"
-      onClick={() => setMenuOpen(null)}
-    >
+    <div className="w-60 h-full bg-[#FAFAF9] border-r border-[#EEECE8] flex flex-col flex-shrink-0 relative">
       {/* Grain overlay */}
       <div className="absolute inset-0 opacity-[0.015] pointer-events-none"
         style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 256 256\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noise\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noise)\' opacity=\'1\'/%3E%3C/svg%3E")' }}
@@ -112,73 +117,9 @@ export default function ChatSidebar({
       {/* Scrollable content */}
       <div className="flex-1 overflow-y-auto px-2 py-2 scrollbar-none">
 
-        {/* Chats section */}
-        {filteredSessions.length > 0 && (
-          <p className="text-[10px] font-semibold text-[#A8A29E] uppercase tracking-[0.08em] px-2 mb-2">Recent chats</p>
-        )}
-        {filteredSessions.map(s => (
-          <motion.div
-            key={s.id}
-            onClick={() => onLoadSession(s.id)}
-            onMouseEnter={() => setHoveredSession(s.id)}
-            onMouseLeave={() => setHoveredSession(null)}
-            whileHover={{ x: 2 }}
-            transition={{ duration: 0.15 }}
-            className="relative px-2 py-2.5 rounded-lg hover:bg-[#F7F6F4] transition-all duration-200 cursor-pointer mb-0.5 group"
-          >
-            <div className="flex items-center justify-between mb-1">
-              <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${STAGE_COLORS[s.buyerStage] ?? 'bg-[#F4F4F5] text-[#52525B]'}`}>
-                {STAGE_LABELS[s.buyerStage] ?? s.buyerStage}
-              </span>
-              <span className="text-[10px] text-[#A8A29E]">{timeAgo(s.lastMessageAt)}</span>
-            </div>
-            <p className="text-[12px] text-[#1C1917] font-medium truncate leading-snug">
-              {s.firstMessage ? s.firstMessage.slice(0, 40) : 'New conversation'}
-            </p>
-            {(s.buyerBudget || s.buyerConfig) && (
-              <p className="text-[10px] text-[#A8A29E] mt-0.5">
-                {s.buyerConfig}{s.buyerBudget ? ` · ₹${Math.round(s.buyerBudget/100000)}L` : ''}
-              </p>
-            )}
-
-            {/* Three-dot menu button */}
-            {hoveredSession === s.id && (
-              <button
-                type="button"
-                onClick={e => { e.preventDefault(); e.stopPropagation(); setMenuOpen(menuOpen === s.id ? null : s.id) }}
-                className="absolute right-2 top-1/2 -translate-y-1/2 w-5 h-5 rounded-md hover:bg-[#ECEAE7] flex items-center justify-center text-[#A8A29E] flex-shrink-0"
-              >
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-                  <circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/>
-                </svg>
-              </button>
-            )}
-
-            {/* Dropdown menu */}
-            {menuOpen === s.id && (
-              <div className="absolute right-2 top-8 z-50 bg-white border border-[#E7E5E4] rounded-xl shadow-[0_8px_24px_rgba(0,0,0,0.08)] py-1 min-w-[140px]">
-                <button type="button" className="w-full px-3 py-2 text-left text-[12px] text-[#1C1917] hover:bg-[#F7F6F4] flex items-center gap-2">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                  Rename
-                </button>
-                <button type="button" onClick={() => { setMenuOpen(null) }} className="w-full px-3 py-2 text-left text-[12px] text-[#A32D2D] hover:bg-[#FDF2F2] flex items-center gap-2">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
-                  Delete chat
-                </button>
-              </div>
-            )}
-          </motion.div>
-        ))}
-        {filteredSessions.length === 0 && sessions.length === 0 && userId && (
-          <p className="text-[12px] text-[#A8A29E] px-2 py-4 text-center">No past chats yet</p>
-        )}
-        {!userId && (
-          <p className="text-[12px] text-[#A8A29E] px-2 py-4 text-center">Sign in to see chat history</p>
-        )}
-
         {/* Projects section */}
         {sortedProjects.length > 0 && (
-          <div className="px-1 mb-2 mt-3">
+          <div className="px-1 mb-2 mt-1">
             <p className="text-[10px] font-semibold text-[#A8A29E] uppercase tracking-[0.08em] mb-2 px-1">Projects</p>
             {sortedProjects
               .filter(p => !searchQuery || p.projectName.toLowerCase().includes(searchQuery.toLowerCase()))
@@ -211,6 +152,108 @@ export default function ChatSidebar({
             }
           </div>
         )}
+
+        {/* Chats section */}
+        {filteredSessions.length > 0 && (
+          <p className="text-[10px] font-semibold text-[#A8A29E] uppercase tracking-[0.08em] px-2 mb-2">Recent chats</p>
+        )}
+        {filteredSessions.map(s => (
+          <motion.div
+            key={s.id}
+            onClick={() => { if (renamingSession !== s.id) onLoadSession(s.id) }}
+            onMouseEnter={() => setHoveredSession(s.id)}
+            onMouseLeave={() => { if (menuOpen !== s.id) setHoveredSession(null) }}
+            whileHover={{ x: 2 }}
+            transition={{ duration: 0.15 }}
+            className="relative px-2 py-2.5 rounded-lg hover:bg-[#F7F6F4] transition-all duration-200 cursor-pointer mb-0.5 group"
+          >
+            <div className="flex items-center justify-between mb-1">
+              <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${STAGE_COLORS[s.buyerStage] ?? 'bg-[#F4F4F5] text-[#52525B]'}`}>
+                {STAGE_LABELS[s.buyerStage] ?? s.buyerStage}
+              </span>
+              <span className="text-[10px] text-[#A8A29E]">{timeAgo(s.lastMessageAt)}</span>
+            </div>
+
+            {renamingSession === s.id ? (
+              <input
+                autoFocus
+                type="text"
+                value={renameValue}
+                onChange={e => setRenameValue(e.target.value)}
+                onBlur={() => setRenamingSession(null)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') setRenamingSession(null)
+                  if (e.key === 'Escape') setRenamingSession(null)
+                }}
+                className="text-[12px] text-[#1C1917] bg-transparent border-b border-[#1B4F8A] outline-none w-full"
+                onClick={e => e.preventDefault()}
+              />
+            ) : (
+              <p className="text-[12px] font-medium text-[#1C1917] truncate leading-tight">
+                {s.firstMessage ? s.firstMessage.slice(0, 40) : 'New conversation'}
+              </p>
+            )}
+
+            {(s.buyerBudget || s.buyerConfig) && (
+              <p className="text-[10px] text-[#A8A29E] mt-0.5">
+                {s.buyerConfig}{s.buyerBudget ? ` · ₹${Math.round(s.buyerBudget/100000)}L` : ''}
+              </p>
+            )}
+
+            {/* Three-dot menu button */}
+            {hoveredSession === s.id && (
+              <button
+                type="button"
+                onClick={e => { e.preventDefault(); e.stopPropagation(); setMenuOpen(menuOpen === s.id ? null : s.id) }}
+                className="absolute right-2 top-1/2 -translate-y-1/2 w-5 h-5 rounded-md hover:bg-[#ECEAE7] flex items-center justify-center text-[#A8A29E] flex-shrink-0"
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                  <circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/>
+                </svg>
+              </button>
+            )}
+
+            {/* Dropdown menu */}
+            {menuOpen === s.id && (
+              <div className="absolute right-2 top-8 z-50 bg-white border border-[#E7E5E4] rounded-xl shadow-[0_8px_24px_rgba(0,0,0,0.08)] py-1 min-w-[140px]">
+                <button
+                  type="button"
+                  onMouseDown={e => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    setRenamingSession(s.id)
+                    setRenameValue(s.firstMessage ? s.firstMessage.slice(0, 40) : s.id.slice(0, 8))
+                    setMenuOpen(null)
+                  }}
+                  className="w-full px-3 py-2 text-left text-[12px] text-[#1C1917] hover:bg-[#F7F6F4] flex items-center gap-2"
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                  Rename
+                </button>
+                <button
+                  type="button"
+                  onMouseDown={e => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    setMenuOpen(null)
+                    setHoveredSession(null)
+                  }}
+                  className="w-full px-3 py-2 text-left text-[12px] text-[#A32D2D] hover:bg-[#FDF2F2] flex items-center gap-2"
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
+                  Delete chat
+                </button>
+              </div>
+            )}
+          </motion.div>
+        ))}
+        {filteredSessions.length === 0 && sessions.length === 0 && userId && (
+          <p className="text-[12px] text-[#A8A29E] px-2 py-4 text-center">No past chats yet</p>
+        )}
+        {!userId && (
+          <p className="text-[12px] text-[#A8A29E] px-2 py-4 text-center">Sign in to see chat history</p>
+        )}
+
       </div>
 
       {/* Footer */}
