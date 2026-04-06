@@ -39,6 +39,10 @@ function timeAgo(d: string) {
   return `${Math.floor(m / 1440)}d`
 }
 
+function getChatNames(): Record<string, string> {
+  try { return JSON.parse(localStorage.getItem('chatNames') || '{}') } catch { return {} }
+}
+
 export default function ChatSidebar({
   open, onClose, userId, userName, userImage, onNewChat, onLoadSession, projects = []
 }: {
@@ -51,6 +55,11 @@ export default function ChatSidebar({
   const [starredProjects, setStarredProjects] = useState<string[]>([])
   const [renamingSession, setRenamingSession] = useState<string | null>(null)
   const [renameValue, setRenameValue] = useState('')
+  const [chatNames, setChatNames] = useState<Record<string, string>>({})
+
+  useEffect(() => {
+    setChatNames(getChatNames())
+  }, [])
 
   useEffect(() => {
     if (!userId) return
@@ -61,10 +70,20 @@ export default function ChatSidebar({
   }, [userId])
 
   useEffect(() => {
-    const close = () => setMenuOpen(null)
-    document.addEventListener('click', close)
-    return () => document.removeEventListener('click', close)
+    const close = (e: MouseEvent) => {
+      setMenuOpen(null)
+      setHoveredSession(null)
+    }
+    document.addEventListener('mousedown', close)
+    return () => document.removeEventListener('mousedown', close)
   }, [])
+
+  const saveRename = (id: string, value: string) => {
+    const saved = { ...getChatNames(), [id]: value }
+    localStorage.setItem('chatNames', JSON.stringify(saved))
+    setChatNames(saved)
+    setRenamingSession(null)
+  }
 
   const filteredSessions = sessions.filter(s =>
     !searchQuery ||
@@ -157,96 +176,105 @@ export default function ChatSidebar({
         {filteredSessions.length > 0 && (
           <p className="text-[10px] font-semibold text-[#A8A29E] uppercase tracking-[0.08em] px-2 mb-2">Recent chats</p>
         )}
-        {filteredSessions.map(s => (
-          <motion.div
-            key={s.id}
-            onClick={() => { if (renamingSession !== s.id) onLoadSession(s.id) }}
-            onMouseEnter={() => setHoveredSession(s.id)}
-            onMouseLeave={() => { if (menuOpen !== s.id) setHoveredSession(null) }}
-            whileHover={{ x: 2 }}
-            transition={{ duration: 0.15 }}
-            className="relative px-2 py-2.5 rounded-lg hover:bg-[#F7F6F4] transition-all duration-200 cursor-pointer mb-0.5 group"
-          >
-            <div className="flex items-center justify-between mb-1">
-              <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${STAGE_COLORS[s.buyerStage] ?? 'bg-[#F4F4F5] text-[#52525B]'}`}>
-                {STAGE_LABELS[s.buyerStage] ?? s.buyerStage}
-              </span>
-              <span className="text-[10px] text-[#A8A29E]">{timeAgo(s.lastMessageAt)}</span>
-            </div>
-
-            {renamingSession === s.id ? (
-              <input
-                autoFocus
-                type="text"
-                value={renameValue}
-                onChange={e => setRenameValue(e.target.value)}
-                onBlur={() => setRenamingSession(null)}
-                onKeyDown={e => {
-                  if (e.key === 'Enter') setRenamingSession(null)
-                  if (e.key === 'Escape') setRenamingSession(null)
-                }}
-                className="text-[12px] text-[#1C1917] bg-transparent border-b border-[#1B4F8A] outline-none w-full"
-                onClick={e => e.preventDefault()}
-              />
-            ) : (
-              <p className="text-[12px] font-medium text-[#1C1917] truncate leading-tight">
-                {s.firstMessage ? s.firstMessage.slice(0, 40) : 'New conversation'}
-              </p>
-            )}
-
-            {(s.buyerBudget || s.buyerConfig) && (
-              <p className="text-[10px] text-[#A8A29E] mt-0.5">
-                {s.buyerConfig}{s.buyerBudget ? ` · ₹${Math.round(s.buyerBudget/100000)}L` : ''}
-              </p>
-            )}
-
-            {/* Three-dot menu button */}
-            {hoveredSession === s.id && (
-              <button
-                type="button"
-                onClick={e => { e.preventDefault(); e.stopPropagation(); setMenuOpen(menuOpen === s.id ? null : s.id) }}
-                className="absolute right-2 top-1/2 -translate-y-1/2 w-5 h-5 rounded-md hover:bg-[#ECEAE7] flex items-center justify-center text-[#A8A29E] flex-shrink-0"
-              >
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-                  <circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/>
-                </svg>
-              </button>
-            )}
-
-            {/* Dropdown menu */}
-            {menuOpen === s.id && (
-              <div className="absolute right-2 top-8 z-50 bg-white border border-[#E7E5E4] rounded-xl shadow-[0_8px_24px_rgba(0,0,0,0.08)] py-1 min-w-[140px]">
-                <button
-                  type="button"
-                  onMouseDown={e => {
-                    e.preventDefault()
-                    e.stopPropagation()
-                    setRenamingSession(s.id)
-                    setRenameValue(s.firstMessage ? s.firstMessage.slice(0, 40) : s.id.slice(0, 8))
-                    setMenuOpen(null)
-                  }}
-                  className="w-full px-3 py-2 text-left text-[12px] text-[#1C1917] hover:bg-[#F7F6F4] flex items-center gap-2"
-                >
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                  Rename
-                </button>
-                <button
-                  type="button"
-                  onMouseDown={e => {
-                    e.preventDefault()
-                    e.stopPropagation()
-                    setMenuOpen(null)
-                    setHoveredSession(null)
-                  }}
-                  className="w-full px-3 py-2 text-left text-[12px] text-[#A32D2D] hover:bg-[#FDF2F2] flex items-center gap-2"
-                >
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
-                  Delete chat
-                </button>
+        {filteredSessions.map(s => {
+          const displayTitle = chatNames[s.id] || (s.firstMessage ? s.firstMessage.slice(0, 40) : 'New conversation')
+          return (
+            <motion.div
+              key={s.id}
+              onClick={() => { if (renamingSession !== s.id) { onLoadSession(s.id); onClose() } }}
+              onMouseEnter={() => setHoveredSession(s.id)}
+              whileHover={{ x: 2 }}
+              transition={{ duration: 0.15 }}
+              className="relative px-2 py-2.5 rounded-lg hover:bg-[#F7F6F4] transition-all duration-200 cursor-pointer mb-0.5 group"
+            >
+              <div className="flex items-center justify-between mb-1">
+                <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${STAGE_COLORS[s.buyerStage] ?? 'bg-[#F4F4F5] text-[#52525B]'}`}>
+                  {STAGE_LABELS[s.buyerStage] ?? s.buyerStage}
+                </span>
+                <span className="text-[10px] text-[#A8A29E]">{timeAgo(s.lastMessageAt)}</span>
               </div>
-            )}
-          </motion.div>
-        ))}
+
+              {renamingSession === s.id ? (
+                <input
+                  autoFocus
+                  type="text"
+                  value={renameValue}
+                  onChange={e => setRenameValue(e.target.value)}
+                  onBlur={() => saveRename(s.id, renameValue)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') saveRename(s.id, renameValue)
+                    if (e.key === 'Escape') setRenamingSession(null)
+                  }}
+                  onMouseDown={e => e.stopPropagation()}
+                  className="text-[12px] text-[#1C1917] bg-transparent border-b border-[#1B4F8A] outline-none w-full"
+                />
+              ) : (
+                <p className="text-[12px] font-medium text-[#1C1917] truncate leading-tight">
+                  {displayTitle}
+                </p>
+              )}
+
+              {(s.buyerBudget || s.buyerConfig) && (
+                <p className="text-[10px] text-[#A8A29E] mt-0.5">
+                  {s.buyerConfig}{s.buyerBudget ? ` · ₹${Math.round(s.buyerBudget/100000)}L` : ''}
+                </p>
+              )}
+
+              {/* Three-dot menu button */}
+              {hoveredSession === s.id && (
+                <button
+                  type="button"
+                  onMouseDown={e => { e.preventDefault(); e.stopPropagation(); setMenuOpen(menuOpen === s.id ? null : s.id) }}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 w-5 h-5 rounded-md hover:bg-[#ECEAE7] flex items-center justify-center text-[#A8A29E] flex-shrink-0"
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                    <circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/>
+                  </svg>
+                </button>
+              )}
+
+              {/* Dropdown menu */}
+              {menuOpen === s.id && (
+                <div
+                  onMouseDown={e => e.stopPropagation()}
+                  className="absolute right-2 top-8 z-50 bg-white border border-[#E7E5E4] rounded-xl shadow-[0_8px_24px_rgba(0,0,0,0.08)] py-1 min-w-[140px]"
+                >
+                  <button
+                    type="button"
+                    onMouseDown={e => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      setRenamingSession(s.id)
+                      setRenameValue(chatNames[s.id] || (s.firstMessage ? s.firstMessage.slice(0, 40) : s.id.slice(0, 8)))
+                      setMenuOpen(null)
+                    }}
+                    className="w-full px-3 py-2 text-left text-[12px] text-[#1C1917] hover:bg-[#F7F6F4] flex items-center gap-2"
+                  >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    Rename
+                  </button>
+                  <button
+                    type="button"
+                    onMouseDown={async (e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      try {
+                        await fetch(`/api/chat-sessions/${s.id}`, { method: 'DELETE' })
+                        setSessions(prev => prev.filter(x => x.id !== s.id))
+                      } catch {}
+                      setMenuOpen(null)
+                      setHoveredSession(null)
+                    }}
+                    className="w-full px-3 py-2 text-left text-[12px] text-[#A32D2D] hover:bg-[#FDF2F2] flex items-center gap-2"
+                  >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
+                    Delete chat
+                  </button>
+                </div>
+              )}
+            </motion.div>
+          )
+        })}
         {filteredSessions.length === 0 && sessions.length === 0 && userId && (
           <p className="text-[12px] text-[#A8A29E] px-2 py-4 text-center">No past chats yet</p>
         )}

@@ -238,7 +238,7 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
       {artifact && (
         <div className="lg:hidden flex-shrink-0">
           {showArtifact ? (
-            <div className="bg-white border-t border-[#E7E5E4] relative">
+            <div className="bg-white border-t-2 border-[#1B4F8A] relative shadow-[0_-4px_20px_rgba(0,0,0,0.06)]">
               <div className="pt-3 pb-1 flex justify-center">
                 <div className="w-10 h-1 rounded-full bg-[#E7E5E4]" />
               </div>
@@ -261,10 +261,10 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
                 </div>
               )}
               <button type="button" onClick={onToggleArtifact}
-                className="absolute top-3 right-3 text-[11px] text-[#A8A29E] hover:text-[#1C1917]">
+                className="absolute top-3 right-4 text-[11px] text-[#A8A29E] hover:text-[#1C1917] bg-white px-2 py-0.5 rounded-full border border-[#E7E5E4] shadow-sm">
                 Hide ↓
               </button>
-              <div className="px-4 pb-4 max-h-[40vh] overflow-y-auto overscroll-contain" style={{ touchAction: 'pan-y' }}>
+              <div className="px-4 pb-4 overflow-y-auto overscroll-contain" style={{ maxHeight: '55vh', touchAction: 'pan-y' }}>
                 {artifact.type === 'visit_booking'
                   ? <VisitBooking projectId={artifact.data.id} projectName={artifact.data.projectName} />
                   : <ProjectCard project={artifact.data} />}

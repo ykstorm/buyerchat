@@ -5,6 +5,8 @@ import { BadgeStatus } from '@/components/admin/AdminComponents'
 import { formatLakh, formatDate, getStageLabel, getPersonaLabel } from '@/lib/admin-utils'
 import { notFound } from 'next/navigation'
 
+const stripMarkdown = (text: string) => text.replace(/\*\*(.*?)\*\*/g, '$1').replace(/\*(.*?)\*/g, '$1')
+
 export default async function BuyerDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
 
@@ -60,7 +62,7 @@ export default async function BuyerDetailPage({ params }: { params: Promise<{ id
                   ? 'bg-[#E6F1FB] text-[#0C447C]'
                   : 'bg-[#F4F4F5] text-[#1A1A2E]'
               }`}>
-                <p className="text-[12px] whitespace-pre-wrap">{msg.content.replace(/\*\*(.*?)\*\*/g, '$1')}</p>
+                <p className="text-[12px] whitespace-pre-wrap">{stripMarkdown(msg.content)}</p>
                 <div className="flex items-center gap-2 mt-1">
                   <span className="text-[10px] text-[#71717A]">
                     {new Date(msg.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
