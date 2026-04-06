@@ -10,6 +10,10 @@ type SessionItem = {
   buyerConfig: string | null; lastMessageAt: string; firstMessage: string
 }
 
+type ProjectItem = {
+  id: string; projectName: string; pricePerSqft: number; microMarket: string
+}
+
 const STAGE_COLORS: Record<string, string> = {
   intent_capture: 'bg-[#F4F4F5] text-[#52525B]',
   project_disclosure: 'bg-[#F4F4F5] text-[#52525B]',
@@ -36,11 +40,12 @@ function timeAgo(d: string) {
 }
 
 export default function ChatSidebar({
-  open, onClose, userId, userName, userImage, onNewChat, onLoadSession
+  open, onClose, userId, userName, userImage, onNewChat, onLoadSession, projects = []
 }: {
-  open: boolean; onClose: () => void; userId: string | null; userName: string | null; userImage: string | null; onNewChat: () => void; onLoadSession: (sessionId: string) => void
+  open: boolean; onClose: () => void; userId: string | null; userName: string | null; userImage: string | null; onNewChat: () => void; onLoadSession: (sessionId: string) => void; projects?: ProjectItem[]
 }) {
   const [sessions, setSessions] = useState<SessionItem[]>([])
+  const [searchQuery, setSearchQuery] = useState('')
 
   useEffect(() => {
     if (!userId) return
@@ -49,6 +54,13 @@ export default function ChatSidebar({
       .then(setSessions)
       .catch(() => {})
   }, [userId])
+
+  const filteredSessions = sessions.filter(s =>
+    !searchQuery ||
+    s.id.includes(searchQuery.toLowerCase()) ||
+    (s.buyerBudget && `${s.buyerBudget}`.includes(searchQuery)) ||
+    (s.buyerConfig && s.buyerConfig.toLowerCase().includes(searchQuery.toLowerCase()))
+  )
 
   const sidebar = (
     <div className="w-60 h-full bg-[#F4F3F0] border-r border-[#E7E5E4] flex flex-col flex-shrink-0">
@@ -65,12 +77,28 @@ export default function ChatSidebar({
         </button>
       </div>
 
-      {/* Past chats */}
+      {/* Search bar */}
+      <div className="px-3 pt-3 pb-2">
+        <div className="flex items-center gap-2 bg-[#F4F3F0] rounded-xl px-3 py-2 border border-[#E7E5E4]">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#A8A29E" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input
+            type="text"
+            placeholder="Search chats or projects..."
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            className="bg-transparent text-[12px] text-[#1C1917] placeholder-[#A8A29E] outline-none w-full"
+          />
+        </div>
+      </div>
+
+      {/* Scrollable content */}
       <div className="flex-1 overflow-y-auto px-2 py-2 scrollbar-none">
-        {sessions.length > 0 && (
-          <p className="text-[10px] font-medium text-[#A8A29E] uppercase tracking-wider px-2 mb-2">Recent chats</p>
+
+        {/* Chats section */}
+        {filteredSessions.length > 0 && (
+          <p className="text-[10px] font-semibold text-[#A8A29E] uppercase tracking-wider px-2 mb-2">Recent chats</p>
         )}
-        {sessions.map(s => (
+        {filteredSessions.map(s => (
           <motion.div
             key={s.id}
             onClick={() => onLoadSession(s.id)}
@@ -94,11 +122,31 @@ export default function ChatSidebar({
             )}
           </motion.div>
         ))}
-        {sessions.length === 0 && userId && (
+        {filteredSessions.length === 0 && sessions.length === 0 && userId && (
           <p className="text-[12px] text-[#A8A29E] px-2 py-4 text-center">No past chats yet</p>
         )}
         {!userId && (
           <p className="text-[12px] text-[#A8A29E] px-2 py-4 text-center">Sign in to see chat history</p>
+        )}
+
+        {/* Projects section */}
+        {projects.length > 0 && (
+          <div className="px-1 mb-2 mt-3">
+            <p className="text-[10px] font-semibold text-[#A8A29E] uppercase tracking-wider mb-2 px-1">Projects</p>
+            {projects
+              .filter(p => !searchQuery || p.projectName.toLowerCase().includes(searchQuery.toLowerCase()))
+              .map(p => (
+                <Link
+                  key={p.id}
+                  href={`/projects/${p.id}`}
+                  className="block px-2 py-2 rounded-lg hover:bg-[#F4F3F0] transition-colors mb-0.5"
+                >
+                  <p className="text-[12px] font-medium text-[#1C1917] truncate">{p.projectName}</p>
+                  <p className="text-[10px] text-[#A8A29E]">₹{p.pricePerSqft?.toLocaleString('en-IN')}/sqft · {p.microMarket}</p>
+                </Link>
+              ))
+            }
+          </div>
         )}
       </div>
 
