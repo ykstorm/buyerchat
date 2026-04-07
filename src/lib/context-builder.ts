@@ -27,6 +27,14 @@ export async function buildContextPayload() {
           unitTypes: true,
           latitude: true,
           longitude: true,
+          decisionTag: true,
+          honestConcern: true,
+          analystNote: true,
+          possessionFlag: true,
+          configurations: true,
+          bankApprovals: true,
+          carpetSqftMin: true,
+          sbaSqftMin: true,
           builder: {
             select: {
               totalTrustScore: true,
@@ -72,6 +80,7 @@ export async function buildContextPayload() {
         qualityScore: p.builder?.qualityScore,
         financialScore: p.builder?.financialScore,
         responsivenessScore: p.builder?.responsivenessScore,
+        zone: p.microMarket,
         location: p.microMarket,
         priceRange: `₹${(p.minPrice / 100000).toFixed(0)}L–₹${(p.maxPrice / 100000).toFixed(0)}L`,
         minPrice: p.minPrice,
@@ -83,6 +92,14 @@ export async function buildContextPayload() {
         rera: p.reraNumber,
         status: p.constructionStatus,
         amenities: p.amenities,
+        decisionTag: p.decisionTag ?? null,
+        honestConcern: p.honestConcern ?? null,
+        analystNote: p.analystNote ?? null,
+        possessionFlag: p.possessionFlag ?? null,
+        configurations: p.configurations ?? null,
+        bankApprovals: p.bankApprovals ?? null,
+        carpetSqftMin: p.carpetSqftMin ?? null,
+        sbaSqftMin: p.sbaSqftMin ?? null,
         urgency,
         // contactPhone and contactEmail deliberately excluded
       }

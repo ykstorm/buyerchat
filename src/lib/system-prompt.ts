@@ -9,7 +9,40 @@ export function buildSystemPrompt(ctx: {
   locationIntelligence?: string
 }, decisionCard?: unknown): string {
 
-  const projectJSON = JSON.stringify(ctx.projects, null, 2)
+  const projects = ctx.projects as any[]
+  const projectList = projects.map((p: any) => {
+    const scoreBreakdown = [
+      p.deliveryScore != null ? `Delivery ${p.deliveryScore}/30` : null,
+      p.reraScore != null ? `RERA ${p.reraScore}/20` : null,
+      p.qualityScore != null ? `Quality ${p.qualityScore}/20` : null,
+      p.financialScore != null ? `Financial ${p.financialScore}/15` : null,
+      p.responsivenessScore != null ? `Response ${p.responsivenessScore}/15` : null,
+    ].filter(Boolean).join(' | ')
+
+    const possessionStr = p.possessionFlag === 'green' ? `${p.possession} ✅ On track` :
+      p.possessionFlag === 'red' ? `${p.possession} 🔴 Delayed risk` :
+      `${p.possession} 🟡 Monitor`
+
+    const decisionStr = p.decisionTag === 'Strong Buy' ? '⭐ Strong Buy' :
+      p.decisionTag === 'Buy w/ Cond' ? '✅ Buy with Conditions' :
+      p.decisionTag === 'Wait' ? '⏳ Wait' :
+      p.decisionTag === 'Avoid' ? '❌ Avoid' : '— Under Review'
+
+    return `
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PROJECT: ${p.name}
+Builder: ${p.builder} | Zone: ${p.zone ?? p.location} | Configs: ${p.configurations ?? '—'}
+DECISION: ${decisionStr} | Trust: ${p.trustScore ?? '—'}/100
+Score: ${scoreBreakdown || '—'}
+Possession: ${possessionStr}
+Price: ₹${p.pricePerSqft ?? '—'}/sqft | Range: ${p.priceRange ?? `₹${Math.round((p.minPrice ?? 0)/100000)}L–₹${Math.round((p.maxPrice ?? 0)/100000)}L`}
+Bank Approvals: ${p.bankApprovals ?? 'Check with builder'}
+⚠️ HONEST CONCERN: ${p.honestConcern ?? 'None on record'}
+💡 ANALYST NOTE: ${p.analystNote ?? '—'}
+ID: ${p.id}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`
+  }).join('\n\n')
+
   const localityJSON = JSON.stringify(ctx.localities, null, 2)
   const infraJSON = JSON.stringify(ctx.infrastructure, null, 2)
 
@@ -187,7 +220,7 @@ PART 11 — VERIFIED PROJECT DATA (use only this)
 Data as of: ${ctx.dataAsOf}
 
 PROJECTS:
-${projectJSON}
+${projectList}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 PART 12 — LOCALITY + INFRASTRUCTURE DATA

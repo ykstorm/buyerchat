@@ -38,6 +38,16 @@ interface ProjectForm {
   bestFor: string
   mainConcern: string
   analystNotes: string
+  // Decision fields
+  totalTrustScore: number
+  decisionTag: string
+  honestConcern: string
+  analystNote: string
+  possessionFlag: string
+  configurations: string
+  bankApprovals: string
+  carpetSqftMin: number
+  sbaSqftMin: number
 }
 
 const DEFAULT: ProjectForm = {
@@ -51,6 +61,10 @@ const DEFAULT: ProjectForm = {
   deliveryScore: 0, reraScore: 0, qualityScore: 0, financialScore: 0, responsivenessScore: 0,
   sopLocation: 5, sopPlanning: 5, sopAmenities: 5, sopGrowth: 5,
   bestFor: '', mainConcern: '', analystNotes: '',
+  totalTrustScore: 0, decisionTag: '',
+  honestConcern: '', analystNote: '', possessionFlag: 'amber',
+  configurations: '', bankApprovals: '',
+  carpetSqftMin: 0, sbaSqftMin: 0,
 }
 
 function trustTotal(f: ProjectForm) {
@@ -79,18 +93,42 @@ function allInPrice(f: ProjectForm): number {
   return Math.round((f.minPrice + gst + stamp + reg) / 100000) * 100000
 }
 
-function ScoreInput({ label, value, max, onChange, hint }: {
-  label: string; value: number; max: number; onChange: (v: number) => void; hint?: string
+function ScoreInput({ label, value, max, onChange, hint, type, options }: {
+  label: string; value: number | string; max?: number; onChange: (v: any) => void; hint?: string
+  type?: 'number' | 'textarea' | 'select'; options?: string[]
 }) {
-  const pct = (value / max) * 100
+  if (type === 'textarea') {
+    return (
+      <div>
+        <label className="block text-[11px] text-[#52525B] mb-1">{label}</label>
+        {hint && <p className="text-[10px] text-[#71717A] mb-1">{hint}</p>}
+        <textarea value={value as string} onChange={e => onChange(e.target.value)} rows={3}
+          className="w-full border border-black/10 rounded-lg px-3 py-2 text-[12px] focus:outline-none focus:border-[#185FA5] resize-none" />
+      </div>
+    )
+  }
+  if (type === 'select' && options) {
+    return (
+      <div>
+        <label className="block text-[11px] text-[#52525B] mb-1">{label}</label>
+        {hint && <p className="text-[10px] text-[#71717A] mb-1">{hint}</p>}
+        <select value={value as string} onChange={e => onChange(e.target.value)}
+          className="w-full border border-black/10 rounded-lg px-3 py-2 text-[12px] focus:outline-none focus:border-[#185FA5]">
+          {options.map(o => <option key={o}>{o}</option>)}
+        </select>
+      </div>
+    )
+  }
+  const numVal = value as number
+  const pct = max ? (numVal / max) * 100 : 0
   const color = pct >= 70 ? '#0F6E56' : pct >= 50 ? '#BA7517' : '#A32D2D'
   return (
     <div>
       <div className="flex items-center justify-between mb-1">
         <label className="text-[11px] text-[#52525B]">{label}</label>
         <div className="flex items-center gap-1">
-          <input type="number" min={0} max={max} value={value}
-            onChange={e => onChange(Math.min(max, Math.max(0, Number(e.target.value))))}
+          <input type="number" min={0} max={max} value={numVal}
+            onChange={e => onChange(Math.min(max ?? 100, Math.max(0, Number(e.target.value))))}
             className="w-12 text-right border border-black/10 rounded px-1 py-0.5 text-[12px] font-mono focus:outline-none focus:border-[#185FA5]" />
           <span className="text-[11px] text-[#52525B]">/{max}</span>
         </div>
@@ -148,12 +186,31 @@ export default function ProjectEditPage() {
             responsivenessScore: data.builder?.responsivenessScore ?? 0,
             sopLocation: 5, sopPlanning: 5, sopAmenities: 5, sopGrowth: 5,
             bestFor: '', mainConcern: '', analystNotes: '',
+            totalTrustScore: data.totalTrustScore ?? 0,
+            decisionTag: data.decisionTag ?? '',
+            honestConcern: data.honestConcern ?? '',
+            analystNote: data.analystNote ?? '',
+            possessionFlag: data.possessionFlag ?? 'amber',
+            configurations: data.configurations ?? '',
+            bankApprovals: data.bankApprovals ?? '',
+            carpetSqftMin: data.carpetSqftMin ?? 0,
+            sbaSqftMin: data.sbaSqftMin ?? 0,
           })
           setLoading(false)
         })
         .catch(() => { setLoading(false); setError('Failed to load.') })
     }
   }, [id, isNew])
+
+  useEffect(() => {
+    const total = (form.deliveryScore || 0) + (form.reraScore || 0) +
+                  (form.qualityScore || 0) + (form.financialScore || 0) +
+                  (form.responsivenessScore || 0)
+    const tag = total >= 80 ? 'Strong Buy' :
+                total >= 65 ? 'Buy w/ Cond' :
+                total >= 50 ? 'Wait' : 'Avoid'
+    setForm(p => ({ ...p, totalTrustScore: total, decisionTag: tag }))
+  }, [form.deliveryScore, form.reraScore, form.qualityScore, form.financialScore, form.responsivenessScore])
 
   const set = (field: keyof ProjectForm, value: any) =>
     setForm(p => ({ ...p, [field]: value }))
@@ -448,6 +505,12 @@ export default function ProjectEditPage() {
                   <textarea value={form.analystNotes} onChange={e => set('analystNotes', e.target.value)} rows={3}
                     className="w-full border border-black/10 rounded-lg px-3 py-2 text-[12px] focus:outline-none focus:border-[#185FA5] resize-none" />
                 </div>
+                <ScoreInput label="Honest Concern (what buyers must know)" value={form.honestConcern} onChange={v => set('honestConcern', v)} type="textarea" />
+                <ScoreInput label="Analyst Note (insider intel)" value={form.analystNote} onChange={v => set('analystNote', v)} type="textarea" />
+                <ScoreInput label="Possession Flag" value={form.possessionFlag} onChange={v => set('possessionFlag', v)} type="select" options={['green','amber','red']} />
+                <ScoreInput label="Configurations" value={form.configurations} onChange={v => set('configurations', v)} type="textarea" />
+                <ScoreInput label="Bank Approvals" value={form.bankApprovals} onChange={v => set('bankApprovals', v)} type="textarea" />
+                <div className="text-[12px] text-[#1A1A2E] font-medium pt-1">Decision Tag (auto): {form.decisionTag || '—'}</div>
               </div>
               {/* Decision Engine scores */}
               <div className="mt-4 pt-4 border-t border-[#F4F4F5]">

@@ -28,6 +28,14 @@ model Project {
   infrastructureScore Float          @default(50)
   demandScore         Float          @default(50)
   builderGradeScore   Float          @default(50)
+  decisionTag         String?
+  honestConcern       String?
+  analystNote         String?
+  possessionFlag      String?
+  configurations      String?
+  bankApprovals       String?
+  carpetSqftMin       Int?
+  sbaSqftMin          Int?
   createdAt           DateTime       @default(now())
   updatedAt           DateTime       @updatedAt
   builder             Builder        @relation(fields: [builderName], references: [builderName])
