@@ -32,18 +32,23 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Max file size is 5MB' }, { status: 400 })
   }
 
-  const bytes = await file.arrayBuffer()
-  const buffer = Buffer.from(bytes)
+  try {
+    const bytes = await file.arrayBuffer()
+    const buffer = Buffer.from(bytes)
 
-  const result = await new Promise((resolve, reject) => {
-    cloudinary.uploader.upload_stream(
-      { folder: 'buyerchat/projects', resource_type: 'image' },
-      (error, result) => {
-        if (error) reject(error)
-        else resolve(result)
-      }
-    ).end(buffer)
-  })
+    const result = await new Promise((resolve, reject) => {
+      cloudinary.uploader.upload_stream(
+        { folder: 'buyerchat/projects', resource_type: 'image' },
+        (error, result) => {
+          if (error) reject(error)
+          else resolve(result)
+        }
+      ).end(buffer)
+    })
 
-  return NextResponse.json(result)
+    return NextResponse.json(result)
+  } catch (err) {
+    console.error('Upload error:', err)
+    return NextResponse.json({ error: 'Upload failed' }, { status: 500 })
+  }
 }

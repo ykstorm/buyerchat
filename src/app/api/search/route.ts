@@ -17,30 +17,35 @@ export async function GET(req: NextRequest) {
 
   const query = parsed.data.q.toLowerCase()
 
-  const projects = await prisma.project.findMany({
-    where: {
-      isActive: true,
-      OR: [
-        { projectName: { contains: query, mode: 'insensitive' } },
-        { builderName: { contains: query, mode: 'insensitive' } },
-        { microMarket: { contains: query, mode: 'insensitive' } },
-        { constructionStatus: { contains: query, mode: 'insensitive' } },
-      ],
-    },
-    select: {
-      id: true,
-      projectName: true,
-      builderName: true,
-      microMarket: true,
-      minPrice: true,
-      maxPrice: true,
-      pricePerSqft: true,
-      unitTypes: true,
-      constructionStatus: true,
-      availableUnits: true,
-    },
-    take: 10,
-  })
+  try {
+    const projects = await prisma.project.findMany({
+      where: {
+        isActive: true,
+        OR: [
+          { projectName: { contains: query, mode: 'insensitive' } },
+          { builderName: { contains: query, mode: 'insensitive' } },
+          { microMarket: { contains: query, mode: 'insensitive' } },
+          { constructionStatus: { contains: query, mode: 'insensitive' } },
+        ],
+      },
+      select: {
+        id: true,
+        projectName: true,
+        builderName: true,
+        microMarket: true,
+        minPrice: true,
+        maxPrice: true,
+        pricePerSqft: true,
+        unitTypes: true,
+        constructionStatus: true,
+        availableUnits: true,
+      },
+      take: 10,
+    })
 
-  return NextResponse.json(projects)
+    return NextResponse.json(projects)
+  } catch (err) {
+    console.error('Search error:', err)
+    return NextResponse.json({ error: 'Search failed' }, { status: 500 })
+  }
 }

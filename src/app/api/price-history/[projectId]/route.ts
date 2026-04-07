@@ -11,22 +11,27 @@ export async function GET(
     return NextResponse.json({ error: 'Sign in required' }, { status: 401 })
   }
 
-  const { projectId } = await params
+  try {
+    const { projectId } = await params
 
-  const project = await prisma.project.findUnique({
-    where: { id: projectId },
-    select: { id: true }
-  })
+    const project = await prisma.project.findUnique({
+      where: { id: projectId },
+      select: { id: true }
+    })
 
-  if (!project) {
-    return NextResponse.json({ error: 'Project not found' }, { status: 404 })
+    if (!project) {
+      return NextResponse.json({ error: 'Project not found' }, { status: 404 })
+    }
+
+    const history = await prisma.priceHistory.findMany({
+      where: { projectId },
+      orderBy: { recordedAt: 'desc' },
+      select: { pricePerSqft: true, recordedAt: true }
+    })
+
+    return NextResponse.json(history)
+  } catch (err) {
+    console.error('Price history fetch error:', err)
+    return NextResponse.json({ error: 'Failed to fetch price history' }, { status: 500 })
   }
-
-  const history = await prisma.priceHistory.findMany({
-    where: { projectId },
-    orderBy: { recordedAt: 'desc' },
-    select: { pricePerSqft: true, recordedAt: true }
-  })
-
-  return NextResponse.json(history)
 }

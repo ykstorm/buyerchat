@@ -36,7 +36,7 @@ export default function SignInPage() {
         {/* Google button */}
         <button
           type="button"
-          onClick={() => signIn('google', { callbackUrl: '/' })}
+          onClick={() => signIn('google', { callbackUrl: '/chat' })}
           className="w-full flex items-center gap-3 border border-[#E7E5E4] rounded-xl py-3 px-4 hover:bg-[#F4F3F0] transition-colors"
         >
           <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">

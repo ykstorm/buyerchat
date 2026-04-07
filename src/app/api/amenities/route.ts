@@ -17,12 +17,17 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })
   }
 
-  const amenities = await prisma.amenity.findMany({
-    where: {
-      ...(parsed.data.type && { type: parsed.data.type }),
-    },
-    orderBy: { qualityRating: 'desc' },
-  })
+  try {
+    const amenities = await prisma.amenity.findMany({
+      where: {
+        ...(parsed.data.type && { type: parsed.data.type }),
+      },
+      orderBy: { qualityRating: 'desc' },
+    })
 
-  return NextResponse.json(amenities)
+    return NextResponse.json(amenities)
+  } catch (err) {
+    console.error('Amenities fetch error:', err)
+    return NextResponse.json({ error: 'Failed to fetch amenities' }, { status: 500 })
+  }
 }

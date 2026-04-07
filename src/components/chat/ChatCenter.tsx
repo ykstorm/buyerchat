@@ -202,9 +202,25 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
                 `}>
                   {msg.role === 'assistant' ? (
                     <div className="prose prose-sm max-w-none text-[#1C1917] [&>p]:mb-2 [&>p:last-child]:mb-0 [&>strong]:font-semibold [&>strong]:text-[#1C1917]">
-                      <ReactMarkdown>{msg.content}</ReactMarkdown>
+                      <ReactMarkdown
+                        components={{
+                          strong: ({ children }) => <span className="font-semibold">{children}</span>,
+                          p: ({ children }) => <span>{children}</span>,
+                        }}
+                      >
+                        {msg.content}
+                      </ReactMarkdown>
                     </div>
-                  ) : msg.content}
+                  ) : (
+                    <ReactMarkdown
+                      components={{
+                        strong: ({ children }) => <span className="font-semibold">{children}</span>,
+                        p: ({ children }) => <span>{children}</span>,
+                      }}
+                    >
+                      {msg.content}
+                    </ReactMarkdown>
+                  )}
                 </div>
               </motion.div>
             )
