@@ -23,10 +23,15 @@ const INJECTION_KEYWORDS = [
 
 function detectStage(userMsg: string, aiResponse: string): string {
   const msg = userMsg.toLowerCase()
-  if (/book|visit|otp|schedule/i.test(msg)) return 'visit_trigger'
-  if (/compare|vs|versus|which is better/i.test(msg)) return 'comparison'
-  if (/budget|afford|price|cost|loan/i.test(msg)) return 'qualification'
-  if (/tell me more|details|about|explain/i.test(msg)) return 'project_disclosure'
+  const ai = aiResponse.toLowerCase()
+  if (/visited|went to|site visit done|already visited|visit hua/i.test(msg)) return 'post_visit'
+  if (/book.*token|otp.*visit|confirm.*visit|visit.*confirm/i.test(msg)) return 'pre_visit'
+  if (/book|visit|otp|schedule|site pe|jaana hai/i.test(msg)) return 'visit_trigger'
+  if (/finaliz|book.*flat|ready to buy|decision|le lenge|book kar|done deal/i.test(msg)) return 'decision'
+  if (/compare|vs|versus|which is better|which one|dono mein/i.test(msg)) return 'comparison'
+  if (/budget|afford|price|cost|loan|emi|kitne mein|kitna budget/i.test(msg)) return 'qualification'
+  if (/tell me more|details|about|explain|aur batao|project ke baare/i.test(msg)) return 'project_disclosure'
+  if (ai.includes('project_card') || ai.includes('strong buy') || ai.includes('honest concern')) return 'project_disclosure'
   return 'intent_capture'
 }
 
