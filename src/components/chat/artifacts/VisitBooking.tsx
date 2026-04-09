@@ -4,6 +4,7 @@ import { useState } from "react"
 interface VisitBookingProps {
   projectId: string
   projectName: string
+  onBack?: () => void
 }
 
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
@@ -18,7 +19,7 @@ function getDatePills(): { label: string; date: Date }[] {
   })
 }
 
-export function VisitBooking({ projectId, projectName }: VisitBookingProps) {
+export function VisitBooking({ projectId, projectName, onBack }: VisitBookingProps) {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
   const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
@@ -69,6 +70,12 @@ export function VisitBooking({ projectId, projectName }: VisitBookingProps) {
 
   return (
     <div className="bg-[#FAFAF9] border border-[#E7E5E4] rounded-2xl p-5 w-full max-w-sm">
+      {onBack && (
+        <button type="button" onClick={onBack}
+          className="flex items-center gap-1 text-[11px] text-[#A8A29E] hover:text-[#1C1917] mb-3 transition-colors">
+          ← Back to project
+        </button>
+      )}
       <h3 className="text-lg font-semibold text-[#1C1917] mb-0.5" style={{ fontFamily: "'Playfair Display', serif" }}>
         Book a site visit
       </h3>

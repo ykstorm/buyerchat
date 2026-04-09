@@ -22,8 +22,10 @@ type Artifact = { type: 'project_card' | 'visit_booking'; data: ProjectType }
 
 export default function ChatRightPanel({
   artifact,
+  onArtifactBack,
 }: {
   artifact: Artifact | null
+  onArtifactBack?: () => void
 }) {
   return (
     <>
@@ -44,6 +46,7 @@ export default function ChatRightPanel({
                   <VisitBooking
                     projectId={artifact.data.id}
                     projectName={artifact.data.projectName}
+                    onBack={onArtifactBack}
                   />
                 </>
               ) : (

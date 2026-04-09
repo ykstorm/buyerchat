@@ -214,7 +214,7 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
                           strong: ({ children }) => <span className="font-semibold text-[#1C1917]">{children}</span>,
                           p: ({ children }) => <span className="block mb-2 last:mb-0">{children}</span>,
                           ul: ({ children }) => <ul className="list-none space-y-1 my-1">{children}</ul>,
-                          li: ({ children }) => <li className="flex gap-2 before:content-['·'] before:text-[#A8A29E]">{children}</li>,
+                          li: ({ children }) => <li className="flex gap-2 pl-1 text-[#52525B]"><span className="text-[#A8A29E] mr-1">·</span>{children}</li>,
                         }}
                       >
                         {msg.content}
@@ -226,7 +226,7 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
                         strong: ({ children }) => <span className="font-semibold text-[#1C1917]">{children}</span>,
                         p: ({ children }) => <span className="block mb-2 last:mb-0">{children}</span>,
                         ul: ({ children }) => <ul className="list-none space-y-1 my-1">{children}</ul>,
-                        li: ({ children }) => <li className="flex gap-2 before:content-['·'] before:text-[#A8A29E]">{children}</li>,
+                        li: ({ children }) => <li className="flex gap-2 pl-1 text-[#52525B]"><span className="text-[#A8A29E] mr-1">·</span>{children}</li>,
                       }}
                     >
                       {msg.content}
@@ -293,7 +293,7 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
               </button>
               <div className="px-4 pb-4 overflow-y-auto overscroll-contain" style={{ maxHeight: '40vh', touchAction: 'pan-y' }}>
                 {artifact.type === 'visit_booking'
-                  ? <VisitBooking projectId={artifact.data.id} projectName={artifact.data.projectName} />
+                  ? <VisitBooking projectId={artifact.data.id} projectName={artifact.data.projectName} onBack={onArtifactBack} />
                   : <ProjectCard project={artifact.data} />}
               </div>
             </div>
