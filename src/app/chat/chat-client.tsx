@@ -198,6 +198,19 @@ export default function ChatClient({
         }))
         setMessages(loaded)
         setSessionId(urlSessionId)
+        // Restore last artifact from session history
+        const lastAssistant = [...loaded].reverse().find(m => m.role === 'assistant')
+        if (lastAssistant) {
+          const lower = lastAssistant.content.toLowerCase()
+          const found = projects.find(p => lower.includes(p.projectName.toLowerCase()))
+          if (found) {
+            const restored: Artifact = { type: 'project_card', data: found }
+            setArtifactHistory([restored])
+            setArtifactIndex(0)
+            setCurrentArtifact(restored)
+            setShowArtifact(true)
+          }
+        }
       } catch {}
       finally { setLoadingSession(false) }
     }

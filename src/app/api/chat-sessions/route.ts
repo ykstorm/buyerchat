@@ -18,6 +18,7 @@ export async function GET() {
       buyerBudget: s.buyerBudget,
       buyerConfig: s.buyerConfig,
       lastMessageAt: s.lastMessageAt,
+      customName: s.customName,
       firstMessage: s.messages[0]?.content ?? ''
     })))
   } catch {

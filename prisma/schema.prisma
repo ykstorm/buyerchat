@@ -192,6 +192,7 @@ buyerPurpose      String?
 qualificationDone Boolean  @default(false)
 projectsDisclosed String[]
 lastMessageAt     DateTime @updatedAt
+customName        String?
 messages          ChatMessageLog[]
 }
 

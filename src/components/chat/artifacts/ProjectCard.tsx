@@ -66,14 +66,57 @@ export default function ProjectCard({ project }: { project: ProjectType }) {
       </div>
 
       {/* Details */}
-      <div className="px-5 py-4 flex gap-2 flex-wrap">
+      <div className="px-5 py-4 border-b border-[#F4F3F0] flex gap-2 flex-wrap">
+        {project.decisionTag && (
+          <span className={`text-[11px] px-2.5 py-1 rounded-full font-medium ${
+            project.decisionTag === 'Strong Buy' ? 'bg-[#E1F5EE] text-[#085041]' :
+            project.decisionTag === 'Buy w/ Cond' ? 'bg-[#E6F1FB] text-[#0C447C]' :
+            project.decisionTag === 'Wait' ? 'bg-[#FAEEDA] text-[#633806]' :
+            'bg-[#FCEBEB] text-[#791F1F]'
+          }`}>
+            {project.decisionTag}
+          </span>
+        )}
         <span className="text-[11px] bg-[#F4F3F0] text-[#52525B] px-2.5 py-1 rounded-full">
           📅 {possession}
         </span>
         <span className="text-[11px] bg-[#E6F1FB] text-[#0C447C] px-2.5 py-1 rounded-full">
           {project.constructionStatus ?? 'Under Construction'}
         </span>
+        {project.configurations && (
+          <span className="text-[11px] bg-[#F4F3F0] text-[#52525B] px-2.5 py-1 rounded-full">
+            {project.configurations}
+          </span>
+        )}
       </div>
+
+      {/* Honest Concern */}
+      {project.honestConcern && (
+        <div className="px-5 py-3 border-b border-[#F4F3F0] bg-[#FFFBF0]">
+          <p className="text-[10px] font-semibold text-[#BA7517] uppercase tracking-wider mb-1">⚠️ Honest Concern</p>
+          <p className="text-[12px] text-[#78716C] leading-relaxed">{project.honestConcern}</p>
+        </div>
+      )}
+
+      {/* Analyst Note */}
+      {project.analystNote && (
+        <div className="px-5 py-3 border-b border-[#F4F3F0] bg-[#F0F7FF]">
+          <p className="text-[10px] font-semibold text-[#1B4F8A] uppercase tracking-wider mb-1">💡 Analyst Note</p>
+          <p className="text-[12px] text-[#78716C] leading-relaxed">{project.analystNote}</p>
+        </div>
+      )}
+
+      {/* Bank Approvals + Price Note */}
+      {(project.bankApprovals || project.priceNote) && (
+        <div className="px-5 py-3 border-b border-[#F4F3F0]">
+          {project.priceNote && (
+            <p className="text-[11px] text-[#78716C] mb-1">💰 {project.priceNote}</p>
+          )}
+          {project.bankApprovals && (
+            <p className="text-[11px] text-[#78716C]">🏦 {project.bankApprovals}</p>
+          )}
+        </div>
+      )}
 
       {/* CTA */}
       <div className="px-5 pb-5">

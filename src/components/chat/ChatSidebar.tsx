@@ -7,7 +7,7 @@ import Link from 'next/link'
 
 type SessionItem = {
   id: string; buyerStage: string; buyerBudget: number | null
-  buyerConfig: string | null; lastMessageAt: string; firstMessage: string
+  buyerConfig: string | null; lastMessageAt: string; firstMessage: string; customName?: string | null
 }
 
 
@@ -44,7 +44,7 @@ function SwipeableSessionItem({ session, onLoad, onClose, menuOpen, setMenuOpen,
   const x = useMotionValue(0)
   const deleteOpacity = useTransform(x, [-100, -50], [1, 0])
   const itemOpacity = useTransform(x, [-100, -60], [0, 1])
-  const displayTitle = chatNames[session.id] || (session.firstMessage ? session.firstMessage.slice(0, 40) : 'New conversation')
+  const displayTitle = chatNames[session.id] || session.customName || (session.firstMessage ? session.firstMessage.slice(0, 40) : 'New conversation')
   const [confirmingDelete, setConfirmingDelete] = useState(false)
 
   const doDelete = async () => {
@@ -267,11 +267,20 @@ const [renamingSession, setRenamingSession] = useState<string | null>(null)
     return () => document.removeEventListener('mousedown', close)
   }, [])
 
-  const saveRename = (id: string, value: string) => {
-    const saved = { ...getChatNames(), [id]: value }
+  const saveRename = async (id: string, value: string) => {
+    const trimmed = value.trim()
+    if (!trimmed) return
+    const saved = { ...getChatNames(), [id]: trimmed }
     localStorage.setItem('chatNames', JSON.stringify(saved))
     setChatNames(saved)
     setRenamingSession(null)
+    try {
+      await fetch(`/api/chat-sessions/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ customName: trimmed })
+      })
+    } catch {}
   }
 
   const filteredSessions = sessions.filter(s =>
