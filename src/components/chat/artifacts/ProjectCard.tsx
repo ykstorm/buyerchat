@@ -81,10 +81,17 @@ export default function ProjectCard({ project }: { project: ProjectType }) {
         </motion.button>
         <button
           type="button"
-          onClick={() => {
+          onClick={async () => {
             const url = `${window.location.origin}/projects/${project.id}`
             if (navigator.share) {
-              navigator.share({ title: project.projectName, text: `Check out ${project.projectName} on BuyerChat`, url })
+              try {
+                await navigator.share({ title: project.projectName, text: `Check out ${project.projectName} on BuyerChat`, url })
+              } catch (err: any) {
+                if (err?.name === 'AbortError') return // user cancelled — not an error
+                navigator.clipboard.writeText(url)
+                setCopied(true)
+                setTimeout(() => setCopied(false), 2000)
+              }
             } else {
               navigator.clipboard.writeText(url)
               setCopied(true)

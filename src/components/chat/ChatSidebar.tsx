@@ -48,6 +48,14 @@ function SwipeableSessionItem({ session, onLoad, onClose, menuOpen, setMenuOpen,
   const deleteOpacity = useTransform(x, [-100, -50], [1, 0])
   const itemOpacity = useTransform(x, [-100, -60], [0, 1])
   const displayTitle = chatNames[session.id] || (session.firstMessage ? session.firstMessage.slice(0, 40) : 'New conversation')
+  const [confirmingDelete, setConfirmingDelete] = useState(false)
+
+  const doDelete = async () => {
+    try {
+      await fetch(`/api/chat-sessions/${session.id}`, { method: 'DELETE' })
+      setSessions((prev: any[]) => prev.filter((s: any) => s.id !== session.id))
+    } catch {}
+  }
 
   const handleDragEnd = async (_: any, info: any) => {
     if (info.offset.x < -80) {
@@ -82,34 +90,68 @@ function SwipeableSessionItem({ session, onLoad, onClose, menuOpen, setMenuOpen,
         style={{ x, opacity: itemOpacity }}
         className="relative px-3 py-2.5 rounded-xl cursor-pointer hover:bg-[#F7F6F4] transition-colors"
         onMouseEnter={() => setHoveredSession(session.id)}
-        onClick={() => { if (renamingSession !== session.id) { onLoad(session.id); onClose() } }}
+        onClick={() => { if (renamingSession !== session.id && !confirmingDelete) { onLoad(session.id); onClose() } }}
       >
-        <div className="flex items-center justify-between mb-1">
-          <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${STAGE_COLORS[session.buyerStage] ?? 'bg-[#F4F4F5] text-[#52525B]'}`}>
-            {STAGE_LABELS[session.buyerStage] ?? session.buyerStage}
-          </span>
-          <span className="text-[10px] text-[#A8A29E]">{timeAgo(session.lastMessageAt)}</span>
-        </div>
-
-        {renamingSession === session.id ? (
-          <input
-            autoFocus
-            type="text"
-            value={renameValue}
-            onChange={e => setRenameValue(e.target.value)}
-            onBlur={() => saveRename(session.id, renameValue)}
-            onKeyDown={e => {
-              if (e.key === 'Enter') saveRename(session.id, renameValue)
-              if (e.key === 'Escape') setRenamingSession(null)
-            }}
-            onMouseDown={e => e.stopPropagation()}
-            className="text-[12px] text-[#1C1917] bg-transparent border-b border-[#1B4F8A] outline-none w-full"
-          />
+        {confirmingDelete ? (
+          <div onMouseDown={e => e.stopPropagation()} onClick={e => e.stopPropagation()} className="bg-[#FEF2F2] border border-[#FECACA] rounded-lg px-2 py-2">
+            <p className="text-[11px] text-[#A32D2D] font-medium mb-1.5">Delete this chat?</p>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onMouseDown={e => { e.preventDefault(); e.stopPropagation() }}
+                onClick={e => { e.stopPropagation(); doDelete() }}
+                className="flex-1 text-[11px] font-medium text-white bg-[#A32D2D] rounded-md py-0.5 hover:bg-[#7F1D1D] transition-colors"
+              >Yes, delete</button>
+              <button
+                type="button"
+                onMouseDown={e => { e.preventDefault(); e.stopPropagation() }}
+                onClick={e => { e.stopPropagation(); setConfirmingDelete(false); }}
+                className="flex-1 text-[11px] font-medium text-[#78716C] bg-[#F4F3F0] rounded-md py-0.5 hover:bg-[#E7E5E4] transition-colors"
+              >Cancel</button>
+            </div>
+          </div>
+        ) : renamingSession === session.id ? (
+          <div onMouseDown={e => e.stopPropagation()} onClick={e => e.stopPropagation()}>
+            <input
+              autoFocus
+              type="text"
+              value={renameValue}
+              onChange={e => setRenameValue(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === 'Enter') saveRename(session.id, renameValue)
+                if (e.key === 'Escape') setRenamingSession(null)
+              }}
+              onMouseDown={e => e.stopPropagation()}
+              className="text-[12px] text-[#1C1917] bg-white border border-[#1B4F8A] rounded-lg outline-none w-full px-2 py-1 mb-1.5"
+            />
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onMouseDown={e => { e.preventDefault(); e.stopPropagation() }}
+                onClick={e => { e.stopPropagation(); saveRename(session.id, renameValue) }}
+                className="flex-1 text-[11px] font-medium text-white bg-[#1B4F8A] rounded-md py-0.5 hover:bg-[#163d6b] transition-colors"
+              >✓</button>
+              <button
+                type="button"
+                onMouseDown={e => { e.preventDefault(); e.stopPropagation() }}
+                onClick={e => { e.stopPropagation(); setRenamingSession(null) }}
+                className="flex-1 text-[11px] font-medium text-[#78716C] bg-[#F4F3F0] rounded-md py-0.5 hover:bg-[#E7E5E4] transition-colors"
+              >✗</button>
+            </div>
+          </div>
         ) : (
-          <p className="text-[12px] font-medium text-[#1C1917] truncate leading-tight">{displayTitle}</p>
+          <>
+            <div className="flex items-center justify-between mb-1">
+              <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${STAGE_COLORS[session.buyerStage] ?? 'bg-[#F4F4F5] text-[#52525B]'}`}>
+                {STAGE_LABELS[session.buyerStage] ?? session.buyerStage}
+              </span>
+              <span className="text-[10px] text-[#A8A29E]">{timeAgo(session.lastMessageAt)}</span>
+            </div>
+            <p className="text-[12px] font-medium text-[#1C1917] truncate leading-tight">{displayTitle}</p>
+          </>
         )}
 
-        {(session.buyerBudget || session.buyerConfig) && (
+        {!confirmingDelete && renamingSession !== session.id && (session.buyerBudget || session.buyerConfig) && (
           <p className="text-[10px] text-[#A8A29E] mt-0.5">
             {session.buyerConfig}{session.buyerBudget ? ` · ₹${Math.round(session.buyerBudget / 100000)}L` : ''}
           </p>
@@ -122,7 +164,7 @@ function SwipeableSessionItem({ session, onLoad, onClose, menuOpen, setMenuOpen,
               <button
                 type="button"
                 onMouseDown={e => { e.preventDefault(); e.stopPropagation() }}
-                onClick={e => { e.stopPropagation(); setRenamingSession(session.id); setRenameValue(session.id.slice(0,8)); }}
+                onClick={e => { e.stopPropagation(); setRenamingSession(session.id); setRenameValue(displayTitle); }}
                 className="w-5 h-5 rounded flex items-center justify-center text-[#A8A29E] hover:text-[#1C1917] hover:bg-[#ECEAE7] transition-colors"
                 title="Rename"
               >
@@ -133,14 +175,8 @@ function SwipeableSessionItem({ session, onLoad, onClose, menuOpen, setMenuOpen,
               </button>
               <button
                 type="button"
-                onMouseDown={async e => {
-                  e.preventDefault()
-                  e.stopPropagation()
-                  try {
-                    await fetch(`/api/chat-sessions/${session.id}`, { method: 'DELETE' })
-                    setSessions((prev: any[]) => prev.filter((s: any) => s.id !== session.id))
-                  } catch {}
-                }}
+                onMouseDown={e => { e.preventDefault(); e.stopPropagation() }}
+                onClick={e => { e.stopPropagation(); setConfirmingDelete(true); setMenuOpen(null) }}
                 className="w-5 h-5 rounded flex items-center justify-center text-[#A8A29E] hover:text-[#A32D2D] hover:bg-[#FEE2E2] transition-colors"
                 title="Delete"
               >
@@ -185,15 +221,8 @@ function SwipeableSessionItem({ session, onLoad, onClose, menuOpen, setMenuOpen,
             </button>
             <button
               type="button"
-              onMouseDown={async (e) => {
-                e.preventDefault(); e.stopPropagation()
-                try {
-                  await fetch(`/api/chat-sessions/${session.id}`, { method: 'DELETE' })
-                  setSessions((prev: any[]) => prev.filter((s: any) => s.id !== session.id))
-                } catch {}
-                setMenuOpen(null)
-                setHoveredSession(null)
-              }}
+              onMouseDown={e => { e.preventDefault(); e.stopPropagation() }}
+              onClick={e => { e.stopPropagation(); setConfirmingDelete(true); setMenuOpen(null); setHoveredSession(null) }}
               className="w-full px-3 py-2 text-left text-[12px] text-[#A32D2D] hover:bg-[#FDF2F2] flex items-center gap-2"
             >
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
@@ -244,11 +273,23 @@ function SwipeableProjectItem({ project, isStarred, onStar }: any) {
           <p className="text-[12px] font-medium text-[#1C1917] truncate">{project.projectName}</p>
           <p className="text-[10px] text-[#A8A29E]">₹{project.pricePerSqft?.toLocaleString('en-IN')}/sqft · {project.microMarket}</p>
         </div>
-        {isStarred && (
-          <svg width="10" height="10" viewBox="0 0 24 24" fill="#F59E0B" stroke="#F59E0B" strokeWidth="2">
-            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-          </svg>
-        )}
+        <button
+          type="button"
+          onMouseDown={e => { e.preventDefault(); e.stopPropagation() }}
+          onClick={e => { e.stopPropagation(); onStar(project.id) }}
+          className="flex-shrink-0 flex items-center justify-center"
+          title={isStarred ? 'Unstar' : 'Star'}
+        >
+          {isStarred ? (
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="#F59E0B" stroke="#F59E0B" strokeWidth="2">
+              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+            </svg>
+          ) : (
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#A8A29E" strokeWidth="2">
+              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+            </svg>
+          )}
+        </button>
       </motion.div>
     </div>
   )
@@ -356,9 +397,17 @@ export default function ChatSidebar({
                   key={p.id}
                   project={p}
                   isStarred={starredProjects.includes(p.id)}
-                  onStar={(id: string) => setStarredProjects(prev =>
-                    prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
-                  )}
+                  onStar={(id: string) => {
+                    const isCurrentlyStarred = starredProjects.includes(id)
+                    setStarredProjects(prev =>
+                      isCurrentlyStarred ? prev.filter(x => x !== id) : [...prev, id]
+                    )
+                    fetch('/api/saved', {
+                      method: isCurrentlyStarred ? 'DELETE' : 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ projectId: id })
+                    }).catch(() => {})
+                  }}
                 />
               ))
             }
