@@ -1,4 +1,5 @@
 'use client'
+import type React from 'react'
 
 import { motion } from 'framer-motion'
 import { FormEvent, useRef, useEffect, useState } from 'react'
@@ -214,7 +215,7 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
                           strong: ({ children }) => <span className="font-semibold text-[#1C1917]">{children}</span>,
                           p: ({ children }) => <span className="block mb-2 last:mb-0">{children}</span>,
                           ul: ({ children }) => <ul className="list-none space-y-1 my-1">{children}</ul>,
-                          li: ({ children }) => <li className="flex gap-2 pl-1 text-[#52525B]"><span className="text-[#A8A29E] mr-1">·</span>{children}</li>,
+                          li: ({ children }) => { const s: React.CSSProperties = {}; return <li style={s} className="flex gap-2 pl-1 text-[#52525B]"><span style={{ color: '#A8A29E', marginRight: 4 }}>·</span>{children}</li> },
                         }}
                       >
                         {msg.content}
@@ -226,7 +227,7 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
                         strong: ({ children }) => <span className="font-semibold text-[#1C1917]">{children}</span>,
                         p: ({ children }) => <span className="block mb-2 last:mb-0">{children}</span>,
                         ul: ({ children }) => <ul className="list-none space-y-1 my-1">{children}</ul>,
-                        li: ({ children }) => <li className="flex gap-2 pl-1 text-[#52525B]"><span className="text-[#A8A29E] mr-1">·</span>{children}</li>,
+                        li: ({ children }) => { const s: React.CSSProperties = {}; return <li style={s} className="flex gap-2 pl-1 text-[#52525B]"><span style={{ color: '#A8A29E', marginRight: 4 }}>·</span>{children}</li> },
                       }}
                     >
                       {msg.content}
