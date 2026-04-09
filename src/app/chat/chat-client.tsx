@@ -65,6 +65,25 @@ export default function ChatClient({
     window.addEventListener('book-visit', handler)
     return () => window.removeEventListener('book-visit', handler)
   }, [projects])
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const { projectId } = (e as CustomEvent).detail
+      const project = projects.find(p => p.id === projectId)
+      if (project) {
+        const restored: Artifact = { type: 'project_card', data: project }
+        const newHistory = [...artifactHistoryRef.current.slice(0, artifactIndexRef.current + 1), restored]
+        artifactHistoryRef.current = newHistory
+        artifactIndexRef.current = newHistory.length - 1
+        setArtifactHistory(newHistory)
+        setArtifactIndex(newHistory.length - 1)
+        setCurrentArtifact(restored)
+        setShowArtifact(true)
+      }
+    }
+    window.addEventListener('show-project-card', handler)
+    return () => window.removeEventListener('show-project-card', handler)
+  }, [projects])
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   const sendMessage = useCallback(async (userContent: string) => {
@@ -167,7 +186,7 @@ export default function ChatClient({
       const newIndex = idx - 1
       artifactIndexRef.current = newIndex
       setArtifactIndex(newIndex)
-      setCurrentArtifact(hist[newIndex])
+      setCurrentArtifact({ type: 'project_card', data: hist[newIndex].data })
       setShowArtifact(true)
     }
   }
@@ -179,7 +198,7 @@ export default function ChatClient({
       const newIndex = idx + 1
       artifactIndexRef.current = newIndex
       setArtifactIndex(newIndex)
-      setCurrentArtifact(hist[newIndex])
+      setCurrentArtifact({ type: 'project_card', data: hist[newIndex].data })
       setShowArtifact(true)
     }
   }
@@ -271,7 +290,10 @@ export default function ChatClient({
         onSelectArtifact={(index) => {
           artifactIndexRef.current = index
           setArtifactIndex(index)
-          setCurrentArtifact(artifactHistoryRef.current[index])
+          const selected = artifactHistoryRef.current[index]
+          // Always show project card when navigating history — visit booking only makes sense in context
+          const normalized: Artifact = { type: 'project_card', data: selected.data }
+          setCurrentArtifact(normalized)
           setShowArtifact(true)
         }}
       />

@@ -70,8 +70,8 @@ export function VisitBooking({ projectId, projectName, onBack }: VisitBookingPro
 
   return (
     <div className="bg-[#FAFAF9] border border-[#E7E5E4] rounded-2xl p-5 w-full max-w-sm">
-      {onBack && (
-        <button type="button" onClick={onBack}
+      {projectId && (
+        <button type="button" onClick={() => window.dispatchEvent(new CustomEvent('show-project-card', { detail: { projectId } }))}
           className="flex items-center gap-1 text-[11px] text-[#A8A29E] hover:text-[#1C1917] mb-3 transition-colors">
           ← Back to project
         </button>

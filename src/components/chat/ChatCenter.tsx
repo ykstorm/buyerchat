@@ -60,6 +60,11 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
   const bottomRef = useRef<HTMLDivElement>(null)
   const [mouse, setMouse] = useState({ x: 0, y: 0 })
   const [showArtifactMenu, setShowArtifactMenu] = useState(false)
+  useEffect(() => {
+    const close = () => setShowArtifactMenu(false)
+    if (showArtifactMenu) document.addEventListener('click', close)
+    return () => document.removeEventListener('click', close)
+  }, [showArtifactMenu])
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -292,7 +297,7 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
                   drag="y"
                   dragConstraints={{ top: 0 }}
                   dragElastic={0.2}
-                  onDragEnd={(_: any, info: any) => { if (info.offset.y > 80) onToggleArtifact?.() }}
+                  onDragEnd={(_: any, info: any) => { if (info.offset.y > 150 && info.velocity.y > 100) onToggleArtifact?.() }}
                   className="bg-white rounded-t-2xl shadow-[0_-8px_40px_rgba(0,0,0,0.12)] overflow-hidden"
                 >
                   {/* Handle */}
@@ -348,7 +353,7 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
 
       {/* Input bar */}
       {/* Artifact history button — top right of chat */}
-      {artifactHistory && artifactHistory.length > 0 && (
+      {artifactHistory && artifactHistory.length > 0 && messages.length > 0 && (
         <div className="lg:hidden absolute top-3 right-3 z-40">
           <div className="relative">
             <button
