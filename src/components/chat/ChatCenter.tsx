@@ -288,7 +288,7 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
                   drag="y"
                   dragConstraints={{ top: 0 }}
                   dragElastic={0.2}
-                  onDragEnd={(_: any, info: any) => { if (info.offset.y > 80) onToggleArtifact() }}
+                  onDragEnd={(_: any, info: any) => { if (info.offset.y > 80) onToggleArtifact?.() }}
                   className="bg-white rounded-t-2xl shadow-[0_-8px_40px_rgba(0,0,0,0.12)] overflow-hidden"
                 >
                   {/* Handle */}

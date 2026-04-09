@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { Playfair_Display, DM_Sans } from 'next/font/google'
+import { Analytics } from '@vercel/analytics/react'
 import './globals.css'
 import Navbar from '@/components/Navbar'
 import ChatWidgetWrapper from '@/components/ChatWidgetWrapper'
@@ -53,6 +54,7 @@ export default function RootLayout({
   <Navbar />
   {children}
   <ChatWidgetWrapper />
+  <Analytics />
 </body>
       
     </html>

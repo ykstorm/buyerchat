@@ -19,6 +19,7 @@
     "@radix-ui/react-select": "^2.2.6",
     "@sentry/nextjs": "^10.47.0",
     "@upstash/redis": "^1.37.0",
+    "@vercel/analytics": "^2.0.1",
     "ai": "^6.0.134",
     "class-variance-authority": "^0.7.1",
     "cloudinary": "^2.9.0",
