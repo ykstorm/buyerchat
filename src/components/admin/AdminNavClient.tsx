@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 const NAV_ITEMS = [
   { href: '/admin',             icon: '📊', label: 'Dash' },
@@ -50,6 +50,14 @@ export default function AdminNavClient({ userName }: { userName: string }) {
       {BOTTOM_GROUP.map(item => <NavItem key={item.href} item={item} />)}
     </aside>
   )
+
+  useEffect(() => {
+    const btn = document.getElementById('admin-mobile-menu')
+    if (!btn) return
+    const handler = () => setMobileOpen(v => !v)
+    btn.addEventListener('click', handler)
+    return () => btn.removeEventListener('click', handler)
+  }, [])
 
   return (
     <>

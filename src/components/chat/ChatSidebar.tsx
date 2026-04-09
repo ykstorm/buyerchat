@@ -257,6 +257,10 @@ const [renamingSession, setRenamingSession] = useState<string | null>(null)
   }, [userId])
 
   useEffect(() => {
+    setSearchQuery('')
+  }, [userId])
+
+  useEffect(() => {
     const close = () => {
       setMenuOpen(null)
       setHoveredSession(null)

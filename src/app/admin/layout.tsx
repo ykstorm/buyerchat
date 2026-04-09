@@ -30,8 +30,11 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
       {/* New topbar — z-[60] overrides AdminNavClient's z-50 topbar */}
       <header className="fixed top-0 left-0 right-0 h-12 bg-[#1B3A6B] z-[60] flex items-center px-4 gap-3">
-        {/* Left: logo */}
-        <div className="flex items-center gap-1 flex-shrink-0">
+        {/* Left: hamburger (mobile) + logo */}
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <button id="admin-mobile-menu" type="button" className="lg:hidden w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 transition-colors">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+          </button>
           <span className="text-[15px] font-semibold text-[#52CDAA]">Aa</span>
           <span className="text-[15px] font-semibold text-white">iGhar</span>
           <span className="text-[11px] text-[#A8C8E8] ml-1.5 hidden sm:inline">Admin</span>

@@ -4,53 +4,6 @@ import { formatLakh, daysBetween, getStageLabel, getUrgency } from '@/lib/admin-
 import Link from 'next/link'
 import AnimatedNumber from '@/components/admin/AnimatedNumber'
 
-function MetricCard({ label, value, sub, color, subColor, href }: { label: string; value: string | number; sub?: string; color?: string; subColor?: string; href?: string }) {
-  const inner = (
-    <div
-      className="bg-white rounded-[10px] p-[12px_14px] transition-shadow"
-      style={{
-        border: '0.5px solid #E0DFDD',
-        ...(href ? { cursor: 'pointer' } : {}),
-      }}
-      onMouseEnter={undefined}
-    >
-      <p className="text-[10px] font-semibold uppercase tracking-wide mb-1.5" style={{ color: '#787878' }}>{label}</p>
-      <p className="font-extrabold leading-[1.1] mb-1" style={{ fontSize: 26, color: color ?? '#1B3A6B' }}>
-        {typeof value === 'number' ? <AnimatedNumber value={value} /> : value}
-      </p>
-      {sub && <p className="text-[9px]" style={{ color: subColor ?? '#B0B0AC' }}>{sub}</p>}
-    </div>
-  )
-  return href ? (
-    <Link href={href} className="block hover:[&>div]:shadow-[0_2px_8px_rgba(0,0,0,0.08)]">
-      {inner}
-    </Link>
-  ) : inner
-}
-
-function Badge({ label, color }: { label: string; color: 'green' | 'red' | 'amber' | 'blue' | 'gray' }) {
-  const map = {
-    green: 'bg-[#E1F5EE] text-[#085041]',
-    red: 'bg-[#FCEBEB] text-[#791F1F]',
-    amber: 'bg-[#FAEEDA] text-[#633806]',
-    blue: 'bg-[#E6F1FB] text-[#0C447C]',
-    gray: 'bg-[#F4F4F5] text-[#52525B]',
-  }
-  return <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${map[color]}`}>{label}</span>
-}
-
-function StatPill({ label, value, color }: { label: string; value: string | number; color: string }) {
-  return (
-    <div className="bg-white border border-black/[0.08] rounded-lg px-4 py-3 flex items-center gap-3">
-      <div className="w-1 h-8 rounded-full flex-shrink-0" style={{ backgroundColor: color }} />
-      <div>
-        <p className="text-[20px] font-semibold text-[#1A1A2E]">{value}</p>
-        <p className="text-[10px] text-[#52525B]">{label}</p>
-      </div>
-    </div>
-  )
-}
-
 type AlertItem = { icon: string; bg: string; color: string; title: string; sub: string }
 
 export default async function OverviewPage() {
@@ -191,245 +144,155 @@ export default async function OverviewPage() {
   )
 
   return (
-    <div>
-      {/* Header: morning greeting */}
-      <div className="flex items-start justify-between mb-4">
+    <div className="min-h-screen" style={{ background: '#0A0F1E' }}>
+      {/* Header */}
+      <div className="flex items-start justify-between mb-6">
         <div>
-          <p className="text-[18px] font-semibold text-[#1A1A2E]">{greeting}</p>
-          <p className="text-[12px] text-[#52525B]">{dateStr}</p>
+          <p className="text-[22px] font-bold text-white">{greeting}</p>
+          <p className="text-[12px] mt-0.5" style={{ color: '#6B7280' }}>{dateStr}</p>
         </div>
         {pipelineBudgetSum > 0 && (
-          <div className="bg-[#E1F5EE] px-3 py-1.5 rounded-full">
-            <p className="text-[11px] font-medium text-[#085041]">
-              Pipeline commission ~ ₹{formatLakh(pipelineBudgetSum)}
+          <div className="px-3 py-1.5 rounded-full" style={{ background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.25)' }}>
+            <p className="text-[11px] font-semibold" style={{ color: '#10B981' }}>
+              Pipeline ~ ₹{formatLakh(pipelineBudgetSum)} commission
             </p>
           </div>
         )}
       </div>
 
-      {/* Deal banner — proof of concept */}
+      {/* Deal banner */}
       {latestDeal && (
-        <div className="mb-4 bg-gradient-to-r from-[#1F3864] to-[#2B4F8E] rounded-xl p-4 flex items-center justify-between">
+        <div className="mb-5 rounded-2xl p-4 flex items-center justify-between" style={{ background: 'linear-gradient(135deg, #1B3A6B 0%, #0D3570 100%)', border: '1px solid rgba(255,255,255,0.08)' }}>
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white text-sm font-bold">
-              ₹
-            </div>
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white font-bold text-sm" style={{ background: 'rgba(255,255,255,0.15)' }}>₹</div>
             <div>
-              <p className="text-[13px] font-semibold text-white">
-                Deal Closed — {latestDeal.builderBrandName}
-              </p>
-              <p className="text-[10px] text-white/70">
-                {latestDeal.buyerName} · ₹{formatLakh(latestDeal.dealValue)} property ·{' '}
-                {new Date(latestDeal.invoiceDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+              <p className="text-[13px] font-semibold text-white">Deal Closed — {latestDeal.builderBrandName}</p>
+              <p className="text-[11px] mt-0.5" style={{ color: 'rgba(255,255,255,0.55)' }}>
+                {latestDeal.buyerName} · ₹{formatLakh(latestDeal.dealValue)} · {new Date(latestDeal.invoiceDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
               </p>
             </div>
           </div>
           <div className="text-right">
-            <p className="text-[20px] font-bold" style={{ color: '#4ADE80' }}>
-              +₹{formatLakh(latestDeal.commissionAmount)}
-            </p>
-            <p className="text-[10px] text-white/60">
-              {latestDeal.paymentStatus === 'paid' ? 'Payment received' : 'Payment pending'}
+            <p className="text-[22px] font-bold" style={{ color: '#34D399' }}>+₹{formatLakh(latestDeal.commissionAmount)}</p>
+            <p className="text-[10px]" style={{ color: latestDeal.paymentStatus === 'received' ? '#34D399' : '#F59E0B' }}>
+              {latestDeal.paymentStatus === 'paid' || latestDeal.paymentStatus === 'received' ? '✓ Received' : '⏳ Pending'}
             </p>
           </div>
         </div>
       )}
 
-      {/* 5 Metric Cards */}
-      <div className="mb-4" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 8 }}>
-        <MetricCard
-          label="Active buyers"
-          value={activeBuyerCount}
-          sub={urgentSessions.length > 0 ? `${urgentSessions.length} need follow-up` : 'All caught up'}
-          subColor={urgentSessions.length > 0 ? '#C0392B' : '#B0B0AC'}
-          href="/admin/buyers"
-        />
-        <MetricCard
-          label="Projects scored"
-          value={projectsLiveCount}
-          sub="in database"
-          href="/admin/projects"
-        />
-        <MetricCard
-          label="Commission earned"
-          value={totalEarned > 0 ? `₹${formatLakh(totalEarned)}` : '₹0'}
-          sub={latestDeal
-            ? `${latestDeal.paymentStatus === 'paid' ? 'Paid' : 'Pending'} · ${latestDeal.builderBrandName}`
-            : 'No deals yet'}
-          color="#0C6B54"
-          href="/admin/revenue"
-        />
-        <MetricCard
-          label="Pipeline value"
-          value={pipelineBudgetSum > 0 ? `₹${formatLakh(pipelineBudgetSum)}` : '—'}
-          sub={`${activeStageCount} in hot stages`}
-          href="/admin/revenue"
-        />
-        <MetricCard
-          label="RERA alerts"
-          value={reraAlertCount}
-          sub="possession < 90 days"
-          color={reraAlertCount > 0 ? '#C0392B' : '#1B3A6B'}
-          href="/admin/intelligence"
-        />
+      {/* Alerts strip */}
+      {alerts.filter(a => a.color === '#A32D2D' || a.color === '#BA7517').length > 0 && (
+        <div className="mb-5 rounded-xl px-4 py-3 flex items-center gap-3 flex-wrap" style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)' }}>
+          <span className="text-[11px] font-bold" style={{ color: '#F87171' }}>🔴 {alerts.filter(a => a.color === '#A32D2D' || a.color === '#BA7517').length} items need attention</span>
+          <span className="text-[11px]" style={{ color: '#9CA3AF' }}>{alerts.filter(a => a.color !== '#0F6E56').map(a => a.title).join(' · ')}</span>
+          <Link href="/admin/followup" className="ml-auto text-[11px] font-semibold px-3 py-1 rounded-lg" style={{ background: 'rgba(239,68,68,0.15)', color: '#F87171' }}>View all →</Link>
+        </div>
+      )}
+
+      {/* KPI Grid */}
+      <div className="grid gap-3 mb-5" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))' }}>
+        {[
+          { label: 'Active Buyers', value: activeBuyerCount, sub: '30-day window', color: '#60A5FA', href: '/admin/buyers' },
+          { label: 'Live Projects', value: projectsLiveCount, sub: '67 in queue', color: '#A78BFA', href: '/admin/projects' },
+          { label: 'Commission Earned', value: `₹${formatLakh(totalEarned)}`, sub: 'All time', color: '#34D399', href: '/admin/revenue' },
+          { label: 'Pending Visits', value: pendingVisitCount, sub: 'Unconfirmed', color: pendingVisitCount > 0 ? '#F87171' : '#34D399', href: '/admin/followup' },
+          { label: 'RERA Alerts', value: reraAlertCount, sub: 'Within 90 days', color: reraAlertCount > 0 ? '#FBBF24' : '#34D399', href: '/admin/intelligence' },
+          { label: 'Hot Pipeline', value: activeStageCount, sub: 'Comparison+', color: '#FBBF24', href: '/admin/buyers' },
+          { label: 'This Week Chats', value: weekChatCount, sub: `${qualifiedThisWeek} qualified`, color: '#60A5FA', href: '/admin/buyers' },
+          { label: "Today's Chats", value: todayConversations, sub: 'Active today', color: '#A78BFA', href: '/admin/buyers' },
+        ].map((card, i) => (
+          <Link key={i} href={card.href} className="block rounded-xl px-4 py-3 transition-all hover:scale-[1.02]" style={{ background: '#111827', border: '1px solid rgba(255,255,255,0.07)' }}>
+            <p className="text-[10px] font-semibold uppercase tracking-wider mb-2" style={{ color: '#6B7280' }}>{card.label}</p>
+            <p className="text-[24px] font-bold leading-none mb-1" style={{ color: card.color }}>{card.value}</p>
+            <p className="text-[10px]" style={{ color: '#4B5563' }}>{card.sub}</p>
+          </Link>
+        ))}
       </div>
 
-      {/* Priority Actions: Follow-up Queue + System Alerts */}
-      <div className="grid grid-cols-2 gap-3 mb-3">
-        <div className="bg-white border border-black/[0.08] rounded-xl p-4">
-          <p className="text-[12px] font-medium text-[#1A1A2E] mb-3">Follow-Up Queue</p>
-          {urgentSessions.length === 0 ? (
-            <p className="text-[12px] text-[#52525B]">No follow-ups pending.</p>
-          ) : (
-            <div>
-              {urgentSessions.map(session => {
-                const { label, color } = getUrgency(new Date(session.lastMessageAt))
-                const days = daysBetween(new Date(session.lastMessageAt))
-                const dotColor = color === 'red' ? '#DC2626' : color === 'amber' ? '#D97706' : '#0F6E56'
-                return (
-                  <Link key={session.id} href={`/admin/buyers/${session.id}`}>
-                    <div className="flex items-center gap-3 py-2 border-b border-[#F4F4F5] last:border-0 hover:bg-[#F8FAFC] -mx-1 px-1 rounded cursor-pointer">
-                      <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: dotColor }} />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[12px] font-medium text-[#1A1A2E] truncate">
-                          {session.buyerPersona ?? 'Unknown'} buyer
-                          {session.buyerConfig && ` · ${session.buyerConfig}`}
-                        </p>
-                        <p className="text-[10px] text-[#52525B]">
-                          {getStageLabel(session.buyerStage)} · {days}d ago
-                        </p>
-                      </div>
-                      <Badge label={label} color={color} />
-                    </div>
-                  </Link>
-                )
-              })}
-              <Link href="/admin/followup" className="block mt-2 text-[11px] text-[#185FA5] hover:underline">
-                View all →
-              </Link>
-            </div>
-          )}
-        </div>
+      {/* Bottom grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
 
-        <div className="bg-white border border-black/[0.08] rounded-xl p-4">
-          <p className="text-[12px] font-medium text-[#1A1A2E] mb-3">System Alerts</p>
-          <div className="space-y-3">
-            {alerts.map((a, i) => (
-              <div key={i} className="flex items-start gap-2.5">
-                <div
-                  className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 text-[10px] font-semibold"
-                  style={{ backgroundColor: a.bg, color: a.color }}
-                >
-                  {a.icon}
-                </div>
-                <div>
-                  <p className="text-[11px] font-medium text-[#1A1A2E]">{a.title}</p>
-                  <p className="text-[10px] text-[#52525B]">{a.sub}</p>
-                </div>
-              </div>
-            ))}
+        {/* Pipeline funnel */}
+        <div className="rounded-2xl p-4" style={{ background: '#111827', border: '1px solid rgba(255,255,255,0.07)' }}>
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-[13px] font-semibold text-white">Pipeline</p>
+            <Link href="/admin/buyers" className="text-[11px] font-medium" style={{ color: '#60A5FA' }}>Open CRM →</Link>
           </div>
-        </div>
-      </div>
-
-      {/* This Week Activity — 4 stats */}
-      <div className="grid grid-cols-4 gap-2.5 mb-3">
-        <StatPill label="New conversations this week" value={weekChatCount} color="#185FA5" />
-        <StatPill label="Site visits this week" value={weekVisitCount} color="#0F6E56" />
-        <StatPill label="Buyers qualified this week" value={qualifiedThisWeek} color="#BA7517" />
-        <StatPill label="Active pipeline sessions" value={activeStageCount} color="#7C3AED" />
-      </div>
-
-      {/* Buyer Pipeline Funnel + Pipeline Snapshot Table */}
-      <div className="grid grid-cols-5 gap-3">
-        <div className="col-span-2 bg-white border border-black/[0.08] rounded-xl p-4">
-          <p className="text-[12px] font-medium text-[#1A1A2E] mb-3">Buyer Pipeline</p>
-          <div className="space-y-2">
+          <div className="space-y-2.5">
             {stageOrder.map(stage => {
               const count = stageCounts[stage] ?? 0
-              const pct = (count / maxStageCount) * 100
-              const isHot = ['comparison', 'visit_trigger', 'pre_visit', 'post_visit'].includes(stage)
+              const hot = ['comparison', 'visit_trigger', 'pre_visit', 'post_visit'].includes(stage)
+              const barColor = stage === 'decision' ? '#34D399' : hot ? '#FBBF24' : '#3B82F6'
+              const width = Math.max((count / maxStageCount) * 100, count > 0 ? 4 : 0)
               return (
                 <div key={stage} className="flex items-center gap-2">
-                  <span className="text-[10px] text-[#52525B] w-24 shrink-0">{getStageLabel(stage)}</span>
-                  <div className="flex-1 h-2 bg-[#E4E4E7] rounded-full">
-                    <div
-                      className="h-full rounded-full"
-                      style={{
-                        width: `${pct}%`,
-                        backgroundColor: isHot ? '#BA7517' : '#185FA5',
-                      }}
-                    />
+                  <span className="text-[10px] w-24 flex-shrink-0" style={{ color: '#9CA3AF' }}>{getStageLabel(stage)}</span>
+                  <div className="flex-1 rounded-full h-1.5" style={{ background: 'rgba(255,255,255,0.06)' }}>
+                    <div className="h-1.5 rounded-full transition-all" style={{ width: `${width}%`, background: barColor }} />
                   </div>
-                  <span className="text-[11px] font-mono text-[#1A1A2E] w-5 text-right">{count}</span>
+                  <span className="text-[11px] font-semibold w-5 text-right" style={{ color: hot && count > 0 ? '#FBBF24' : '#6B7280' }}>{count}</span>
                 </div>
               )
             })}
           </div>
         </div>
 
-        <div className="col-span-3 bg-white border border-black/[0.08] rounded-xl p-4">
-          <p className="text-[12px] font-medium text-[#1A1A2E] mb-3">Pipeline Snapshot</p>
-          {pipelineSessions.length === 0 ? (
-            <p className="text-[12px] text-[#52525B]">No buyers in comparison or visit stages.</p>
-          ) : (
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-[#F4F4F5]">
-                  <th className="text-left text-[10px] text-[#52525B] font-medium pb-2">Buyer</th>
-                  <th className="text-left text-[10px] text-[#52525B] font-medium pb-2">Stage</th>
-                  <th className="text-right text-[10px] text-[#52525B] font-medium pb-2">Budget</th>
-                  <th className="text-right text-[10px] text-[#52525B] font-medium pb-2">Est. Commission</th>
-                </tr>
-              </thead>
-              <tbody>
-                {pipelineSessions.map(s => {
-                  const commission = s.buyerBudget ? s.buyerBudget * 0.015 : null
-                  const stageColor: 'blue' | 'amber' | 'gray' =
-                    s.buyerStage === 'comparison' ? 'blue'
-                    : s.buyerStage.includes('visit') ? 'amber'
-                    : 'gray'
-                  return (
-                    <tr key={s.id} className="border-b border-[#F4F4F5] last:border-0">
-                      <td className="py-1.5">
-                        <Link href={`/admin/buyers/${s.id}`} className="hover:text-[#185FA5]">
-                          <span className="text-[11px] font-medium text-[#1A1A2E]">
-                            {s.buyerPersona ?? 'Unknown'}
-                          </span>
-                          {s.buyerConfig && (
-                            <span className="text-[10px] text-[#71717A]"> · {s.buyerConfig}</span>
-                          )}
-                        </Link>
-                      </td>
-                      <td className="py-1.5">
-                        <Badge label={getStageLabel(s.buyerStage)} color={stageColor} />
-                      </td>
-                      <td className="py-1.5 text-right text-[11px] font-mono text-[#1A1A2E]">
-                        {s.buyerBudget ? `₹${formatLakh(s.buyerBudget)}` : '—'}
-                      </td>
-                      <td className="py-1.5 text-right text-[11px] font-semibold font-mono"
-                        style={{ color: commission ? '#0F6E56' : '#71717A' }}>
-                        {commission ? `₹${formatLakh(commission)}` : '—'}
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-              {pipelineTableTotal > 0 && (
-                <tfoot>
-                  <tr className="border-t-2 border-[#E4E4E7]">
-                    <td colSpan={3} className="pt-2 text-[10px] text-[#52525B]">
-                      Total pipeline commission
-                    </td>
-                    <td className="pt-2 text-right text-[12px] font-bold font-mono" style={{ color: '#0F6E56' }}>
-                      ₹{formatLakh(pipelineTableTotal)}
-                    </td>
-                  </tr>
-                </tfoot>
-              )}
-            </table>
-          )}
+        {/* Follow-up queue */}
+        <div className="rounded-2xl p-4" style={{ background: '#111827', border: '1px solid rgba(255,255,255,0.07)' }}>
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-[13px] font-semibold text-white">Follow-up Queue</p>
+            <Link href="/admin/followup" className="text-[11px] font-medium" style={{ color: '#60A5FA' }}>All →</Link>
+          </div>
+          <div className="space-y-2">
+            {urgentSessions.length === 0 ? (
+              <p className="text-[12px]" style={{ color: '#4B5563' }}>No urgent follow-ups</p>
+            ) : urgentSessions.slice(0, 5).map(s => {
+              const { label: urgencyLabel, color: urgencyColor } = getUrgency(s.lastMessageAt)
+              const isRed = urgencyColor === 'red'
+              return (
+                <Link key={s.id} href={`/admin/buyers/${s.id}`} className="flex items-center justify-between rounded-lg px-3 py-2 transition-colors hover:bg-white/5" style={{ background: isRed ? 'rgba(239,68,68,0.08)' : 'rgba(245,158,11,0.06)' }}>
+                  <div>
+                    <p className="text-[11px] font-medium" style={{ color: isRed ? '#F87171' : '#FCD34D' }}>
+                      {s.buyerConfig ?? 'Buyer'} · {getStageLabel(s.buyerStage)}
+                    </p>
+                    <p className="text-[10px]" style={{ color: '#6B7280' }}>{daysBetween(s.lastMessageAt)}d silent</p>
+                  </div>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: isRed ? 'rgba(239,68,68,0.2)' : 'rgba(245,158,11,0.15)', color: isRed ? '#F87171' : '#FBBF24' }}>
+                    {urgencyLabel}
+                  </span>
+                </Link>
+              )
+            })}
+          </div>
         </div>
+
+        {/* Pipeline snapshot */}
+        <div className="rounded-2xl p-4" style={{ background: '#111827', border: '1px solid rgba(255,255,255,0.07)' }}>
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-[13px] font-semibold text-white">Hot Buyers</p>
+            <span className="text-[11px]" style={{ color: '#6B7280' }}>~₹{formatLakh(pipelineTableTotal)} pipeline</span>
+          </div>
+          <div className="space-y-1.5">
+            {pipelineSessions.length === 0 ? (
+              <p className="text-[12px]" style={{ color: '#4B5563' }}>No active pipeline</p>
+            ) : pipelineSessions.slice(0, 6).map(s => (
+              <Link key={s.id} href={`/admin/buyers/${s.id}`} className="flex items-center justify-between rounded-lg px-3 py-2 hover:bg-white/5 transition-colors">
+                <div>
+                  <p className="text-[11px] font-medium text-white">{s.buyerConfig ?? '—'} · {getStageLabel(s.buyerStage)}</p>
+                  <p className="text-[10px]" style={{ color: '#6B7280' }}>{s.buyerPersona ?? 'buyer'}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-[11px] font-semibold" style={{ color: '#34D399' }}>
+                    {s.buyerBudget ? `₹${formatLakh(s.buyerBudget * 0.015)}` : '—'}
+                  </p>
+                  <p className="text-[9px]" style={{ color: '#4B5563' }}>est. commission</p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+
       </div>
     </div>
   )

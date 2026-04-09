@@ -352,7 +352,7 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
           <div className="relative">
             <button
               type="button"
-              onClick={() => setShowArtifactMenu(prev => !prev)}
+              onClick={e => { e.stopPropagation(); setShowArtifactMenu(prev => !prev) }}
               className="w-9 h-9 bg-white border border-[#E7E5E4] rounded-xl flex items-center justify-center shadow-sm relative"
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1B4F8A" strokeWidth="2">
