@@ -3,6 +3,20 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
+function ScoreField({ label, max, value, onChange }: { label: string; max: number; value: number; onChange: (v: number) => void }) {
+  return (
+    <div>
+      <div className="flex justify-between mb-1">
+        <label className="text-[11px] text-[#52525B]">{label}</label>
+        <span className="text-[11px] font-medium text-[#1B3A6B]">{value}/{max}</span>
+      </div>
+      <input type="range" min={0} max={max} value={value}
+        onChange={e => onChange(Number(e.target.value))}
+        className="w-full accent-[#1B3A6B]" />
+    </div>
+  )
+}
+
 export default function NewBuilderPage() {
   const router = useRouter()
   const [saving, setSaving] = useState(false)
@@ -39,18 +53,6 @@ export default function NewBuilderPage() {
     setSaving(false)
   }
 
-  const ScoreField = ({ label, field, max }: { label: string; field: string; max: number }) => (
-    <div>
-      <div className="flex justify-between mb-1">
-        <label className="text-[11px] text-[#52525B]">{label}</label>
-        <span className="text-[11px] font-medium text-[#1B3A6B]">{(form as any)[field]}/{max}</span>
-      </div>
-      <input type="range" min={0} max={max} value={(form as any)[field]}
-        onChange={e => set(field, Number(e.target.value))}
-        className="w-full accent-[#1B3A6B]" />
-    </div>
-  )
-
   return (
     <div className="min-h-screen bg-[#EFEFED] p-6">
       <div className="max-w-xl mx-auto">
@@ -70,11 +72,11 @@ export default function NewBuilderPage() {
             </div>
             <div className="bg-[#F8F8F7] rounded-lg p-4 space-y-3">
               <p className="text-[11px] font-medium text-[#1B3A6B] mb-2">Trust Scores</p>
-              <ScoreField label="Delivery Score" field="deliveryScore" max={30} />
-              <ScoreField label="RERA Score" field="reraScore" max={20} />
-              <ScoreField label="Quality Score" field="qualityScore" max={20} />
-              <ScoreField label="Financial Score" field="financialScore" max={15} />
-              <ScoreField label="Responsiveness Score" field="responsivenessScore" max={15} />
+              <ScoreField label="Delivery Score" max={30} value={form.deliveryScore} onChange={v => set('deliveryScore', v)} />
+              <ScoreField label="RERA Score" max={20} value={form.reraScore} onChange={v => set('reraScore', v)} />
+              <ScoreField label="Quality Score" max={20} value={form.qualityScore} onChange={v => set('qualityScore', v)} />
+              <ScoreField label="Financial Score" max={15} value={form.financialScore} onChange={v => set('financialScore', v)} />
+              <ScoreField label="Responsiveness Score" max={15} value={form.responsivenessScore} onChange={v => set('responsivenessScore', v)} />
               <div className="flex items-center justify-between pt-2 border-t border-[#E0DFDD]">
                 <span className="text-[12px] text-[#52525B]">Trust Score</span>
                 <span className="text-[16px] font-bold text-[#1B3A6B]">{trust}/100 — Grade {grade}</span>
