@@ -6,9 +6,16 @@ import { VisitBooking } from './artifacts/VisitBooking'
 
 type ProjectType = {
   id: string; projectName: string; builderName: string
-  pricePerSqft: number; minPrice: number; maxPrice: number
+  pricePerSqft: number | null; minPrice: number; maxPrice: number
   possessionDate: Date | string; constructionStatus: string
   microMarket: string
+  decisionTag?: string | null
+  honestConcern?: string | null
+  analystNote?: string | null
+  possessionFlag?: string | null
+  configurations?: string | null
+  bankApprovals?: string | null
+  priceNote?: string | null
 }
 
 type Artifact = { type: 'project_card' | 'visit_booking'; data: ProjectType }
