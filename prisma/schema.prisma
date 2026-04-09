@@ -21,6 +21,7 @@ model Project {
   latitude            Float
   longitude           Float
   constructionStatus  String
+  priceNote           String?
   unitTypes           String[]
   isActive            Boolean        @default(true)
   locationScore       Float          @default(50)

@@ -22,7 +22,8 @@
       "Bash(curl -s https://buyerchat-ten.vercel.app/api/builders)",
       "Bash(grep -v \"node_modules\\\\|.next\\\\|//.*fetch\")",
       "Bash(grep:*)",
-      "Bash(wait)"
+      "Bash(wait)",
+      "Bash(node:*)"
     ]
   }
 }
