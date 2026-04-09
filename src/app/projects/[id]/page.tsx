@@ -345,7 +345,7 @@ function ProjectDetailClient({ project }: { project: ProjectDetail }) {
                 ₹{formatPrice(project.minPrice)} – ₹{formatPrice(project.maxPrice)}
               </p>
               <p className="font-mono text-sm text-[#8888a8] mt-1">
-                ₹{project.pricePerSqft.toLocaleString('en-IN')}/sqft
+                {project.pricePerSqft && project.pricePerSqft > 0 ? `₹${project.pricePerSqft.toLocaleString('en-IN')}/sqft` : 'Price on request'}
               </p>
 
               <div className="mt-6 grid grid-cols-2 gap-3">

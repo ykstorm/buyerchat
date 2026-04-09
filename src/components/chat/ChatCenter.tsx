@@ -291,10 +291,9 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
                   dragElastic={0.2}
                   onDragEnd={(_: any, info: any) => { if (info.offset.y > 80) onToggleArtifact?.() }}
                   className="bg-white rounded-t-2xl shadow-[0_-8px_40px_rgba(0,0,0,0.12)] overflow-hidden"
-                  style={{ touchAction: 'none' }}
                 >
                   {/* Handle */}
-                  <div className="flex justify-center pt-3 pb-1 cursor-grab active:cursor-grabbing" onClick={onToggleArtifact}>
+                  <div className="flex justify-center pt-3 pb-1 cursor-grab active:cursor-grabbing" style={{ touchAction: 'none' }} onClick={onToggleArtifact}>
                     <div className="w-10 h-1 rounded-full bg-[#E7E5E4]" />
                   </div>
                   {/* Nav bar */}

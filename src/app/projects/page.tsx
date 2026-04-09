@@ -134,7 +134,7 @@ function ProjectCard({ project, index }: { project: Project; index: number }) {
               : 'Price on request'}
         </div>
         <div className="font-sans text-[11px] text-[#636380] mt-0.5">
-          ₹{project.pricePerSqft.toLocaleString('en-IN')}/sqft · {project.unitTypes.join(', ')}
+          {project.pricePerSqft > 0 ? `₹${project.pricePerSqft.toLocaleString('en-IN')}/sqft · ` : ''}{project.unitTypes.join(', ')}
         </div>
 
         <div className="mt-3 grid grid-cols-2 gap-2">
