@@ -256,6 +256,7 @@ function ProjectDetailClient({ project }: { project: ProjectDetail }) {
     : []
 
   return (
+    <>
     <div className="min-h-screen bg-[#09090b] pt-28 pb-24">
       <div className="max-w-5xl mx-auto px-6">
         <motion.div
@@ -522,14 +523,15 @@ function ProjectDetailClient({ project }: { project: ProjectDetail }) {
           </div>
         </div>
       </div>
-      <VisitBookingModal
-        projectId={project.id}
-        projectName={project.projectName} 
-        builderName={project.builderName}
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-      />
     </div>
+    <VisitBookingModal
+      projectId={project.id}
+      projectName={project.projectName}
+      builderName={project.builderName}
+      isOpen={isModalOpen}
+      onClose={() => setIsModalOpen(false)}
+    />
+    </>
   )
 }
 

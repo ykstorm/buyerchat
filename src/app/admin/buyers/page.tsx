@@ -237,7 +237,7 @@ export default async function BuyersPage({
                                 {getPersonaLabel(session.buyerPersona).charAt(0)}
                               </div>
                               <span className="font-medium text-[#1A1A2E] hover:text-[#185FA5] whitespace-nowrap">
-                                {session.id.slice(0, 8)}…
+                                {session.customName || (session.buyerBudget ? `₹${Math.round(session.buyerBudget/100000)}L · ${session.buyerConfig ?? ''}` : session.id.slice(0, 8))}…
                               </span>
                             </div>
                           </Link>
