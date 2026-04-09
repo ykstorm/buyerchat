@@ -33,6 +33,7 @@ export async function buildContextPayload() {
           possessionFlag: true,
           configurations: true,
           bankApprovals: true,
+          priceNote: true,
           carpetSqftMin: true,
           sbaSqftMin: true,
           builder: {
@@ -98,6 +99,7 @@ export async function buildContextPayload() {
         possessionFlag: p.possessionFlag ?? null,
         configurations: p.configurations ?? null,
         bankApprovals: p.bankApprovals ?? null,
+        priceNote: p.priceNote ?? null,
         carpetSqftMin: p.carpetSqftMin ?? null,
         sbaSqftMin: p.sbaSqftMin ?? null,
         urgency,

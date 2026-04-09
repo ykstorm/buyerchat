@@ -216,7 +216,6 @@ export default function ChatClient({
         userImage={userImage}
         onNewChat={newChat}
         onLoadSession={loadSession}
-        projects={projects}
       />
 
       <ChatCenter

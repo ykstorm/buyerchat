@@ -176,7 +176,7 @@ export default function DashboardPage() {
                       <p className="text-[12px] text-[#78716C]">{visit.builderName}</p>
                     </div>
                     <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${STATUS_STYLES[visit.status] ?? STATUS_STYLES.pending}`}>
-                      {visit.status.charAt(0).toUpperCase() + visit.status.slice(1)}
+                      {(visit.status ?? 'pending').charAt(0).toUpperCase() + (visit.status ?? 'pending').slice(1)}
                     </span>
                   </div>
                   <p className="text-[12px] text-[#78716C] mb-1">

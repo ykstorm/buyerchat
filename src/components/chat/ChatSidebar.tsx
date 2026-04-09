@@ -10,9 +10,6 @@ type SessionItem = {
   buyerConfig: string | null; lastMessageAt: string; firstMessage: string
 }
 
-type ProjectItem = {
-  id: string; projectName: string; pricePerSqft: number; microMarket: string
-}
 
 const STAGE_COLORS: Record<string, string> = {
   intent_capture: 'bg-[#F4F4F5] text-[#52525B]',
@@ -235,77 +232,17 @@ function SwipeableSessionItem({ session, onLoad, onClose, menuOpen, setMenuOpen,
   )
 }
 
-function SwipeableProjectItem({ project, isStarred, onStar }: any) {
-  const x = useMotionValue(0)
-  const starOpacity = useTransform(x, [30, 60], [0, 1])
-  const starScale = useTransform(x, [30, 70], [0.5, 1])
-
-  const handleDragEnd = (_: any, info: any) => {
-    if (info.offset.x > 60) {
-      onStar(project.id)
-    }
-    animate(x, 0, { type: 'spring', stiffness: 400, damping: 30 })
-  }
-
-  return (
-    <div className="relative overflow-hidden rounded-lg mb-0.5">
-      {/* Star background */}
-      <motion.div
-        style={{ opacity: starOpacity }}
-        className="absolute inset-0 bg-[#FEF9C3] flex items-center pl-4 rounded-lg"
-      >
-        <motion.div style={{ scale: starScale }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="#F59E0B" stroke="#F59E0B" strokeWidth="2">
-            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-          </svg>
-        </motion.div>
-      </motion.div>
-
-      <motion.div
-        drag="x"
-        dragConstraints={{ left: 0, right: 80 }}
-        dragElastic={0.1}
-        onDragEnd={handleDragEnd}
-        style={{ x }}
-        className="relative px-2 py-2 rounded-lg hover:bg-[#F7F6F4] transition-colors flex items-center gap-2"
-      >
-        <div className="flex-1 min-w-0">
-          <p className="text-[12px] font-medium text-[#1C1917] truncate">{project.projectName}</p>
-          <p className="text-[10px] text-[#A8A29E]">₹{project.pricePerSqft?.toLocaleString('en-IN')}/sqft · {project.microMarket}</p>
-        </div>
-        <button
-          type="button"
-          onMouseDown={e => { e.preventDefault(); e.stopPropagation() }}
-          onClick={e => { e.stopPropagation(); onStar(project.id) }}
-          className="flex-shrink-0 flex items-center justify-center"
-          title={isStarred ? 'Unstar' : 'Star'}
-        >
-          {isStarred ? (
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="#F59E0B" stroke="#F59E0B" strokeWidth="2">
-              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-            </svg>
-          ) : (
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#A8A29E" strokeWidth="2">
-              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-            </svg>
-          )}
-        </button>
-      </motion.div>
-    </div>
-  )
-}
 
 export default function ChatSidebar({
-  open, onClose, userId, userName, userImage, onNewChat, onLoadSession, projects = []
+  open, onClose, userId, userName, userImage, onNewChat, onLoadSession
 }: {
-  open: boolean; onClose: () => void; userId: string | null; userName: string | null; userImage: string | null; onNewChat: () => void; onLoadSession: (sessionId: string) => void; projects?: ProjectItem[]
+  open: boolean; onClose: () => void; userId: string | null; userName: string | null; userImage: string | null; onNewChat: () => void; onLoadSession: (sessionId: string) => void
 }) {
   const [sessions, setSessions] = useState<SessionItem[]>([])
   const [searchQuery, setSearchQuery] = useState('')
   const [hoveredSession, setHoveredSession] = useState<string | null>(null)
   const [menuOpen, setMenuOpen] = useState<string | null>(null)
-  const [starredProjects, setStarredProjects] = useState<string[]>([])
-  const [renamingSession, setRenamingSession] = useState<string | null>(null)
+const [renamingSession, setRenamingSession] = useState<string | null>(null)
   const [renameValue, setRenameValue] = useState('')
   const [chatNames, setChatNames] = useState<Record<string, string>>({})
 
@@ -344,15 +281,7 @@ export default function ChatSidebar({
     (s.buyerConfig && s.buyerConfig.toLowerCase().includes(searchQuery.toLowerCase()))
   )
 
-  const sortedProjects = [...projects].sort((a, b) => {
-    const aStarred = starredProjects.includes(a.id)
-    const bStarred = starredProjects.includes(b.id)
-    if (aStarred && !bStarred) return -1
-    if (!aStarred && bStarred) return 1
-    return 0
-  })
-
-  const sidebar = (
+const sidebar = (
     <div className="w-60 h-full bg-[#FAFAF9] border-r border-[#EEECE8] flex flex-col flex-shrink-0 relative grain">
       {/* Grain overlay */}
       <div className="absolute inset-0 opacity-[0.015] pointer-events-none"
@@ -375,7 +304,7 @@ export default function ChatSidebar({
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#A8A29E" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
           <input
             type="text"
-            placeholder="Search chats or projects..."
+            placeholder="Search chats..."
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
             className="bg-transparent text-[12px] text-[#1C1917] placeholder-[#A8A29E] outline-none w-full"
@@ -385,34 +314,6 @@ export default function ChatSidebar({
 
       {/* Scrollable content */}
       <div className="flex-1 overflow-y-auto px-2 py-2 scrollbar-none">
-
-        {/* Projects section */}
-        {sortedProjects.length > 0 && (
-          <div className="px-1 mb-2 mt-1">
-            <p className="text-[10px] font-semibold text-[#A8A29E] uppercase tracking-[0.08em] mb-2 px-1">Projects</p>
-            {sortedProjects
-              .filter(p => !searchQuery || p.projectName.toLowerCase().includes(searchQuery.toLowerCase()))
-              .map(p => (
-                <SwipeableProjectItem
-                  key={p.id}
-                  project={p}
-                  isStarred={starredProjects.includes(p.id)}
-                  onStar={(id: string) => {
-                    const isCurrentlyStarred = starredProjects.includes(id)
-                    setStarredProjects(prev =>
-                      isCurrentlyStarred ? prev.filter(x => x !== id) : [...prev, id]
-                    )
-                    fetch('/api/saved', {
-                      method: isCurrentlyStarred ? 'DELETE' : 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ projectId: id })
-                    }).catch(() => {})
-                  }}
-                />
-              ))
-            }
-          </div>
-        )}
 
         {/* Chats section */}
         {filteredSessions.length > 0 && (
