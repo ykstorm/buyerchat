@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useEffect, FormEvent } from 'react'
+import { useState, useCallback, useEffect, useRef, FormEvent } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import ChatSidebar from '@/components/chat/ChatSidebar'
 import ChatCenter, { type Message } from '@/components/chat/ChatCenter'
@@ -44,6 +44,8 @@ export default function ChatClient({
   const [showArtifact, setShowArtifact] = useState(true)
   const [artifactHistory, setArtifactHistory] = useState<Artifact[]>([])
   const [artifactIndex, setArtifactIndex] = useState(-1)
+  const artifactHistoryRef = useRef<Artifact[]>([])
+  const artifactIndexRef = useRef<number>(-1)
 
   useEffect(() => { if (artifact) setShowArtifact(true) }, [artifact])
 
@@ -118,6 +120,8 @@ export default function ChatClient({
         const newHistory1 = [...artifactHistory.slice(0, artifactIndex + 1), newArtifact1]
         setArtifactHistory(newHistory1)
         setArtifactIndex(newHistory1.length - 1)
+        artifactHistoryRef.current = newHistory1
+        artifactIndexRef.current = newHistory1.length - 1
         setCurrentArtifact(newArtifact1)
         setShowArtifact(true)
       } else if (found) {
@@ -125,6 +129,8 @@ export default function ChatClient({
         const newHistory2 = [...artifactHistory.slice(0, artifactIndex + 1), newArtifact2]
         setArtifactHistory(newHistory2)
         setArtifactIndex(newHistory2.length - 1)
+        artifactHistoryRef.current = newHistory2
+        artifactIndexRef.current = newHistory2.length - 1
         setCurrentArtifact(newArtifact2)
         setShowArtifact(true)
       }
@@ -155,19 +161,25 @@ export default function ChatClient({
   }, [sendMessage])
 
   const goArtifactBack = () => {
-    if (artifactIndex > 0) {
-      const newIndex = artifactIndex - 1
+    const idx = artifactIndexRef.current
+    const hist = artifactHistoryRef.current
+    if (idx > 0) {
+      const newIndex = idx - 1
+      artifactIndexRef.current = newIndex
       setArtifactIndex(newIndex)
-      setCurrentArtifact(artifactHistory[newIndex])
+      setCurrentArtifact(hist[newIndex])
       setShowArtifact(true)
     }
   }
 
   const goArtifactForward = () => {
-    if (artifactIndex < artifactHistory.length - 1) {
-      const newIndex = artifactIndex + 1
+    const idx = artifactIndexRef.current
+    const hist = artifactHistoryRef.current
+    if (idx < hist.length - 1) {
+      const newIndex = idx + 1
+      artifactIndexRef.current = newIndex
       setArtifactIndex(newIndex)
-      setCurrentArtifact(artifactHistory[newIndex])
+      setCurrentArtifact(hist[newIndex])
       setShowArtifact(true)
     }
   }
