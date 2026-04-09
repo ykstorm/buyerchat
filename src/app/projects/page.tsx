@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import Link from 'next/link'
 import { motion, useInView } from 'framer-motion'
 import { useRouter } from 'next/navigation'
 
@@ -157,7 +158,7 @@ function ProjectCard({ project, index }: { project: Project; index: number }) {
           <div className="w-1.5 h-1.5 rounded-full bg-[#3de8a0]" />
           <span className="font-sans text-[11px] text-[#636380]">RERA Verified</span>
         </div>
-        <span className="font-sans text-xs text-[#3de8a0] hover:underline">View details →</span>
+        <Link href={`/projects/${project.id}`} className="font-sans text-xs text-[#3de8a0] hover:underline">View details →</Link>
       </div>
     </motion.div>
   )
@@ -269,6 +270,9 @@ export default function ProjectsPage() {
           <div className="font-sans text-[10px] font-medium tracking-[0.12em] uppercase text-[#3de8a0] mb-3">
             VERIFIED PROJECTS
           </div>
+          <Link href="/chat" className="inline-flex items-center gap-1 text-[11px] text-[#636380] hover:text-[#3de8a0] mb-4 transition-colors">
+            ← Back to chat
+          </Link>
           <h1 className="font-serif text-5xl font-bold text-[#e0e0ea] leading-tight tracking-tight">
             Active projects in South Bopal & Shela
           </h1>

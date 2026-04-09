@@ -147,7 +147,7 @@ async function main() {
             builderName,
             microMarket: row.zone || 'Shela',
             availableUnits: safeInt(row.units) ?? 0,
-            pricePerSqft: safeFloat(row.bsp_sqft) ?? (row.all_in_lakh ? parseFloat(row.all_in_lakh) * 100000 / 1000 : 0),
+            pricePerSqft: safeFloat(row.bsp_sqft) ?? 0,
             minPrice: row.min_price_lakh ? (parseFloat(row.min_price_lakh) * 100000) : 0,
             maxPrice: row.max_price_lakh ? (parseFloat(row.max_price_lakh) * 100000) : 0,
             possessionDate: parsePossessionDate(row.possession_date),
