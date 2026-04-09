@@ -37,6 +37,7 @@ interface FilterState {
 }
 
 function formatPrice(price: number): string {
+  if (!price || price === 0) return '—'
   if (price >= 10000000) return (price / 10000000).toFixed(1) + 'Cr'
   if (price >= 100000) return (price / 100000).toFixed(0) + 'L'
   return price.toLocaleString('en-IN')
@@ -125,7 +126,11 @@ function ProjectCard({ project, index }: { project: Project; index: number }) {
         <div className="border-t border-white/[0.06] my-4" />
 
         <div className="font-sans text-base font-semibold text-[#e0e0ea]">
-          ₹{formatPrice(project.minPrice)} – ₹{formatPrice(project.maxPrice)}
+          {project.minPrice && project.maxPrice && project.minPrice > 0 && project.maxPrice > 0
+            ? `₹${formatPrice(project.minPrice)} – ₹${formatPrice(project.maxPrice)}`
+            : project.pricePerSqft > 0
+              ? `₹${project.pricePerSqft.toLocaleString('en-IN')}/sqft`
+              : 'Price on request'}
         </div>
         <div className="font-sans text-[11px] text-[#636380] mt-0.5">
           ₹{project.pricePerSqft.toLocaleString('en-IN')}/sqft · {project.unitTypes.join(', ')}

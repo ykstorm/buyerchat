@@ -1,7 +1,7 @@
 'use client'
 import type React from 'react'
 
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { FormEvent, useRef, useEffect, useState } from 'react'
 import ReactMarkdown from 'react-markdown'
 import ProjectCard from './artifacts/ProjectCard'
@@ -63,7 +63,7 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
   }, [messages, isLoading])
 
   return (
-    <div className="flex-1 flex flex-col h-full relative overflow-hidden bg-[#FAFAF8]">
+    <div className="flex-1 flex flex-col h-dvh relative overflow-hidden bg-[#FAFAF8]">
       {loadingSession ? (
         <div className="flex-1 flex items-center justify-center">
           <motion.div
@@ -262,63 +262,95 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
         </div>
       )}
 
-      {/* Mobile artifact card — renders above input bar in normal flow */}
-      {artifact && (
-        <div className="lg:hidden flex-shrink-0 border-t border-[#E7E5E4]">
-          {showArtifact ? (
-            <div className="bg-white border-t-2 border-[#1B4F8A] relative shadow-[0_-4px_20px_rgba(0,0,0,0.06)]">
-              <div className="pt-3 pb-1 flex justify-center">
-                <div className="w-10 h-1 rounded-full bg-[#E7E5E4]" />
-              </div>
-              {(canGoBack || canGoForward) && (
-                <div className="flex items-center gap-2 px-4 py-1.5 border-b border-[#F4F3F0]">
-                  <button type="button" onClick={onArtifactBack} disabled={!canGoBack}
-                    className="text-[11px] text-[#78716C] disabled:text-[#D6D3D1] hover:text-[#1C1917] disabled:cursor-not-allowed flex items-center gap-1">
-                    ← Back
-                  </button>
-                  <span className="text-[#E7E5E4]">|</span>
-                  <button type="button" onClick={onArtifactForward} disabled={!canGoForward}
-                    className="text-[11px] text-[#78716C] disabled:text-[#D6D3D1] hover:text-[#1C1917] disabled:cursor-not-allowed flex items-center gap-1">
-                    Forward →
-                  </button>
+      {/* Mobile artifact — smooth bottom sheet */}
+      <AnimatePresence>
+        {artifact && (
+          <motion.div
+            className="lg:hidden fixed inset-x-0 bottom-0 z-30"
+            style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
+          >
+            {showArtifact ? (
+              <>
+                {/* Backdrop */}
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="fixed inset-0 bg-black/20 z-[-1]"
+                  onClick={onToggleArtifact}
+                />
+                {/* Sheet */}
+                <motion.div
+                  initial={{ y: '100%' }}
+                  animate={{ y: 0 }}
+                  exit={{ y: '100%' }}
+                  transition={{ type: 'spring', stiffness: 400, damping: 40 }}
+                  drag="y"
+                  dragConstraints={{ top: 0 }}
+                  dragElastic={0.2}
+                  onDragEnd={(_: any, info: any) => { if (info.offset.y > 80) onToggleArtifact() }}
+                  className="bg-white rounded-t-2xl shadow-[0_-8px_40px_rgba(0,0,0,0.12)] overflow-hidden"
+                >
+                  {/* Handle */}
+                  <div className="flex justify-center pt-3 pb-1 cursor-grab active:cursor-grabbing" onClick={onToggleArtifact}>
+                    <div className="w-10 h-1 rounded-full bg-[#E7E5E4]" />
+                  </div>
+                  {/* Nav bar */}
                   {artifactTotal && artifactTotal > 1 && (
-                    <span className="ml-auto text-[10px] text-[#A8A29E]">
-                      {artifactCurrent} of {artifactTotal}
-                    </span>
+                    <div className="flex items-center gap-2 px-4 py-2 border-b border-[#F4F3F0]">
+                      <button type="button" onClick={onArtifactBack} disabled={!canGoBack}
+                        className={`text-[11px] flex items-center gap-1 px-2 py-1 rounded-lg transition-colors ${canGoBack ? 'text-[#1C1917] hover:bg-[#F4F3F0]' : 'text-[#D6D3D1] cursor-not-allowed'}`}>
+                        ← Back
+                      </button>
+                      <span className="text-[10px] text-[#A8A29E] mx-auto">{artifactCurrent} of {artifactTotal}</span>
+                      <button type="button" onClick={onArtifactForward} disabled={!canGoForward}
+                        className={`text-[11px] flex items-center gap-1 px-2 py-1 rounded-lg transition-colors ${canGoForward ? 'text-[#1C1917] hover:bg-[#F4F3F0]' : 'text-[#D6D3D1] cursor-not-allowed'}`}>
+                        Forward →
+                      </button>
+                    </div>
                   )}
+                  {/* Content */}
+                  <div className="px-4 pb-6 overflow-y-auto overscroll-contain" style={{ maxHeight: '70vh', touchAction: 'pan-y' }}>
+                    {artifact.type === 'visit_booking'
+                      ? <VisitBooking projectId={artifact.data.id} projectName={artifact.data.projectName} onBack={onArtifactBack} />
+                      : <ProjectCard project={artifact.data} />}
+                  </div>
+                </motion.div>
+              </>
+            ) : (
+              /* Collapsed pill */
+              <motion.button
+                type="button"
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                exit={{ y: 20, opacity: 0 }}
+                onClick={onToggleArtifact}
+                className="w-full bg-white border-t border-[#E7E5E4] px-4 py-3 flex items-center justify-between shadow-[0_-2px_12px_rgba(0,0,0,0.06)]"
+              >
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-lg bg-[#1B4F8A] flex items-center justify-center flex-shrink-0">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="white"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/></svg>
+                  </div>
+                  <span className="text-[12px] font-medium text-[#1C1917] truncate max-w-[200px]">
+                    {artifact.type === 'visit_booking' ? `Book visit — ${artifact.data.projectName}` : artifact.data.projectName}
+                  </span>
                 </div>
-              )}
-              <button type="button" onClick={onToggleArtifact}
-                className="absolute top-3 right-4 text-[11px] text-[#A8A29E] hover:text-[#1C1917] bg-white px-2 py-0.5 rounded-full border border-[#E7E5E4] shadow-sm">
-                Hide ↓
-              </button>
-              <div className="px-4 pb-4 overflow-y-auto overscroll-contain" style={{ maxHeight: '40vh', touchAction: 'pan-y' }}>
-                {artifact.type === 'visit_booking'
-                  ? <VisitBooking projectId={artifact.data.id} projectName={artifact.data.projectName} onBack={onArtifactBack} />
-                  : <ProjectCard project={artifact.data} />}
-              </div>
-            </div>
-          ) : (
-            <button type="button" onClick={onToggleArtifact}
-              className="w-full bg-white border-t border-[#E7E5E4] px-4 py-2.5 flex items-center justify-between text-[12px] font-medium text-[#1C1917] hover:bg-[#F4F3F0]">
-              <span className="truncate">
-                {artifact.type === 'visit_booking' ? `Book visit — ${artifact.data.projectName}` : artifact.data.projectName}
-              </span>
-              <span className="text-[#A8A29E] text-[11px] ml-2">Show ↑</span>
-            </button>
-          )}
-        </div>
-      )}
+                <span className="text-[11px] text-[#A8A29E]">↑ View</span>
+              </motion.button>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Input bar */}
-      <div className="border-t border-[#EEECE8] bg-[#FAFAF8]/90 backdrop-blur-sm px-4 py-3 sticky bottom-0 z-20 flex-shrink-0" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+      <div className="border-t border-[#EEECE8] bg-[#FAFAF8]/90 backdrop-blur-sm px-4 py-3 sticky bottom-0 z-20 flex-shrink-0" style={{ paddingBottom: artifact && !showArtifact ? '60px' : 'env(safe-area-inset-bottom, 0px)' }}>
         <form onSubmit={handleSubmit} className="flex gap-2 items-center">
           <input
             value={input}
             onChange={handleInputChange}
             placeholder="Ask about properties in South Bopal & Shela..."
             maxLength={800}
-            className="flex-1 bg-white border border-[#E7E5E4] rounded-2xl px-4 py-2.5 text-[13px] text-[#1C1917] placeholder:text-[#C8C4BF] focus:outline-none focus:ring-2 focus:ring-[#1B4F8A]/15 focus:border-[#1B4F8A]/50 transition-all duration-200 shadow-luxury-sm"
+            className="flex-1 bg-white border border-[#E7E5E4] rounded-2xl px-4 py-2.5 text-[16px] text-[#1C1917] placeholder:text-[#C8C4BF] focus:outline-none focus:ring-2 focus:ring-[#1B4F8A]/15 focus:border-[#1B4F8A]/50 transition-all duration-200 shadow-luxury-sm"
           />
           <motion.button
             type="submit"

@@ -6,12 +6,17 @@ import Link from 'next/link'
 
 interface SavedProject {
   id: string
-  name: string
-  builder: string
-  location: string
-  price: string
-  image: string
-  savedAt: string
+  projectId: string
+  project: {
+    id: string
+    projectName: string
+    builderName: string
+    microMarket: string
+    minPrice: number
+    maxPrice: number
+    unitTypes: string[]
+  }
+  createdAt: string
 }
 
 interface VisitRequest {
@@ -123,19 +128,23 @@ export default function DashboardPage() {
           <p className="text-[12px] uppercase tracking-widest text-[#A8A29E] mb-3">Saved Projects</p>
           {savedProjects.length > 0 ? (
             <div className="space-y-3">
-              {savedProjects.map(project => (
-                <div key={project.id} className="bg-white border border-[#E7E5E4] rounded-2xl p-4">
+              {savedProjects.map(sp => (
+                <div key={sp.id} className="bg-white border border-[#E7E5E4] rounded-2xl p-4">
                   <h3
                     style={{ fontFamily: 'var(--font-playfair)' }}
                     className="text-[18px] text-[#1C1917] leading-tight mb-0.5"
                   >
-                    {project.name}
+                    {sp.project.projectName}
                   </h3>
-                  <p className="text-[12px] text-[#78716C] mb-2">{project.builder}</p>
+                  <p className="text-[12px] text-[#78716C] mb-2">{sp.project.builderName} · {sp.project.microMarket}</p>
                   <div className="flex items-center justify-between">
-                    <p className="text-[14px] font-medium text-[#1B4F8A]">{project.price}</p>
+                    <p className="text-[14px] font-medium text-[#1B4F8A]">
+                      {sp.project.minPrice > 0 && sp.project.maxPrice > 0
+                        ? `₹${Math.round(sp.project.minPrice/100000)}L – ₹${Math.round(sp.project.maxPrice/100000)}L`
+                        : 'Price on request'}
+                    </p>
                     <Link
-                      href={`/projects/${project.id}`}
+                      href={`/projects/${sp.project.id}`}
                       className="text-[11px] text-[#A8A29E] hover:text-[#1C1917] transition-colors"
                     >
                       View details →
