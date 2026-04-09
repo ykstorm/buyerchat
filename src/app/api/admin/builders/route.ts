@@ -43,7 +43,13 @@ try {
   const grade = computeGrade(totalTrustScore)
 
   const builder = await prisma.builder.create({
-    data: { ...d, totalTrustScore, grade },
+    data: {
+        ...d,
+        totalTrustScore,
+        grade,
+        contactEmail: d.contactEmail ?? null,
+        contactPhone: d.contactPhone ?? null,
+      },
     select: {
       id: true,
       builderName: true,
