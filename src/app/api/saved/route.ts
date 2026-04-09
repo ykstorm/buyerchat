@@ -66,3 +66,18 @@ export async function GET(req: NextRequest) {
 
   return NextResponse.json({ savedProjects: saved })
 }
+
+export async function DELETE(req: NextRequest) {
+  try {
+    const session = await auth()
+    if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const body = await req.json()
+    await prisma.savedProject.deleteMany({
+      where: { userId: session.user.id, projectId: body.projectId }
+    })
+    return NextResponse.json({ success: true })
+  } catch (err) {
+    console.error('Unsave error:', err)
+    return NextResponse.json({ error: 'Failed' }, { status: 500 })
+  }
+}
