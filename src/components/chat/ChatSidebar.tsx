@@ -233,6 +233,7 @@ export default function ChatSidebar({
 }) {
   const [sessions, setSessions] = useState<SessionItem[]>([])
   const [searchQuery, setSearchQuery] = useState('')
+  const [savedProjects, setSavedProjects] = useState<{ projectId: string; project: { id: string; projectName: string; microMarket: string } }[]>([])
   const [hoveredSession, setHoveredSession] = useState<string | null>(null)
   const [menuOpen, setMenuOpen] = useState<string | null>(null)
 const [renamingSession, setRenamingSession] = useState<string | null>(null)
@@ -248,6 +249,10 @@ const [renamingSession, setRenamingSession] = useState<string | null>(null)
     fetch('/api/chat-sessions')
       .then(r => r.json())
       .then(setSessions)
+      .catch(() => {})
+    fetch('/api/saved')
+      .then(r => r.json())
+      .then(data => setSavedProjects(data.savedProjects ?? []))
       .catch(() => {})
   }, [userId])
 
@@ -355,6 +360,22 @@ const sidebar = (
       <div className="px-4 py-3 border-t border-[#E7E5E4]">
         {userId ? (
           <div>
+            {savedProjects.length > 0 && (
+              <div className="mb-2">
+                <p className="text-[10px] font-semibold text-[#A8A29E] uppercase tracking-wider mb-1.5">★ Saved</p>
+                {savedProjects.slice(0, 3).map(s => (
+                  <Link key={s.projectId} href={`/projects/${s.projectId}`}
+                    className="block text-[11px] text-[#1C1917] hover:text-[#1B4F8A] truncate py-0.5 transition-colors">
+                    {s.project.projectName}
+                  </Link>
+                ))}
+                {savedProjects.length > 3 && (
+                  <Link href="/dashboard" className="text-[10px] text-[#A8A29E] hover:text-[#1B4F8A]">
+                    +{savedProjects.length - 3} more →
+                  </Link>
+                )}
+              </div>
+            )}
             <Link href="/dashboard" className="text-[10px] text-[#A8A29E] hover:text-[#1C1917] block mb-1">
               My saved projects →
             </Link>

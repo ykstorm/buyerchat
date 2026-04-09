@@ -257,7 +257,15 @@ export default function ChatClient({
         artifactTotal={artifactHistory.length}
       />
 
-      <ChatRightPanel artifact={artifact} onArtifactBack={goArtifactBack} />
+      <ChatRightPanel
+        artifact={artifact}
+        onArtifactBack={goArtifactBack}
+        onArtifactForward={goArtifactForward}
+        canGoBack={artifactIndex > 0}
+        canGoForward={artifactIndex < artifactHistory.length - 1}
+        artifactCurrent={artifactIndex + 1}
+        artifactTotal={artifactHistory.length}
+      />
     </div>
   )
 }

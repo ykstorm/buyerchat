@@ -23,9 +23,19 @@ type Artifact = { type: 'project_card' | 'visit_booking'; data: ProjectType }
 export default function ChatRightPanel({
   artifact,
   onArtifactBack,
+  onArtifactForward,
+  canGoBack,
+  canGoForward,
+  artifactCurrent,
+  artifactTotal,
 }: {
   artifact: Artifact | null
   onArtifactBack?: () => void
+  onArtifactForward?: () => void
+  canGoBack?: boolean
+  canGoForward?: boolean
+  artifactCurrent?: number
+  artifactTotal?: number
 }) {
   return (
     <>
@@ -40,6 +50,21 @@ export default function ChatRightPanel({
               exit={{ x: -20, opacity: 0 }}
               transition={{ type: 'spring', stiffness: 300, damping: 28, mass: 0.8 }}
             >
+              {(canGoBack || canGoForward) && (
+                <div className="flex items-center gap-2 mb-3">
+                  <button type="button" onClick={onArtifactBack} disabled={!canGoBack}
+                    className="text-[11px] text-[#78716C] disabled:text-[#D6D3D1] hover:text-[#1C1917] disabled:cursor-not-allowed flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-[#F4F3F0] transition-colors">
+                    ← Back
+                  </button>
+                  <button type="button" onClick={onArtifactForward} disabled={!canGoForward}
+                    className="text-[11px] text-[#78716C] disabled:text-[#D6D3D1] hover:text-[#1C1917] disabled:cursor-not-allowed flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-[#F4F3F0] transition-colors">
+                    Forward →
+                  </button>
+                  {artifactTotal && artifactTotal > 1 && (
+                    <span className="ml-auto text-[10px] text-[#A8A29E]">{artifactCurrent} of {artifactTotal}</span>
+                  )}
+                </div>
+              )}
               {artifact.type === 'visit_booking' ? (
                 <>
                   <p className="text-[11px] font-medium text-[#A8A29E] uppercase tracking-wider mb-3">Book a visit</p>
