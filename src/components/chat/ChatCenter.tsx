@@ -45,6 +45,8 @@ type Props = {
   onArtifactForward?: () => void
   artifactCurrent?: number
   artifactTotal?: number
+  artifactHistory?: Artifact[]
+  onSelectArtifact?: (index: number) => void
 }
 
 const STARTERS = [
@@ -54,9 +56,10 @@ const STARTERS = [
   "I'm confused — help me decide",
 ]
 
-export default function ChatCenter({ messages, input, handleInputChange, handleSubmit, isLoading, append, loadingSession, artifact, showArtifact, onToggleArtifact, canGoBack, canGoForward, onArtifactBack, onArtifactForward, artifactCurrent, artifactTotal }: Props) {
+export default function ChatCenter({ messages, input, handleInputChange, handleSubmit, isLoading, append, loadingSession, artifact, showArtifact, onToggleArtifact, canGoBack, canGoForward, onArtifactBack, onArtifactForward, artifactCurrent, artifactTotal, artifactHistory, onSelectArtifact }: Props) {
   const bottomRef = useRef<HTMLDivElement>(null)
   const [mouse, setMouse] = useState({ x: 0, y: 0 })
+  const [showArtifactMenu, setShowArtifactMenu] = useState(false)
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -311,7 +314,7 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
                     </div>
                   )}
                   {/* Content */}
-                  <div className="px-4 pb-6 overflow-y-auto overscroll-contain" style={{ maxHeight: '55vh', touchAction: 'pan-y', WebkitOverflowScrolling: 'touch' }}>
+                  <div className="px-4 pb-6 overflow-y-auto overscroll-contain" style={{ maxHeight: '55vh', touchAction: 'pan-y', WebkitOverflowScrolling: 'touch' }} onPointerDown={e => e.stopPropagation()}>
                     {artifact.type === 'visit_booking'
                       ? <VisitBooking projectId={artifact.data.id} projectName={artifact.data.projectName} onBack={onArtifactBack} />
                       : <ProjectCard project={artifact.data} />}
@@ -344,6 +347,40 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
       </AnimatePresence>
 
       {/* Input bar */}
+      {/* Artifact history button — top right of chat */}
+      {artifactHistory && artifactHistory.length > 0 && (
+        <div className="lg:hidden absolute top-3 right-3 z-40">
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setShowArtifactMenu(prev => !prev)}
+              className="w-9 h-9 bg-white border border-[#E7E5E4] rounded-xl flex items-center justify-center shadow-sm relative"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1B4F8A" strokeWidth="2">
+                <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
+              </svg>
+              {artifactHistory.length > 1 && (
+                <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#1B4F8A] text-white text-[9px] font-bold rounded-full flex items-center justify-center">
+                  {artifactHistory.length}
+                </span>
+              )}
+            </button>
+            {showArtifactMenu && (
+              <div className="absolute right-0 top-11 bg-white border border-[#E7E5E4] rounded-2xl shadow-[0_8px_24px_rgba(0,0,0,0.08)] py-2 min-w-[200px] z-50">
+                {artifactHistory.map((a, i) => (
+                  <button key={i} type="button"
+                    onClick={() => { onSelectArtifact?.(i); setShowArtifactMenu(false) }}
+                    className="w-full px-4 py-2.5 text-left hover:bg-[#F4F3F0] transition-colors">
+                    <p className="text-[12px] font-medium text-[#1C1917] truncate">{a.data.projectName}</p>
+                    <p className="text-[10px] text-[#A8A29E]">{a.type === 'visit_booking' ? 'Visit booking' : 'Project card'}</p>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       <div className="border-t border-[#EEECE8] bg-[#FAFAF8]/90 backdrop-blur-sm px-4 py-3 sticky bottom-0 z-20 flex-shrink-0" style={{ paddingBottom: artifact && !showArtifact ? '60px' : 'env(safe-area-inset-bottom, 0px)' }}>
         <form onSubmit={handleSubmit} className="flex gap-2 items-center">
           <input

@@ -267,6 +267,13 @@ export default function ChatClient({
         onArtifactForward={goArtifactForward}
         artifactCurrent={artifactIndex + 1}
         artifactTotal={artifactHistory.length}
+        artifactHistory={artifactHistory}
+        onSelectArtifact={(index) => {
+          artifactIndexRef.current = index
+          setArtifactIndex(index)
+          setCurrentArtifact(artifactHistoryRef.current[index])
+          setShowArtifact(true)
+        }}
       />
 
       <ChatRightPanel
