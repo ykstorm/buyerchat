@@ -10,7 +10,10 @@ export default async function ChatPage() {
     select: {
       id: true, projectName: true, builderName: true,
       pricePerSqft: true, minPrice: true, maxPrice: true,
-      possessionDate: true, constructionStatus: true, microMarket: true
+      possessionDate: true, constructionStatus: true, microMarket: true,
+      decisionTag: true, honestConcern: true, analystNote: true,
+      possessionFlag: true, configurations: true, bankApprovals: true,
+      priceNote: true
     }
   })
   return (

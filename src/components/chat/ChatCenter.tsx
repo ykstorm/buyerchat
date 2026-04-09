@@ -201,11 +201,13 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
                   }
                 `}>
                   {msg.role === 'assistant' ? (
-                    <div className="prose prose-sm max-w-none text-[#1C1917] [&>p]:mb-2 [&>p:last-child]:mb-0 [&>strong]:font-semibold [&>strong]:text-[#1C1917]">
+                    <div className="prose prose-sm max-w-none text-[#1C1917]">
                       <ReactMarkdown
                         components={{
-                          strong: ({ children }) => <span className="font-semibold">{children}</span>,
-                          p: ({ children }) => <span>{children}</span>,
+                          strong: ({ children }) => <span className="font-semibold text-[#1C1917]">{children}</span>,
+                          p: ({ children }) => <span className="block mb-2 last:mb-0">{children}</span>,
+                          ul: ({ children }) => <ul className="list-none space-y-1 my-1">{children}</ul>,
+                          li: ({ children }) => <li className="flex gap-2 before:content-['·'] before:text-[#A8A29E]">{children}</li>,
                         }}
                       >
                         {msg.content}
@@ -214,8 +216,10 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
                   ) : (
                     <ReactMarkdown
                       components={{
-                        strong: ({ children }) => <span className="font-semibold">{children}</span>,
-                        p: ({ children }) => <span>{children}</span>,
+                        strong: ({ children }) => <span className="font-semibold text-[#1C1917]">{children}</span>,
+                        p: ({ children }) => <span className="block mb-2 last:mb-0">{children}</span>,
+                        ul: ({ children }) => <ul className="list-none space-y-1 my-1">{children}</ul>,
+                        li: ({ children }) => <li className="flex gap-2 before:content-['·'] before:text-[#A8A29E]">{children}</li>,
                       }}
                     >
                       {msg.content}
