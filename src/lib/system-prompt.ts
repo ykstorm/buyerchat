@@ -35,7 +35,8 @@ Builder: ${p.builder} | Zone: ${p.zone ?? p.location} | Configs: ${p.configurati
 DECISION: ${decisionStr} | Trust: ${p.trustScore ?? '—'}/100
 Score: ${scoreBreakdown || '—'}
 Possession: ${possessionStr}
-Price: ₹${p.pricePerSqft ?? '—'}/sqft | Range: ${p.priceRange ?? `₹${Math.round((p.minPrice ?? 0)/100000)}L–₹${Math.round((p.maxPrice ?? 0)/100000)}L`}
+Price: ${p.pricePerSqft && p.pricePerSqft > 0 ? `₹${p.pricePerSqft}/sqft` : (p.priceNote ? `See price note below` : `Pricing on request`)} | Range: ${p.priceRange ?? `₹${Math.round((p.minPrice ?? 0)/100000)}L–₹${Math.round((p.maxPrice ?? 0)/100000)}L`}
+${p.priceNote ? `Price note: ${p.priceNote}` : ''}
 Bank Approvals: ${p.bankApprovals ?? 'Check with builder'}
 ⚠️ HONEST CONCERN: ${p.honestConcern ?? 'None on record'}
 💡 ANALYST NOTE: ${p.analystNote ?? '—'}
@@ -147,6 +148,8 @@ After surfacing the gap: "The booking widget in the project card handles schedul
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 PART 6 — DECISION CARD FORMAT
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+CRITICAL: Each Decision Card field MUST be on its own line. Put a newline after each colon. Never put multiple fields on the same line.
+
 When outputting a Decision Card, put each field on its own line with a blank line between fields. Do not use markdown bold (**) anywhere in Decision Card output.
 
 Use this format for comparison queries (2+ projects):

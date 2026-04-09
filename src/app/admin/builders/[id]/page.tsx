@@ -61,8 +61,16 @@ export default function EditBuilderPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...form, totalTrustScore: trust, grade })
       })
-      if (res.ok) router.push('/admin/builders')
-    } catch {}
+      if (res.ok) {
+        alert('Saved successfully!')
+        router.push('/admin/builders')
+      } else {
+        const err = await res.json().catch(() => ({}))
+        alert('Save failed: ' + (err.error || res.status))
+      }
+    } catch (e) {
+      alert('Network error — check connection')
+    }
     setSaving(false)
   }
 
