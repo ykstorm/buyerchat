@@ -95,13 +95,13 @@ function SwipeableSessionItem({ session, onLoad, onClose, menuOpen, setMenuOpen,
             <div className="flex items-center gap-1">
               <button
                 type="button"
-                onMouseDown={e => { e.preventDefault(); e.stopPropagation() }}
+                onClick={e => { e.preventDefault(); e.stopPropagation() }}
                 onClick={e => { e.stopPropagation(); doDelete() }}
                 className="flex-1 text-[11px] font-medium text-white bg-[#A32D2D] rounded-md py-0.5 hover:bg-[#7F1D1D] transition-colors"
               >Yes, delete</button>
               <button
                 type="button"
-                onMouseDown={e => { e.preventDefault(); e.stopPropagation() }}
+                onClick={e => { e.preventDefault(); e.stopPropagation() }}
                 onClick={e => { e.stopPropagation(); setConfirmingDelete(false); }}
                 className="flex-1 text-[11px] font-medium text-[#78716C] bg-[#F4F3F0] rounded-md py-0.5 hover:bg-[#E7E5E4] transition-colors"
               >Cancel</button>
@@ -124,13 +124,13 @@ function SwipeableSessionItem({ session, onLoad, onClose, menuOpen, setMenuOpen,
             <div className="flex items-center gap-1">
               <button
                 type="button"
-                onMouseDown={e => { e.preventDefault(); e.stopPropagation() }}
+                onClick={e => { e.preventDefault(); e.stopPropagation() }}
                 onClick={e => { e.stopPropagation(); saveRename(session.id, renameValue) }}
                 className="flex-1 text-[11px] font-medium text-white bg-[#1B4F8A] rounded-md py-0.5 hover:bg-[#163d6b] transition-colors"
               >✓</button>
               <button
                 type="button"
-                onMouseDown={e => { e.preventDefault(); e.stopPropagation() }}
+                onClick={e => { e.preventDefault(); e.stopPropagation() }}
                 onClick={e => { e.stopPropagation(); setRenamingSession(null) }}
                 className="flex-1 text-[11px] font-medium text-[#78716C] bg-[#F4F3F0] rounded-md py-0.5 hover:bg-[#E7E5E4] transition-colors"
               >✗</button>
@@ -160,7 +160,7 @@ function SwipeableSessionItem({ session, onLoad, onClose, menuOpen, setMenuOpen,
             <div className="hidden lg:flex items-center gap-1 absolute right-2 top-1/2 -translate-y-1/2">
               <button
                 type="button"
-                onMouseDown={e => { e.preventDefault(); e.stopPropagation() }}
+                onClick={e => { e.preventDefault(); e.stopPropagation() }}
                 onClick={e => { e.stopPropagation(); setRenamingSession(session.id); setRenameValue(displayTitle); }}
                 className="w-5 h-5 rounded flex items-center justify-center text-[#A8A29E] hover:text-[#1C1917] hover:bg-[#ECEAE7] transition-colors"
                 title="Rename"
@@ -172,7 +172,7 @@ function SwipeableSessionItem({ session, onLoad, onClose, menuOpen, setMenuOpen,
               </button>
               <button
                 type="button"
-                onMouseDown={e => { e.preventDefault(); e.stopPropagation() }}
+                onClick={e => { e.preventDefault(); e.stopPropagation() }}
                 onClick={e => { e.stopPropagation(); setConfirmingDelete(true); setMenuOpen(null) }}
                 className="w-5 h-5 rounded flex items-center justify-center text-[#A8A29E] hover:text-[#A32D2D] hover:bg-[#FEE2E2] transition-colors"
                 title="Delete"
@@ -188,7 +188,7 @@ function SwipeableSessionItem({ session, onLoad, onClose, menuOpen, setMenuOpen,
             <button
               type="button"
               className="lg:hidden absolute right-2 top-1/2 -translate-y-1/2 w-5 h-5 rounded flex items-center justify-center text-[#A8A29E]"
-              onMouseDown={e => { e.preventDefault(); e.stopPropagation(); setMenuOpen(menuOpen === session.id ? null : session.id) }}
+              onClick={e => { e.preventDefault(); e.stopPropagation(); setMenuOpen(menuOpen === session.id ? null : session.id) }}
             >
               <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
                 <circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/>
@@ -200,7 +200,7 @@ function SwipeableSessionItem({ session, onLoad, onClose, menuOpen, setMenuOpen,
         {/* Mobile dropdown menu */}
         {menuOpen === session.id && (
           <div
-            onMouseDown={e => e.stopPropagation()}
+            onClick={e => e.stopPropagation()}
             className="absolute right-2 top-8 z-50 bg-white border border-[#E7E5E4] rounded-xl shadow-[0_8px_24px_rgba(0,0,0,0.08)] py-1 min-w-[140px]"
           >
             <button
@@ -218,7 +218,7 @@ function SwipeableSessionItem({ session, onLoad, onClose, menuOpen, setMenuOpen,
             </button>
             <button
               type="button"
-              onMouseDown={e => { e.preventDefault(); e.stopPropagation() }}
+              onClick={e => { e.preventDefault(); e.stopPropagation() }}
               onClick={e => { e.stopPropagation(); setConfirmingDelete(true); setMenuOpen(null); setHoveredSession(null) }}
               className="w-full px-3 py-2 text-left text-[12px] text-[#A32D2D] hover:bg-[#FDF2F2] flex items-center gap-2"
             >
@@ -259,12 +259,12 @@ const [renamingSession, setRenamingSession] = useState<string | null>(null)
   }, [userId])
 
   useEffect(() => {
-    const close = (e: MouseEvent) => {
+    const close = () => {
       setMenuOpen(null)
       setHoveredSession(null)
     }
-    document.addEventListener('mousedown', close)
-    return () => document.removeEventListener('mousedown', close)
+    document.addEventListener('click', close)
+    return () => document.removeEventListener('click', close)
   }, [])
 
   const saveRename = async (id: string, value: string) => {
@@ -283,12 +283,14 @@ const [renamingSession, setRenamingSession] = useState<string | null>(null)
     } catch {}
   }
 
-  const filteredSessions = sessions.filter(s =>
-    !searchQuery ||
-    s.id.includes(searchQuery.toLowerCase()) ||
-    (s.buyerBudget && `${s.buyerBudget}`.includes(searchQuery)) ||
-    (s.buyerConfig && s.buyerConfig.toLowerCase().includes(searchQuery.toLowerCase()))
-  )
+  const filteredSessions = sessions.filter(s => {
+    if (!searchQuery) return true
+    const q = searchQuery.toLowerCase()
+    const title = chatNames[s.id] || s.customName || s.firstMessage || ''
+    return title.toLowerCase().includes(q) ||
+      (s.buyerConfig && s.buyerConfig.toLowerCase().includes(q)) ||
+      (s.buyerBudget && `${s.buyerBudget}`.includes(q))
+  })
 
 const sidebar = (
     <div className="w-60 h-full bg-[#FAFAF9] border-r border-[#EEECE8] flex flex-col flex-shrink-0 relative grain">

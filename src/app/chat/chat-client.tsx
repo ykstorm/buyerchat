@@ -135,7 +135,7 @@ export default function ChatClient({
     } finally {
       setIsLoading(false)
     }
-  }, [messages, isLoading, projects])
+  }, [messages, isLoading, projects, artifactHistory, artifactIndex])
 
   const handleSubmit = useCallback((e: FormEvent) => {
     e.preventDefault()

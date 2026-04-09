@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 
 type ProjectType = {
@@ -21,6 +21,47 @@ const formatL = (n: number | null | undefined) => n ? Math.round(n / 100000) : n
 
 export default function ProjectCard({ project }: { project: ProjectType }) {
   const [copied, setCopied] = useState(false)
+  const [saved, setSaved] = useState(false)
+  const [saving, setSaving] = useState(false)
+
+  const toggleSave = async () => {
+    if (saving) return
+    setSaving(true)
+    const prev = saved
+    setSaved(!saved)
+    try {
+      if (prev) {
+        const res = await fetch('/api/saved', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ projectId: project.id })
+        })
+        if (!res.ok) setSaved(true)
+      } else {
+        const res = await fetch('/api/saved', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ projectId: project.id })
+        })
+        if (!res.ok && res.status !== 409) setSaved(false)
+      }
+    } catch { setSaved(prev) }
+    setSaving(false)
+  }
+
+  useEffect(() => {
+    let cancelled = false
+    fetch('/api/saved')
+      .then(r => r.json())
+      .then(data => {
+        if (cancelled) return
+        const ids = (data.savedProjects ?? []).map((s: any) => s.projectId)
+        if (ids.includes(project.id)) setSaved(true)
+      })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [project.id])
+
   const possession = project.possessionDate
     ? new Date(project.possessionDate).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })
     : 'TBD'
@@ -129,6 +170,17 @@ export default function ProjectCard({ project }: { project: ProjectType }) {
         >
           Book OTP-verified visit →
         </motion.button>
+        <button
+          type="button"
+          onClick={toggleSave}
+          className={`w-full mt-3 py-2 rounded-xl border text-[12px] font-medium flex items-center justify-center gap-2 transition-colors ${
+            saved
+              ? 'border-[#1B4F8A] text-[#1B4F8A] bg-[#EEF4FF]'
+              : 'border-[#E7E5E4] text-[#78716C] hover:bg-[#F4F3F0]'
+          }`}
+        >
+          {saved ? '★ Saved' : '☆ Save project'}
+        </button>
         <button
           type="button"
           onClick={async () => {
