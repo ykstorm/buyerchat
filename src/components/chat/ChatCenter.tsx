@@ -181,7 +181,7 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
         </div>
 
       ) : (
-        <div className="flex-1 overflow-y-auto min-h-0 px-5 py-6 space-y-1 pb-0 lg:pb-0">
+        <div className={`flex-1 overflow-y-auto min-h-0 px-5 py-6 space-y-1 lg:pb-6 ${artifact && !showArtifact ? 'pb-16' : 'pb-6'}`}>
           {messages.map((msg, i) => {
             const prevMsg = messages[i - 1]
             const isGrouped = prevMsg?.role === msg.role
@@ -278,6 +278,7 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
                   exit={{ opacity: 0 }}
                   className="fixed inset-0 bg-black/20 z-[-1]"
                   onClick={onToggleArtifact}
+                  style={{ touchAction: 'none' }}
                 />
                 {/* Sheet */}
                 <motion.div
@@ -290,6 +291,7 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
                   dragElastic={0.2}
                   onDragEnd={(_: any, info: any) => { if (info.offset.y > 80) onToggleArtifact?.() }}
                   className="bg-white rounded-t-2xl shadow-[0_-8px_40px_rgba(0,0,0,0.12)] overflow-hidden"
+                  style={{ touchAction: 'none' }}
                 >
                   {/* Handle */}
                   <div className="flex justify-center pt-3 pb-1 cursor-grab active:cursor-grabbing" onClick={onToggleArtifact}>
@@ -310,7 +312,7 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
                     </div>
                   )}
                   {/* Content */}
-                  <div className="px-4 pb-6 overflow-y-auto overscroll-contain" style={{ maxHeight: '70vh', touchAction: 'pan-y' }}>
+                  <div className="px-4 pb-6 overflow-y-auto overscroll-contain" style={{ maxHeight: '55vh', touchAction: 'pan-y', WebkitOverflowScrolling: 'touch' }}>
                     {artifact.type === 'visit_booking'
                       ? <VisitBooking projectId={artifact.data.id} projectName={artifact.data.projectName} onBack={onArtifactBack} />
                       : <ProjectCard project={artifact.data} />}
