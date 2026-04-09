@@ -1,19 +1,15 @@
-let cachedContext: string | null = null
-let cacheExpiresAt: number = 0
+// Context cache disabled — Vercel serverless instances don't share memory.
+// Each request fetches fresh from DB. At 16 projects this is fast enough.
+// Re-enable with Redis (Upstash) when project count exceeds 100.
 
 export function getCachedContext(): string | null {
-  if (Date.now() < cacheExpiresAt && cachedContext) {
-    return cachedContext
-  }
   return null
 }
 
-export function setCachedContext(context: string): void {
-  cachedContext = context
-  cacheExpiresAt = Date.now() + 5 * 60 * 1000 // 5 minutes
+export function setCachedContext(_context: string): void {
+  // no-op
 }
 
 export function invalidateContextCache(): void {
-  cachedContext = null
-  cacheExpiresAt = 0
+  // no-op
 }

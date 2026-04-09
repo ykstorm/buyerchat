@@ -96,7 +96,17 @@ if (hasInjection) {
   let decisionCard = null
   if (isComparison && context.projects.length >= 2) {
     try {
-      decisionCard = buildDecisionCard(sanitizedMsg, context.projects[0], context.projects[1])
+      const lower = sanitizedMsg.toLowerCase()
+      const allMessages = cappedMessages.map((m: any) => m.content).join(' ').toLowerCase()
+      const mentioned = context.projects.filter((p: any) =>
+        lower.includes((p.name ?? '').toLowerCase()) ||
+        allMessages.includes((p.name ?? '').toLowerCase())
+      )
+      const pA = mentioned[0] ?? context.projects[0]
+      const pB = mentioned[1] ?? context.projects[1]
+      if (pA.id !== pB.id) {
+        decisionCard = buildDecisionCard(sanitizedMsg, pA, pB)
+      }
     } catch (e) {
       console.error('Decision engine failed:', e)
     }
