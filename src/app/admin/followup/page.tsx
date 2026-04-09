@@ -1,17 +1,7 @@
 import { prisma } from '@/lib/prisma'
 import { daysBetween, formatLakh, getPersonaLabel, getStageLabel } from '@/lib/admin-utils'
-import FollowUpCard from '@/components/admin/FollowUpCard'
+import { DarkMetricCard, DarkCard, DarkBadge } from '@/components/admin/DarkCard'
 import Link from 'next/link'
-
-function MetricCard({ label, value, sub, color, subColor }: { label: string; value: string | number; sub?: string; color?: string; subColor?: string }) {
-  return (
-    <div className="bg-white rounded-[10px] p-[12px_14px]" style={{ border: '0.5px solid #E0DFDD' }}>
-      <p className="text-[10px] font-semibold uppercase tracking-wide mb-1.5" style={{ color: '#787878' }}>{label}</p>
-      <p className="font-extrabold leading-[1.1] mb-1" style={{ fontSize: 26, color: color ?? '#1B3A6B' }}>{value}</p>
-      {sub && <p className="text-[9px]" style={{ color: subColor ?? '#B0B0AC' }}>{sub}</p>}
-    </div>
-  )
-}
 
 const STAGE_RULES: Record<string, { urgency: string; color: string; days: number; action: string }> = {
   intent_capture:     { urgency: 'Normal',  color: '#52525B', days: 3,  action: 'Qualify buyer — ask purpose and budget' },
@@ -69,148 +59,141 @@ export default async function FollowUpPage() {
   const qualifiedSessions = sessions.filter(s => s.buyerStage === 'qualification')
 
   return (
-    <div>
+    <div style={{ background: '#0A0F1E', minHeight: '100vh' }}>
       {/* Header */}
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-5">
         <div>
-          <h1 className="text-[14px] font-medium text-[#1A1A2E]">Follow-Up / Daily Dashboard</h1>
-          <p className="text-[12px] text-[#52525B]">
-            Today: {now.toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}
+          <h1 className="text-[18px] font-bold text-white">Follow-Up Dashboard</h1>
+          <p className="text-[12px] mt-0.5" style={{ color: '#6B7280' }}>
+            {now.toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}
           </p>
         </div>
-        <button type="button" className="text-[11px] text-[#185FA5] border border-[#185FA5]/30 px-3 py-1.5 rounded-lg hover:bg-[#EEF5FD] transition-colors">
-          Refresh dashboard
-        </button>
+        <div className="px-3 py-1.5 rounded-lg text-[11px] font-medium" style={{ background: 'rgba(96,165,250,0.1)', color: '#60A5FA', border: '1px solid rgba(96,165,250,0.2)' }}>
+          AI drafts · You approve · You send
+        </div>
       </div>
 
       {/* Metrics */}
-      <div className="grid grid-cols-4 gap-3 mb-5">
-        <MetricCard label="Urgent today" value={urgent.length} sub={`${postVisitSessions.length} post-visit silence`} color="#A32D2D" />
-        <MetricCard label="High priority" value={high.length} sub="Follow-up due" color="#BA7517" />
-        <MetricCard label="Overdue" value={overdue.length} sub="Should have been done" color="#BA7517" />
-        <MetricCard label="Re-engage" value={reEngage.length} sub="30+ days cold" color="#52525B" />
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
+        <DarkMetricCard label="Urgent Today" value={urgent.length} sub={`${postVisitSessions.length} post-visit`} color="#F87171" />
+        <DarkMetricCard label="High Priority" value={high.length} sub="Follow-up due" color="#FBBF24" />
+        <DarkMetricCard label="Overdue" value={overdue.length} sub="Past deadline" color="#FB923C" />
+        <DarkMetricCard label="Re-engage" value={reEngage.length} sub="28+ days cold" color="#9CA3AF" />
       </div>
 
-      {/* Info banner */}
-      <div className="bg-[#EEF5FD] border border-[#B5D4F4] rounded-xl px-4 py-3 mb-5 text-[12px] text-[#0C447C]">
-        AI drafts message based on stage + intent data. You approve. WhatsApp opens. You send. <strong>Human touch always.</strong>
+      {/* Alert banners */}
+      <div className="flex gap-3 mb-5 flex-wrap">
+        {postVisitSessions.length > 0 && (
+          <div className="flex-1 rounded-xl px-4 py-3" style={{ background: 'rgba(248,113,113,0.08)', border: '1px solid rgba(248,113,113,0.2)' }}>
+            <p className="text-[12px] font-semibold" style={{ color: '#F87171' }}>🚨 {postVisitSessions.length} post-visit silence</p>
+            <p className="text-[11px] mt-0.5" style={{ color: '#9CA3AF' }}>Post-visit decode needed. Capture emotion before buyer goes cold.</p>
+          </div>
+        )}
+        {qualifiedSessions.length > 0 && (
+          <div className="flex-1 rounded-xl px-4 py-3" style={{ background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.2)' }}>
+            <p className="text-[12px] font-semibold" style={{ color: '#FBBF24' }}>⚡ {qualifiedSessions.length} qualified buyers</p>
+            <p className="text-[11px] mt-0.5" style={{ color: '#9CA3AF' }}>Send shortlist within 24h — highest conversion window.</p>
+          </div>
+        )}
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
-        {/* Main follow-up queue */}
-        <div className="col-span-2 space-y-3">
-
-          {/* Urgent section */}
-          {urgent.length > 0 ? (
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        {/* Queue */}
+        <div className="lg:col-span-2 space-y-4">
+          {urgent.length > 0 && (
             <div>
-              <p className="text-[11px] font-semibold text-[#A32D2D] uppercase tracking-wider mb-2">
-                Urgent — contact today ({urgent.length})
-              </p>
-              {urgent.map(session => (
-                <FollowUpCard key={session.id} session={session} />
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-8">
-              <p className="text-[13px] text-[#52525B]">No urgent follow-ups right now.</p>
-              <p className="text-[11px] text-[#A8A29E] mt-1">Check back after buyers have more conversations.</p>
+              <p className="text-[11px] font-semibold uppercase tracking-wider mb-2" style={{ color: '#F87171' }}>🔴 Urgent — contact today ({urgent.length})</p>
+              <div className="space-y-2">
+                {urgent.map(session => (
+                  <a key={session.id} href={`/admin/buyers/${session.id}`} className="flex items-center justify-between rounded-xl px-4 py-3 transition-colors hover:bg-white/5" style={{ background: 'rgba(248,113,113,0.06)', border: '1px solid rgba(248,113,113,0.15)' }}>
+                    <div>
+                      <p className="text-[12px] font-medium text-white">{getPersonaLabel(session.buyerPersona)} · {session.buyerConfig ?? '—'}</p>
+                      <p className="text-[11px] mt-0.5" style={{ color: '#9CA3AF' }}>{getStageLabel(session.buyerStage)} · {daysBetween(session.lastMessageAt)}d silent</p>
+                      <p className="text-[10px] mt-1" style={{ color: '#F87171' }}>{STAGE_RULES[session.buyerStage]?.action}</p>
+                    </div>
+                    <DarkBadge label="Urgent" color="red" />
+                  </a>
+                ))}
+              </div>
             </div>
           )}
 
-          {/* High priority */}
           {high.length > 0 && (
             <div>
-              <p className="text-[11px] font-semibold text-[#BA7517] uppercase tracking-wider mb-2 mt-4">
-                High priority ({high.length})
-              </p>
-              {high.map(session => (
-                <FollowUpCard key={session.id} session={session} />
-              ))}
+              <p className="text-[11px] font-semibold uppercase tracking-wider mb-2" style={{ color: '#FBBF24' }}>🟡 High Priority ({high.length})</p>
+              <div className="space-y-2">
+                {high.map(session => (
+                  <a key={session.id} href={`/admin/buyers/${session.id}`} className="flex items-center justify-between rounded-xl px-4 py-3 transition-colors hover:bg-white/5" style={{ background: 'rgba(251,191,36,0.06)', border: '1px solid rgba(251,191,36,0.12)' }}>
+                    <div>
+                      <p className="text-[12px] font-medium text-white">{getPersonaLabel(session.buyerPersona)} · {session.buyerConfig ?? '—'}</p>
+                      <p className="text-[11px] mt-0.5" style={{ color: '#9CA3AF' }}>{getStageLabel(session.buyerStage)} · {daysBetween(session.lastMessageAt)}d silent</p>
+                      <p className="text-[10px] mt-1" style={{ color: '#FBBF24' }}>{STAGE_RULES[session.buyerStage]?.action}</p>
+                    </div>
+                    <DarkBadge label="High" color="amber" />
+                  </a>
+                ))}
+              </div>
             </div>
           )}
 
-          {/* Overdue */}
           {overdue.filter(s => !urgent.includes(s) && !high.includes(s)).length > 0 && (
             <div>
-              <p className="text-[11px] font-semibold text-[#52525B] uppercase tracking-wider mb-2 mt-4">
-                Overdue — should have been done already
-              </p>
-              {overdue.filter(s => !urgent.includes(s) && !high.includes(s)).map(session => (
-                <FollowUpCard key={session.id} session={session} />
-              ))}
+              <p className="text-[11px] font-semibold uppercase tracking-wider mb-2" style={{ color: '#FB923C' }}>Overdue — past deadline ({overdue.filter(s => !urgent.includes(s) && !high.includes(s)).length})</p>
+              <div className="space-y-2">
+                {overdue.filter(s => !urgent.includes(s) && !high.includes(s)).map(session => (
+                  <a key={session.id} href={`/admin/buyers/${session.id}`} className="flex items-center justify-between rounded-xl px-4 py-3 hover:bg-white/5 transition-colors" style={{ background: 'rgba(251,146,60,0.06)', border: '1px solid rgba(251,146,60,0.15)' }}>
+                    <div>
+                      <p className="text-[12px] font-medium text-white">{getPersonaLabel(session.buyerPersona)} · {session.buyerConfig ?? '—'}</p>
+                      <p className="text-[11px] mt-0.5" style={{ color: '#9CA3AF' }}>{getStageLabel(session.buyerStage)} · {daysBetween(session.lastMessageAt)}d overdue</p>
+                    </div>
+                    <DarkBadge label="Overdue" color="amber" />
+                  </a>
+                ))}
+              </div>
             </div>
           )}
 
-          {/* Re-engage */}
           {reEngage.length > 0 && (
             <div>
-              <p className="text-[11px] font-semibold text-[#52525B] uppercase tracking-wider mb-2 mt-4">
-                Re-engage — cold buyers ({reEngage.length})
-              </p>
-              {reEngage.map(session => (
-                <div key={session.id} className="bg-white border border-black/[0.08] rounded-xl p-3 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-[#F4F4F5] flex items-center justify-center text-[11px] font-medium text-[#52525B]">
-                      {getPersonaLabel(session.buyerPersona).charAt(0)}
-                    </div>
+              <p className="text-[11px] font-semibold uppercase tracking-wider mb-2" style={{ color: '#9CA3AF' }}>Re-engage — cold buyers ({reEngage.length})</p>
+              <div className="space-y-2">
+                {reEngage.map(session => (
+                  <a key={session.id} href={`/admin/buyers/${session.id}`} className="flex items-center justify-between rounded-xl px-4 py-3 hover:bg-white/5 transition-colors" style={{ background: '#111827', border: '1px solid rgba(255,255,255,0.06)' }}>
                     <div>
-                      <p className="text-[12px] font-medium text-[#1A1A2E]">
-                        {getPersonaLabel(session.buyerPersona)} · {session.buyerConfig ?? '—'} · {session.buyerBudget ? `₹${formatLakh(session.buyerBudget)}` : '—'}
-                      </p>
-                      <p className="text-[11px] text-[#52525B]">
-                        {daysBetween(session.lastMessageAt)} days cold · {getStageLabel(session.buyerStage)}
-                      </p>
+                      <p className="text-[12px] font-medium text-white">{getPersonaLabel(session.buyerPersona)} · {session.buyerConfig ?? '—'} · {session.buyerBudget ? `₹${formatLakh(session.buyerBudget)}` : '—'}</p>
+                      <p className="text-[11px] mt-0.5" style={{ color: '#6B7280' }}>{daysBetween(session.lastMessageAt)}d cold · {getStageLabel(session.buyerStage)}</p>
                     </div>
-                  </div>
-                  <span className="text-[10px] bg-[#F4F4F5] text-[#52525B] px-2 py-1 rounded-full">Re-engage {daysBetween(session.lastMessageAt)}d</span>
-                </div>
-              ))}
+                    <DarkBadge label={`${daysBetween(session.lastMessageAt)}d`} color="gray" />
+                  </a>
+                ))}
+              </div>
             </div>
           )}
 
           {sessions.length === 0 && (
-            <div className="bg-white border border-black/[0.08] rounded-xl p-8 text-center">
-              <p className="text-[12px] text-[#52525B]">No buyers in follow-up queue.</p>
-              <p className="text-[11px] text-[#71717A] mt-1">Buyers will appear here once they start chatting.</p>
+            <div className="rounded-2xl p-8 text-center" style={{ background: '#111827', border: '1px solid rgba(255,255,255,0.07)' }}>
+              <p className="text-[13px]" style={{ color: '#6B7280' }}>No buyers in follow-up queue.</p>
             </div>
           )}
         </div>
 
-        {/* Right: Rules engine */}
-        <div className="space-y-3">
-          <div className="bg-white border border-black/[0.08] rounded-xl p-4">
-            <p className="text-[12px] font-medium text-[#1A1A2E] mb-3">Follow-Up Rules Engine</p>
-            <p className="text-[11px] text-[#52525B] mb-3">Stage-wise rules. Dashboard auto-applies these every morning.</p>
+        {/* Rules engine */}
+        <div>
+          <DarkCard title="Follow-Up Rules">
             <div className="space-y-3">
               {Object.entries(STAGE_RULES).map(([stage, rule]) => (
-                <div key={stage} className="border-b border-[#F4F4F5] last:border-0 pb-2.5 last:pb-0">
+                <div key={stage} style={{ borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: 10 }}>
                   <div className="flex items-center justify-between mb-1">
-                    <p className="text-[11px] font-medium text-[#1A1A2E]">{getStageLabel(stage)}</p>
-                    <span className="text-[10px] font-semibold" style={{ color: rule.color }}>
+                    <p className="text-[11px] font-medium text-white">{getStageLabel(stage)}</p>
+                    <span className="text-[10px] font-semibold" style={{ color: rule.color === '#A32D2D' ? '#F87171' : rule.color === '#BA7517' ? '#FBBF24' : '#9CA3AF' }}>
                       {rule.urgency} · {rule.days === 0 ? 'Same day' : `${rule.days}d`}
                     </span>
                   </div>
-                  <p className="text-[10px] text-[#52525B] leading-relaxed">{rule.action}</p>
+                  <p className="text-[10px] leading-relaxed" style={{ color: '#6B7280' }}>{rule.action}</p>
                 </div>
               ))}
             </div>
-          </div>
-
-          {/* Qualified buyers alert */}
-          {qualifiedSessions.length > 0 && (
-            <div className="bg-[#FFF7ED] border border-[#BA7517]/30 rounded-xl p-3">
-              <p className="text-[11px] font-semibold text-[#BA7517] mb-1">⚡ {qualifiedSessions.length} qualified buyer{qualifiedSessions.length > 1 ? 's' : ''}</p>
-              <p className="text-[11px] text-[#633806]">Send personalised shortlist within 24 hours — highest conversion window.</p>
-            </div>
-          )}
-
-          {/* Post-visit alert */}
-          {postVisitSessions.length > 0 && (
-            <div className="bg-[#FCEBEB] border border-[#A32D2D]/30 rounded-xl p-3">
-              <p className="text-[11px] font-semibold text-[#A32D2D] mb-1">🚨 {postVisitSessions.length} post-visit silence</p>
-              <p className="text-[11px] text-[#791F1F]">Post-visit decode needed. Capture emotion before buyer goes cold.</p>
-            </div>
-          )}
+          </DarkCard>
         </div>
       </div>
     </div>
