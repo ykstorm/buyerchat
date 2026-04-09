@@ -7,13 +7,13 @@ import { invalidateContextCache } from '@/lib/context-cache'
 const BuilderSchema = z.object({
   builderName: z.string().min(1),
   brandName: z.string().min(1),
-  deliveryScore: z.number().min(0).max(20),
+  deliveryScore: z.number().min(0).max(30),
   reraScore: z.number().min(0).max(20),
   qualityScore: z.number().min(0).max(20),
   financialScore: z.number().min(0).max(15),
   responsivenessScore: z.number().min(0).max(15),
-  contactEmail: z.string().email(),
-  contactPhone: z.string().min(1),
+  contactEmail: z.string().email().optional(),
+  contactPhone: z.string().optional(),
   partnerStatus: z.boolean().default(false),
   commissionRatePct: z.number().default(1.5),
 })
