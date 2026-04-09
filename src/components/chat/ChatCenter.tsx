@@ -321,32 +321,26 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
                   {/* Content */}
                   <div className="px-4 pb-6 overflow-y-auto overscroll-contain" style={{ maxHeight: '55vh', touchAction: 'pan-y', WebkitOverflowScrolling: 'touch' }} onPointerDown={e => e.stopPropagation()}>
                     {artifact.type === 'visit_booking'
-                      ? <VisitBooking projectId={artifact.data.id} projectName={artifact.data.projectName} onBack={onArtifactBack} />
+                      ? <VisitBooking projectId={artifact.data.id} projectName={artifact.data.projectName} />
                       : <ProjectCard project={artifact.data} />}
                   </div>
                 </motion.div>
               </>
-            ) : (
-              /* Collapsed pill */
+            ) : (!artifactHistory?.length || messages.length === 0) ? (
               <motion.button
                 type="button"
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 exit={{ y: 20, opacity: 0 }}
                 onClick={onToggleArtifact}
-                className="w-full bg-white border-t border-[#E7E5E4] px-4 py-3 flex items-center justify-between shadow-[0_-2px_12px_rgba(0,0,0,0.06)]"
+                className="w-full bg-white border-t border-[#E7E5E4] px-4 py-2 flex items-center justify-between"
               >
-                <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 rounded-lg bg-[#1B4F8A] flex items-center justify-center flex-shrink-0">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="white"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/></svg>
-                  </div>
-                  <span className="text-[12px] font-medium text-[#1C1917] truncate max-w-[200px]">
-                    {artifact.type === 'visit_booking' ? `Book visit — ${artifact.data.projectName}` : artifact.data.projectName}
-                  </span>
-                </div>
-                <span className="text-[11px] text-[#A8A29E]">↑ View</span>
+                <span className="text-[12px] font-medium text-[#1C1917] truncate">
+                  {artifact.type === 'visit_booking' ? `Book visit — ${artifact.data.projectName}` : artifact.data.projectName}
+                </span>
+                <span className="text-[11px] text-[#1B4F8A] font-medium">↑ Open</span>
               </motion.button>
-            )}
+            ) : null}
           </motion.div>
         )}
       </AnimatePresence>

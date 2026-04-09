@@ -4,7 +4,6 @@ import { useState } from "react"
 interface VisitBookingProps {
   projectId: string
   projectName: string
-  onBack?: () => void
 }
 
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
@@ -19,7 +18,7 @@ function getDatePills(): { label: string; date: Date }[] {
   })
 }
 
-export function VisitBooking({ projectId, projectName, onBack }: VisitBookingProps) {
+export function VisitBooking({ projectId, projectName }: VisitBookingProps) {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
   const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
