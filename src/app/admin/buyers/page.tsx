@@ -167,7 +167,7 @@ export default async function BuyersPage({
                                   {getPersonaLabel(session.buyerPersona).charAt(0)}
                                 </div>
                                 {urgency && (
-                                  <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full" style={{ color: urgencyColor(days) === '#A32D2D' ? '#F87171' : '#FBBF24', background: urgencyColor(days) === '#A32D2D' ? 'rgba(248,113,113,0.15)' : 'rgba(251,191,36,0.15)' }}>{urgency}</span>
+                                  <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full" style={{ color: urgencyColor(days) === '#F87171' ? '#F87171' : '#FBBF24', background: urgencyColor(days) === '#F87171' ? 'rgba(248,113,113,0.15)' : 'rgba(251,191,36,0.15)' }}>{urgency}</span>
                                 )}
                               </div>
                               <p className="text-[11px] font-medium text-white truncate">{getPersonaLabel(session.buyerPersona)} · {session.buyerConfig ?? '—'}</p>
@@ -227,7 +227,7 @@ export default async function BuyersPage({
                         <td className="py-2.5 px-3" style={{ color: '#6B7280' }}>{days}d</td>
                         <td className="py-2.5 px-3" style={{ color: '#6B7280' }}>{days === 0 ? 'Today' : `${days}d ago`}</td>
                         <td className="py-2.5 px-3">
-                          {urgency ? <span className="text-[10px] font-semibold" style={{ color: urgencyColor(days) === '#A32D2D' ? '#F87171' : '#FBBF24' }}>{urgency}</span> : <span className="text-[10px]" style={{ color: '#4B5563' }}>Normal</span>}
+                          {urgency ? <span className="text-[10px] font-semibold" style={{ color: urgencyColor(days) === '#F87171' ? '#F87171' : '#FBBF24' }}>{urgency}</span> : <span className="text-[10px]" style={{ color: '#4B5563' }}>Normal</span>}
                         </td>
                         <td className="py-2.5 px-3"><LeakageBadge score={risk} /></td>
                       </tr>
