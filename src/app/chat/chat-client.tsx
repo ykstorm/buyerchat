@@ -55,7 +55,9 @@ export default function ChatClient({
       const project = projects.find(p => p.id === projectId)
       if (project) {
         const newArtifact: Artifact = { type: 'visit_booking', data: project }
-        const newHistory = [...artifactHistory.slice(0, artifactIndex + 1), newArtifact]
+        const newHistory = [...artifactHistoryRef.current.slice(0, artifactIndexRef.current + 1), newArtifact]
+        artifactHistoryRef.current = newHistory
+        artifactIndexRef.current = newHistory.length - 1
         setArtifactHistory(newHistory)
         setArtifactIndex(newHistory.length - 1)
         setCurrentArtifact(newArtifact)
@@ -136,20 +138,20 @@ export default function ChatClient({
       const found = projects.find(p => lower.includes(p.projectName.toLowerCase()))
       if (found && /book.*visit|visit.*book|schedule.*visit/i.test(full)) {
         const newArtifact1: Artifact = { type: 'visit_booking', data: found }
-        const newHistory1 = [...artifactHistory.slice(0, artifactIndex + 1), newArtifact1]
-        setArtifactHistory(newHistory1)
-        setArtifactIndex(newHistory1.length - 1)
+        const newHistory1 = [...artifactHistoryRef.current.slice(0, artifactIndexRef.current + 1), newArtifact1]
         artifactHistoryRef.current = newHistory1
         artifactIndexRef.current = newHistory1.length - 1
+        setArtifactHistory(newHistory1)
+        setArtifactIndex(newHistory1.length - 1)
         setCurrentArtifact(newArtifact1)
         setShowArtifact(true)
       } else if (found) {
         const newArtifact2: Artifact = { type: 'project_card', data: found }
-        const newHistory2 = [...artifactHistory.slice(0, artifactIndex + 1), newArtifact2]
-        setArtifactHistory(newHistory2)
-        setArtifactIndex(newHistory2.length - 1)
+        const newHistory2 = [...artifactHistoryRef.current.slice(0, artifactIndexRef.current + 1), newArtifact2]
         artifactHistoryRef.current = newHistory2
         artifactIndexRef.current = newHistory2.length - 1
+        setArtifactHistory(newHistory2)
+        setArtifactIndex(newHistory2.length - 1)
         setCurrentArtifact(newArtifact2)
         setShowArtifact(true)
       }
@@ -209,9 +211,20 @@ export default function ChatClient({
     setInput('')
     setCurrentArtifact(null)
     setSessionId(null)
+    setArtifactHistory([])
+    setArtifactIndex(-1)
+    artifactHistoryRef.current = []
+    artifactIndexRef.current = -1
+    setShowArtifact(true)
+    router.replace('/chat')
   }, [router])
 
   const loadSession = useCallback((id: string) => {
+    setCurrentArtifact(null)
+    setArtifactHistory([])
+    setArtifactIndex(-1)
+    artifactHistoryRef.current = []
+    artifactIndexRef.current = -1
     router.push(`/chat?session=${id}`)
   }, [router])
 
