@@ -24,7 +24,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const day = getDayNumber()
 
   return (
-    <div className="min-h-screen bg-[#EFEFED]">
+    <div className="min-h-screen" style={{ background: '#0A0F1E' }}>
       {/* AdminNavClient renders sidebar (and its own topbar underneath) */}
       <AdminNavClient userName={userName} />
 
@@ -66,7 +66,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       </header>
 
       {/* Content: sidebar offset on desktop */}
-      <main className="lg:ml-14 mt-12 p-5 min-h-screen">
+      <main className="lg:ml-14 mt-12 p-5 min-h-screen" style={{ background: '#0A0F1E' }}>
         {children}
       </main>
     </div>

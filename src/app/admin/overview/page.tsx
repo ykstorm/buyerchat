@@ -2,7 +2,6 @@
 import { prisma } from '@/lib/prisma'
 import { formatLakh, daysBetween, getStageLabel, getUrgency } from '@/lib/admin-utils'
 import Link from 'next/link'
-import AnimatedNumber from '@/components/admin/AnimatedNumber'
 
 type AlertItem = { icon: string; bg: string; color: string; title: string; sub: string }
 

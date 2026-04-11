@@ -10,7 +10,7 @@ export async function buildContextPayload() {
 
     const [projects, localities, infrastructure] = await Promise.all([
       prisma.project.findMany({
-        where: { isActive: true },
+        where: { isActive: true, decisionTag: { not: 'Avoid' }, honestConcern: { not: null } },
         select: {
           id: true,
           projectName: true,

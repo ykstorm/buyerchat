@@ -319,7 +319,7 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
                     </div>
                   )}
                   {/* Content */}
-                  <div className="px-4 pb-6 overflow-y-auto overscroll-contain" style={{ maxHeight: '55vh', touchAction: 'pan-y', WebkitOverflowScrolling: 'touch' }} onPointerDown={e => e.stopPropagation()}>
+                  <div className="px-4 pb-6 overscroll-contain" style={{ height: '50vh', overflowY: 'scroll', touchAction: 'pan-y', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'thin', scrollbarColor: '#E7E5E4 transparent' }} onPointerDown={e => e.stopPropagation()}>
                     {artifact.type === 'visit_booking'
                       ? <VisitBooking projectId={artifact.data.id} projectName={artifact.data.projectName} />
                       : <ProjectCard project={artifact.data} />}
@@ -380,7 +380,7 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
         </div>
       )}
 
-      <div className="border-t border-[#EEECE8] bg-[#FAFAF8]/90 backdrop-blur-sm px-4 py-3 sticky bottom-0 z-20 flex-shrink-0" style={{ paddingBottom: artifact && !showArtifact ? '60px' : 'env(safe-area-inset-bottom, 0px)' }}>
+      <div className="border-t border-[#EEECE8] bg-[#FAFAF8]/90 backdrop-blur-sm px-4 py-3 sticky bottom-0 z-20 flex-shrink-0" style={{ paddingBottom: 'env(safe-area-inset-bottom, 12px)' }}>
         <form onSubmit={handleSubmit} className="flex gap-2 items-center">
           <input
             value={input}

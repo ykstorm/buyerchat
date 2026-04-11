@@ -23,7 +23,9 @@
       "Bash(grep -v \"node_modules\\\\|.next\\\\|//.*fetch\")",
       "Bash(grep:*)",
       "Bash(wait)",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "Bash(npx next:*)",
+      "Bash(npm i:*)"
     ]
   }
 }
