@@ -299,6 +299,42 @@ export default async function OverviewPage() {
           </div>
         </div>
 
+        {/* Today's actions */}
+        <div className="rounded-2xl p-4" style={{ background: '#111827', border: '1px solid rgba(255,255,255,0.07)' }}>
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-[13px] font-semibold text-white">Today's Actions</p>
+            <span className="text-[10px]" style={{ color: '#4B5563' }}>{new Date().toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' })}</span>
+          </div>
+          <div className="space-y-2">
+            {[
+              urgentSessions.length > 0 && {
+                icon: '🔴', text: `Contact ${urgentSessions.length} urgent buyer${urgentSessions.length > 1 ? 's' : ''} today`, href: '/admin/followup', color: '#F87171'
+              },
+              postVisitSilenceCount > 0 && {
+                icon: '⏰', text: `${postVisitSilenceCount} post-visit buyer${postVisitSilenceCount > 1 ? 's' : ''} need 48h follow-up`, href: '/admin/followup', color: '#FBBF24'
+              },
+              scoringQueueCount > 0 && {
+                icon: '📋', text: `Score ${scoringQueueCount} project${scoringQueueCount > 1 ? 's' : ''} — buyers seeing ₹0 prices`, href: '/admin/projects', color: '#FBBF24'
+              },
+              pendingVisitCount > 0 && {
+                icon: '🏗', text: `${pendingVisitCount} site visit${pendingVisitCount > 1 ? 's' : ''} upcoming — send builder brief`, href: '/admin/visits', color: '#60A5FA'
+              },
+              reraAlertCount > 0 && {
+                icon: '⚠️', text: `${reraAlertCount} RERA deadline${reraAlertCount > 1 ? 's' : ''} within 90 days`, href: '/admin/intelligence', color: '#F87171'
+              },
+            ].filter(Boolean).map((action: any, i) => (
+              <Link key={i} href={action.href} className="flex items-center gap-2.5 rounded-lg px-3 py-2.5 transition-colors hover:bg-white/5" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                <span className="text-[14px]">{action.icon}</span>
+                <span className="text-[11px]" style={{ color: action.color }}>{action.text}</span>
+                <span className="ml-auto text-[10px]" style={{ color: '#4B5563' }}>→</span>
+              </Link>
+            ))}
+            {urgentSessions.length === 0 && postVisitSilenceCount === 0 && scoringQueueCount === 0 && (
+              <p className="text-[12px] text-center py-4" style={{ color: '#4B5563' }}>All clear — no urgent actions today ✓</p>
+            )}
+          </div>
+        </div>
+
       </div>
     </div>
   )

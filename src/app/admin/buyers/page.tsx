@@ -30,10 +30,21 @@ function urgencyLabel(days: number, stage: string) {
 function getLeakageScore(session: any): number {
   let score = 0
   const days = Math.floor((Date.now() - new Date(session.lastMessageAt).getTime()) / 86400000)
-  if (days > 7) score += 20
-  if (days > 14) score += 10
-  if (['visit_trigger', 'pre_visit', 'post_visit'].includes(session.buyerStage)) score += 25
-  if (session.qualificationDone && days > 3) score += 15
+  // Days silent signals
+  if (days > 3) score += 10
+  if (days > 7) score += 15
+  if (days > 14) score += 15
+  if (days > 21) score += 10
+  // Stage signals — hot stages + silence = high bypass risk
+  if (['visit_trigger', 'pre_visit'].includes(session.buyerStage)) score += 20
+  if (session.buyerStage === 'post_visit') score += 25
+  if (session.buyerStage === 'comparison') score += 10
+  // Qualification signals
+  if (session.qualificationDone && days > 2) score += 15
+  // Projects disclosed but gone silent
+  if ((session.projectsDisclosed?.length ?? 0) > 0 && days > 5) score += 10
+  // Budget known = serious buyer, silence = risk
+  if (session.buyerBudget && days > 4) score += 10
   return Math.min(score, 100)
 }
 

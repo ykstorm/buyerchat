@@ -65,6 +65,8 @@ Next.js 15, Neon PostgreSQL, Prisma 7, GPT-4o, Auth.js v5, Vercel, Upstash Redis
 - ProjectCard SBU+Carpet+ALL-IN+EMI
 
 ## PENDING (priority order)
+0. Cards-first AI response system — JSON response format + ChatRenderer (core architecture change)
+0b. Response format rules — AI giving too-long text responses, dump 5 projects at once (temporary fix: prompt patch)
 1. Mobile UX final pass
 2. Dark/light mode toggle (Day 40)
 3. Homesty rebrand + BuyerChat → Homesty everywhere (Day 42)

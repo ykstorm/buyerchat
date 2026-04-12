@@ -54,6 +54,9 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         amenitiesScore: Number(body.amenitiesScore ?? 50),
         infrastructureScore: Number(body.infrastructureScore ?? 50),
         demandScore: Number(body.demandScore ?? 50),
+        sopPlanning: body.sopPlanning !== undefined ? Number(body.sopPlanning) : undefined,
+        sopGrowth: body.sopGrowth !== undefined ? Number(body.sopGrowth) : undefined,
+        sopTotal: body.sopTotal !== undefined ? Number(body.sopTotal) : undefined,
         isActive: body.isActive ?? true,
       }
     })
