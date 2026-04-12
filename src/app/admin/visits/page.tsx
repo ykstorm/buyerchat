@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { redirect } from 'next/navigation'
 import { DarkBadge } from '@/components/admin/DarkCard'
 import MarkVisitComplete from '@/components/admin/MarkVisitComplete'
+import PreVisitBriefButton from '@/components/admin/PreVisitBriefButton'
 
 function getStatus(visit: { visitCompleted: boolean; visitScheduledDate: Date }) {
   if (visit.visitCompleted) return { label: 'Completed', color: 'green' as const }
@@ -80,7 +81,18 @@ export default async function VisitsPage() {
                       <DarkBadge label={visit.otpVerified ? 'Verified' : 'Not verified'} color={visit.otpVerified ? 'green' : 'red'} />
                     </td>
                     <td className="px-4 py-3">
-                      {!visit.visitCompleted && <MarkVisitComplete visitId={visit.id} />}
+                      <div className="flex flex-col gap-1.5">
+                        {!visit.visitCompleted && <MarkVisitComplete visitId={visit.id} />}
+                        {!visit.visitCompleted && (
+                          <PreVisitBriefButton
+                            projectName={visit.project?.projectName ?? '—'}
+                            builderName={visit.project?.builderName ?? '—'}
+                            visitDate={visit.visitScheduledDate.toString()}
+                            buyerName={visit.buyerName}
+                            visitToken={visit.visitToken}
+                          />
+                        )}
+                      </div>
                     </td>
                   </tr>
                 )

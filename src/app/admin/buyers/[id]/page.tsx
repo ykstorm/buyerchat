@@ -43,7 +43,7 @@ export default async function BuyerDetailPage({ params }: { params: Promise<{ id
             { label: 'Purpose', value: session.buyerPurpose ?? '—' },
             { label: 'Qualified', value: session.qualificationDone ? 'Yes ✓' : 'No' },
             { label: 'Messages', value: session.messages?.length ?? 0 },
-            { label: 'Site visits', value: session.siteVisits?.length ?? 0 },
+            { label: 'Projects seen', value: session.projectsDisclosed?.length ?? 0 },
           ].map(item => (
             <div key={item.label}>
               <p className="text-[10px] uppercase tracking-wider mb-1" style={{ color: '#4B5563' }}>{item.label}</p>

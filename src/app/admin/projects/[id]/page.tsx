@@ -107,7 +107,7 @@ function ScoreInput({ label, value, max, onChange, hint, type, options }: {
         <label className="block text-[11px] text-[#9CA3AF] mb-1">{label}</label>
         {hint && <p className="text-[10px] text-[#6B7280] mb-1">{hint}</p>}
         <textarea value={value as string} onChange={e => onChange(e.target.value)} rows={3}
-          className="w-full rounded-lg px-3 py-2 text-[12px] text-white outline-none resize-none" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}" />
+          className="w-full rounded-lg px-3 py-2 text-[12px] text-white outline-none resize-none" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }} />
       </div>
     )
   }
@@ -117,7 +117,7 @@ function ScoreInput({ label, value, max, onChange, hint, type, options }: {
         <label className="block text-[11px] text-[#9CA3AF] mb-1">{label}</label>
         {hint && <p className="text-[10px] text-[#6B7280] mb-1">{hint}</p>}
         <select value={value as string} onChange={e => onChange(e.target.value)}
-          className="w-full rounded-lg px-3 py-2 text-[12px] text-white outline-none" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}">
+          className="w-full rounded-lg px-3 py-2 text-[12px] text-white outline-none" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}>
           {options.map(o => <option key={o}>{o}</option>)}
         </select>
       </div>
@@ -133,7 +133,7 @@ function ScoreInput({ label, value, max, onChange, hint, type, options }: {
         <div className="flex items-center gap-1">
           <input type="number" min={0} max={max} value={numVal}
             onChange={e => onChange(Math.min(max ?? 100, Math.max(0, Number(e.target.value))))}
-            className="w-12 text-right rounded px-1 py-0.5 text-[12px] font-mono text-white outline-none" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}" />
+            className="w-12 text-right rounded px-1 py-0.5 text-[12px] font-mono text-white outline-none" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }} />
           <span className="text-[11px] text-[#9CA3AF]">/{max}</span>
         </div>
       </div>
@@ -319,7 +319,7 @@ export default function ProjectEditPage() {
               <div className="flex gap-2 mb-4">
                 <input value={form.reraNumber} onChange={e => set('reraNumber', e.target.value)}
                   placeholder="PR/GJ/AHMEDABAD/..."
-                  className="flex-1 rounded-lg px-3 py-2 text-[12px] font-mono text-white outline-none" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}" />
+                  className="flex-1 rounded-lg px-3 py-2 text-[12px] font-mono text-white outline-none" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }} />
                 <button type="button" disabled={reraFetching || !form.reraNumber}
                   className="bg-[#185FA5] text-white text-[11px] font-medium px-4 py-2 rounded-lg hover:bg-[#0C447C] disabled:opacity-50 transition-colors">
                   {reraFetching ? 'Fetching…' : 'Fetch from portal'}
@@ -334,17 +334,17 @@ export default function ProjectEditPage() {
                 <div>
                   <label className="block text-[11px] text-[#9CA3AF] mb-1">Project name *</label>
                   <input value={form.projectName} onChange={e => set('projectName', e.target.value)}
-                    className="w-full rounded-lg px-3 py-2 text-[12px] text-white outline-none" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}" />
+                    className="w-full rounded-lg px-3 py-2 text-[12px] text-white outline-none" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }} />
                 </div>
                 <div>
                   <label className="block text-[11px] text-[#9CA3AF] mb-1">Builder brand name *</label>
                   <input value={form.builderName} onChange={e => set('builderName', e.target.value)}
-                    className="w-full rounded-lg px-3 py-2 text-[12px] text-white outline-none" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}" />
+                    className="w-full rounded-lg px-3 py-2 text-[12px] text-white outline-none" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }} />
                 </div>
                 <div>
                   <label className="block text-[11px] text-[#9CA3AF] mb-1">Area</label>
                   <select value={form.microMarket} onChange={e => set('microMarket', e.target.value)}
-                    className="w-full rounded-lg px-3 py-2 text-[12px] text-white outline-none" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}">
+                    className="w-full rounded-lg px-3 py-2 text-[12px] text-white outline-none" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}>
                     <option>Shela</option>
                     <option>South Bopal</option>
                     <option>Bopal</option>
@@ -353,12 +353,12 @@ export default function ProjectEditPage() {
                 <div>
                   <label className="block text-[11px] text-[#9CA3AF] mb-1">Possession date</label>
                   <input type="date" value={form.possessionDate} onChange={e => set('possessionDate', e.target.value)}
-                    className="w-full rounded-lg px-3 py-2 text-[12px] text-white outline-none" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}" />
+                    className="w-full rounded-lg px-3 py-2 text-[12px] text-white outline-none" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }} />
                 </div>
                 <div>
                   <label className="block text-[11px] text-[#9CA3AF] mb-1">Construction status</label>
                   <select value={form.constructionStatus} onChange={e => set('constructionStatus', e.target.value)}
-                    className="w-full rounded-lg px-3 py-2 text-[12px] text-white outline-none" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}">
+                    className="w-full rounded-lg px-3 py-2 text-[12px] text-white outline-none" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}>
                     <option>Under Construction</option>
                     <option>Ready to Move</option>
                     <option>New Launch</option>
@@ -367,18 +367,18 @@ export default function ProjectEditPage() {
                 <div>
                   <label className="block text-[11px] text-[#9CA3AF] mb-1">Available units</label>
                   <input type="number" value={form.availableUnits} onChange={e => set('availableUnits', e.target.value)}
-                    className="w-full rounded-lg px-3 py-2 text-[12px] font-mono text-white outline-none" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}" />
+                    className="w-full rounded-lg px-3 py-2 text-[12px] font-mono text-white outline-none" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }} />
                 </div>
               </div>
               <div className="mt-3">
                 <label className="block text-[11px] text-[#9CA3AF] mb-1">Unit types (comma-separated e.g. 2BHK, 3BHK)</label>
                 <input value={form.unitTypes} onChange={e => set('unitTypes', e.target.value)}
-                  className="w-full rounded-lg px-3 py-2 text-[12px] text-white outline-none" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}" />
+                  className="w-full rounded-lg px-3 py-2 text-[12px] text-white outline-none" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }} />
               </div>
               <div className="mt-3">
                 <label className="block text-[11px] text-[#9CA3AF] mb-1">Amenities (comma-separated)</label>
                 <textarea value={form.amenities} onChange={e => set('amenities', e.target.value)} rows={2}
-                  className="w-full rounded-lg px-3 py-2 text-[12px] text-white outline-none resize-none" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}" />
+                  className="w-full rounded-lg px-3 py-2 text-[12px] text-white outline-none resize-none" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }} />
               </div>
             </div>
           )}
@@ -598,18 +598,18 @@ export default function ProjectEditPage() {
                   <label className="block text-[11px] text-[#9CA3AF] mb-1">Best for (1 line)</label>
                   <input value={form.bestFor} onChange={e => set('bestFor', e.target.value)}
                     placeholder="e.g. Families with school-going kids wanting Shela lifestyle"
-                    className="w-full rounded-lg px-3 py-2 text-[12px] text-white outline-none" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}" />
+                    className="w-full rounded-lg px-3 py-2 text-[12px] text-white outline-none" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }} />
                 </div>
                 <div>
                   <label className="block text-[11px] text-[#9CA3AF] mb-1">Main concern (MANDATORY)</label>
                   <input value={form.mainConcern} onChange={e => set('mainConcern', e.target.value)}
                     placeholder="e.g. First project by this builder — no delivery track record"
-                    className="w-full rounded-lg px-3 py-2 text-[12px] text-white outline-none" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}" />
+                    className="w-full rounded-lg px-3 py-2 text-[12px] text-white outline-none" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }} />
                 </div>
                 <div>
                   <label className="block text-[11px] text-[#9CA3AF] mb-1">Analyst notes</label>
                   <textarea value={form.analystNotes} onChange={e => set('analystNotes', e.target.value)} rows={3}
-                    className="w-full rounded-lg px-3 py-2 text-[12px] text-white outline-none resize-none" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}" />
+                    className="w-full rounded-lg px-3 py-2 text-[12px] text-white outline-none resize-none" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }} />
                 </div>
                 <ScoreInput label="Honest Concern (what buyers must know)" value={form.honestConcern} onChange={v => set('honestConcern', v)} type="textarea" />
                 <ScoreInput label="Analyst Note (insider intel)" value={form.analystNote} onChange={v => set('analystNote', v)} type="textarea" />
@@ -632,7 +632,7 @@ export default function ProjectEditPage() {
                       <label className="block text-[11px] text-[#9CA3AF] mb-1">{label} /100</label>
                       <input type="number" min={0} max={100} value={form[field] as number}
                         onChange={e => set(field, Number(e.target.value))}
-                        className="w-full rounded-lg px-3 py-2 text-[12px] font-mono text-white outline-none" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}" />
+                        className="w-full rounded-lg px-3 py-2 text-[12px] font-mono text-white outline-none" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }} />
                     </div>
                   ))}
                 </div>

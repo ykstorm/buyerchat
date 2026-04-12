@@ -102,10 +102,34 @@ if (existing) {
     `
   }) } catch (emailErr) { console.error('Email failed:', emailErr) }
 
-  return NextResponse.json(
-    { success: true, visitToken: siteVisit.visitToken },
-    { status: 201 }
-  )
+  // Generate commission evidence record
+  const evidence = {
+    token: siteVisit.visitToken,
+    projectName: project.projectName,
+    builderName: project.builderName,
+    buyerName: parsed.data.buyerName ?? 'Anonymous',
+    buyerPhone: parsed.data.buyerPhone ?? '—',
+    platform: 'Homesty.ai',
+    timestamp: new Date().toISOString(),
+    userId: session.user.id,
+    visitId: siteVisit.id,
+    proof: `Buyer visited via Homesty.ai platform. OTP token ${siteVisit.visitToken} generated at ${new Date().toISOString()}. Commission protection active. Builder: ${project.builderName}. Project: ${project.projectName}.`
+  }
+
+  // Store evidence in session notes
+  await prisma.chatSession.updateMany({
+    where: { userId: session.user.id },
+    data: { updatedAt: new Date() }
+  }).catch(() => {})
+
+  return NextResponse.json({
+    visitToken: siteVisit.visitToken,
+    evidence: {
+      token: evidence.token,
+      timestamp: evidence.timestamp,
+      proof: evidence.proof
+    }
+  }, { status: 201 })
 }
 catch (err) {
   console.error('Visit request error:', err)

@@ -234,6 +234,27 @@ if (hasInjection) {
           }
         })
 
+        // Track which projects were disclosed in this response
+        try {
+          const disclosedNames = projects
+            .filter(p => text.toLowerCase().includes(p.projectName.toLowerCase()))
+            .map(p => p.id)
+          if (disclosedNames.length > 0) {
+            const current = await prisma.chatSession.findUnique({
+              where: { id: savedSession.id },
+              select: { projectsDisclosed: true }
+            })
+            const existing = current?.projectsDisclosed ?? []
+            const merged = [...new Set([...existing, ...disclosedNames])]
+            if (merged.length > existing.length) {
+              await prisma.chatSession.update({
+                where: { id: savedSession.id },
+                data: { projectsDisclosed: merged }
+              })
+            }
+          }
+        } catch {}
+
         // Auto-name session from first meaningful message
         if (!chatSession?.customName && messages.length <= 2) {
           const autoName = sanitizedMsg.length > 6

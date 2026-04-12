@@ -63,12 +63,12 @@ export default function NewBuilderPage() {
             <div>
               <label className="text-[11px] text-[#9CA3AF] block mb-1">Builder Name (unique ID) *</label>
               <input value={form.builderName} onChange={e => set('builderName', e.target.value)}
-                className="w-full rounded-lg px-3 py-2 text-[13px] text-white outline-none" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}" placeholder="e.g. venus-group" />
+                className="w-full rounded-lg px-3 py-2 text-[13px] text-white outline-none" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }} placeholder="e.g. venus-group" />
             </div>
             <div>
               <label className="text-[11px] text-[#9CA3AF] block mb-1">Brand Name (what buyers see)</label>
               <input value={form.brandName} onChange={e => set('brandName', e.target.value)}
-                className="w-full rounded-lg px-3 py-2 text-[13px] text-white outline-none" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}" placeholder="e.g. Venus Group" />
+                className="w-full rounded-lg px-3 py-2 text-[13px] text-white outline-none" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }} placeholder="e.g. Venus Group" />
             </div>
             <div className="bg-white/[0.03] rounded-lg p-4 space-y-3">
               <p className="text-[11px] font-medium text-white mb-2">Trust Scores</p>
