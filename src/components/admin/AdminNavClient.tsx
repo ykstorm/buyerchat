@@ -13,6 +13,7 @@ const NAV_ITEMS = [
   { href: '/admin/revenue',     icon: '💰', label: 'Revenue' },
   { href: '/admin/intelligence',icon: '🧠', label: 'Intel' },
   { href: '/admin/visits',      icon: '📅', label: 'Visits' },
+  { href: '/admin/settings',    icon: '⚙️', label: 'Settings' },
 ]
 
 const TOP_GROUP = NAV_ITEMS.slice(0, 4)

@@ -229,6 +229,13 @@ export default function ChatClient({
   }, [router])
 
   useEffect(() => {
+    // On fresh page load (not sidebar navigation), clear stale session URL
+    if (urlSessionId && !document.referrer.includes('/chat')) {
+      router.replace('/chat')
+    }
+  }, [])
+
+  useEffect(() => {
     if (!urlSessionId) return
     const load = async () => {
       setLoadingSession(true)

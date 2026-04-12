@@ -133,9 +133,32 @@ if (hasInjection) {
     })
   }
 
+  // Fetch buyer history for return memory
+  let buyerMemory: string | null = null
+  if (session?.user?.id && !incomingSessionId) {
+    try {
+      const prevSessions = await prisma.chatSession.findMany({
+        where: { userId: session.user.id, NOT: { id: chatSession!.id } },
+        orderBy: { lastMessageAt: 'desc' },
+        take: 3,
+        select: { buyerBudget: true, buyerConfig: true, buyerPersona: true, buyerStage: true, buyerPurpose: true }
+      })
+      if (prevSessions.length > 0) {
+        const s = prevSessions[0]
+        const parts = [
+          s.buyerConfig && `looking at ${s.buyerConfig}`,
+          s.buyerBudget && `budget ₹${Math.round(s.buyerBudget/100000)}L`,
+          s.buyerPurpose && `for ${s.buyerPurpose}`,
+          s.buyerPersona && s.buyerPersona !== 'unknown' && `persona: ${s.buyerPersona}`,
+        ].filter(Boolean)
+        if (parts.length > 0) buyerMemory = `Returning buyer. Last session: ${parts.join(', ')}. Stage reached: ${s.buyerStage}.`
+      }
+    } catch {}
+  }
+
   const result = streamText({
     model: openai('gpt-4o'),
-    system: buildSystemPrompt(context, decisionCard),
+    system: buildSystemPrompt(context, decisionCard, buyerMemory),
     messages: cappedMessages,
     temperature: 0.3,
     maxOutputTokens: 500,

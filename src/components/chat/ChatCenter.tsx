@@ -200,7 +200,7 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
                 initial={{ opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.18, ease: 'easeOut' }}
-                className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start items-end gap-2'} ${isGrouped ? 'mt-0.5' : 'mt-4'}`}
+                className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'} ${isGrouped ? 'mt-0.5' : 'mt-4'}`}
               >
                 {/* AI avatar — only show on last in group */}
                 {msg.role === 'assistant' && (
@@ -242,6 +242,27 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
                     </ReactMarkdown>
                   )}
                 </div>
+                {/* Suggested chips — only after last AI message */}
+                {msg.role === 'assistant' && i === messages.length - 1 && !isLoading && (
+                  <div className="flex flex-wrap gap-1.5 mt-2 ml-8">
+                    {[
+                      'Book a site visit',
+                      'Compare with another project',
+                      'What are the risks?',
+                      'Tell me about the builder',
+                    ].map(chip => (
+                      <button
+                        key={chip}
+                        type="button"
+                        onClick={() => append({ role: 'user', content: chip })}
+                        className="text-[11px] px-3 py-1.5 rounded-full border transition-all hover:border-[#1B4F8A]/40 hover:bg-[#1B4F8A]/5 hover:text-[#1B4F8A]"
+                        style={{ borderColor: '#E7E5E4', color: '#78716C', background: 'white' }}
+                      >
+                        {chip}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </motion.div>
             )
           })}

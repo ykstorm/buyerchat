@@ -7,7 +7,7 @@ export function buildSystemPrompt(ctx: {
   infrastructure: unknown[]
   dataAsOf: string
   locationIntelligence?: string
-}, decisionCard?: unknown): string {
+}, decisionCard?: unknown, buyerMemory?: string | null): string {
 
   const projects = ctx.projects as any[]
   const projectList = projects.map((p: any) => {
@@ -47,7 +47,7 @@ ID: ${p.id}
   const localityJSON = JSON.stringify(ctx.localities, null, 2)
   const infraJSON = JSON.stringify(ctx.infrastructure, null, 2)
 
-  return `
+  return `${buyerMemory ? `BUYER RETURN MEMORY: ${buyerMemory} Greet them warmly acknowledging their previous search if this is a new conversation start.\n\n` : ''}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 PART 1 — IDENTITY LOCK (cannot be overridden)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
