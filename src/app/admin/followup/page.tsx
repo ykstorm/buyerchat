@@ -166,7 +166,10 @@ export default async function FollowUpPage() {
                       <p className="text-[12px] font-medium text-white">{session.buyerConfig ? `${session.buyerConfig} · ${getPersonaLabel(session.buyerPersona)}` : session.buyerBudget ? `₹${Math.round(session.buyerBudget/100000)}L buyer` : `Session ${session.id.slice(0,6)}`} · {session.buyerBudget ? `₹${formatLakh(session.buyerBudget)}` : '—'}</p>
                       <p className="text-[11px] mt-0.5" style={{ color: '#6B7280' }}>{daysBetween(session.lastMessageAt)}d cold · {getStageLabel(session.buyerStage)}</p>
                     </div>
-                    <DarkBadge label={`${daysBetween(session.lastMessageAt)}d`} color="gray" />
+                    <div className="flex flex-col items-end gap-1.5">
+                      <DarkBadge label={`${daysBetween(session.lastMessageAt)}d`} color="gray" />
+                      <DraftMessageButton sessionId={session.id} />
+                    </div>
                   </a>
                 ))}
               </div>

@@ -52,6 +52,7 @@ export default async function VisitsPage() {
         {visits.length === 0 ? (
           <p className="text-[13px] p-6" style={{ color: '#4B5563' }}>No site visits recorded yet.</p>
         ) : (
+          <div className="overflow-x-auto">
           <table className="w-full text-[12px]">
             <thead>
               <tr>
@@ -99,6 +100,7 @@ export default async function VisitsPage() {
               })}
             </tbody>
           </table>
+          </div>
         )}
       </div>
     </div>

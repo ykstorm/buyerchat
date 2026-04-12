@@ -327,7 +327,7 @@ const sidebar = (
             placeholder="Search chats..."
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
-            className="bg-transparent text-[12px] text-[#1C1917] placeholder-[#A8A29E] outline-none w-full"
+            className="bg-transparent text-[16px] md:text-[12px] text-[#1C1917] placeholder-[#A8A29E] outline-none w-full"
           />
         </div>
       </div>
