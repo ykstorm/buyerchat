@@ -13,7 +13,10 @@ export default async function BuyerDetailPage({ params }: { params: Promise<{ id
   try {
     session = await prisma.chatSession.findUnique({
       where: { id },
-      include: { messages: { orderBy: { createdAt: 'asc' } } }
+      include: {
+        messages: { orderBy: { createdAt: 'asc' } },
+        siteVisits: { select: { visitToken: true, visitScheduledDate: true, visitCompleted: true, project: { select: { projectName: true } } } }
+      }
     })
   } catch (err) {
     console.error('Buyer detail error:', err)
@@ -39,9 +42,9 @@ export default async function BuyerDetailPage({ params }: { params: Promise<{ id
             { label: 'Budget', value: session.buyerBudget ? `₹${formatLakh(session.buyerBudget)}` : '—' },
             { label: 'Stage', value: getStageLabel(session.buyerStage) },
             { label: 'Purpose', value: session.buyerPurpose ?? '—' },
-            { label: 'Qualified', value: session.qualificationDone ? 'Yes' : 'No' },
-            { label: 'Projects seen', value: session.projectsDisclosed?.length ?? 0 },
+            { label: 'Qualified', value: session.qualificationDone ? 'Yes ✓' : 'No' },
             { label: 'Messages', value: session.messages?.length ?? 0 },
+            { label: 'Site visits', value: session.siteVisits?.length ?? 0 },
           ].map(item => (
             <div key={item.label}>
               <p className="text-[10px] uppercase tracking-wider mb-1" style={{ color: '#4B5563' }}>{item.label}</p>
@@ -83,6 +86,30 @@ export default async function BuyerDetailPage({ params }: { params: Promise<{ id
           )}
         </div>
       </div>
+        {/* Site visits */}
+        {session.siteVisits?.length > 0 && (
+          <div className="rounded-2xl overflow-hidden mt-4" style={{ background: '#111827', border: '1px solid rgba(255,255,255,0.07)' }}>
+            <div className="px-4 py-3" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+              <p className="text-[13px] font-semibold text-white">Site Visits ({session.siteVisits.length})</p>
+            </div>
+            <div className="p-4 space-y-2">
+              {session.siteVisits.map((v: any) => (
+                <div key={v.visitToken} className="flex items-center justify-between rounded-xl px-3 py-2.5" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                  <div>
+                    <p className="text-[12px] font-medium text-white">{v.project?.projectName ?? '—'}</p>
+                    <p className="text-[10px] mt-0.5" style={{ color: '#6B7280' }}>
+                      {new Date(v.visitScheduledDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono text-[13px] font-bold" style={{ color: '#34D399' }}>{v.visitToken}</span>
+                    <DarkBadge label={v.visitCompleted ? 'Completed' : 'Upcoming'} color={v.visitCompleted ? 'green' : 'blue'} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
     </div>
   )
 }
