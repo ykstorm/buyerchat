@@ -116,10 +116,10 @@ if (existing) {
     proof: `Buyer visited via Homesty.ai platform. OTP token ${siteVisit.visitToken} generated at ${new Date().toISOString()}. Commission protection active. Builder: ${project.builderName}. Project: ${project.projectName}.`
   }
 
-  // Store evidence in session notes
+  // Touch session to mark activity
   await prisma.chatSession.updateMany({
     where: { userId: session.user.id },
-    data: { updatedAt: new Date() }
+    data: { lastMessageAt: new Date() }
   }).catch(() => {})
 
   return NextResponse.json({

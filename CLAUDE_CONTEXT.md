@@ -51,16 +51,30 @@ Next.js 15, Neon PostgreSQL, Prisma 7, GPT-4o, Auth.js v5, Vercel, Upstash Redis
 - Settings page with functional tabs
 - Buyer CRM Sessions tab rename
 
+## COMPLETED DAY 37-38
+- Homesty landing page with tagline
+- Pre-visit brief button on visits page
+- Commission evidence in visit booking
+- Project disclosure tracking (projects seen count)
+- All admin forms dark themed
+- Session quality scores on kanban
+- Buyer match engine on projects page
+- Mark visit complete + post_visit stage
+- Post-visit AI feedback context
+- Pricing system Step 3 full UI
+- ProjectCard SBU+Carpet+ALL-IN+EMI
+
 ## PENDING (priority order)
-1. Post-visit feedback prompt in chat (buyer return after visit)
-2. Buyer match engine UI on projects page
-3. Mobile UX final pass
-4. Dark/light mode toggle (Day 40)
-5. Homesty rebrand (Day 42)
-6. MSG91 SMS OTP (DLT pending — Balvir)
-7. WhatsApp nudge (blocked on DLT)
-8. Commission lock PDF
-9. RERA auto-scraper
+1. Mobile UX final pass
+2. Dark/light mode toggle (Day 40)
+3. Homesty rebrand + BuyerChat → Homesty everywhere (Day 42)
+4. Cards-first AI response system (Day 42)
+5. WhatsApp pre-visit brief auto-send (DLT pending)
+6. WhatsApp post-visit auto-send (DLT pending)
+7. SMS OTP registration (DLT pending)
+8. RERA auto-scraper Puppeteer (Day 42)
+9. PDF auto-extract Claude API (Day 42)
+10. SOP scoring 10 categories
 
 ## Data Issues (Balvir)
 - 10 projects minPrice=maxPrice=0 — enter via admin

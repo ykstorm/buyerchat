@@ -313,7 +313,7 @@ export default function ProjectEditPage() {
 
           {/* Step 1: RERA */}
           {step === 1 && (
-            <div className="rounded-xl p-4" style={{ background: '#111827', border: '1px solid rgba(255,255,255,0.07)' }}">
+            <div className="rounded-xl p-4" style={{ background: '#111827', border: '1px solid rgba(255,255,255,0.07)' }}>
               <p className="text-[12px] font-medium text-white mb-1">Step 1 — RERA Data</p>
               <p className="text-[11px] text-[#9CA3AF] mb-4">Auto-fetch from gujrera.gujarat.gov.in — enter RERA number and click fetch</p>
               <div className="flex gap-2 mb-4">
@@ -385,7 +385,7 @@ export default function ProjectEditPage() {
 
           {/* Step 2: Brochure — placeholder */}
           {step === 2 && (
-            <div className="rounded-xl p-4" style={{ background: '#111827', border: '1px solid rgba(255,255,255,0.07)' }}">
+            <div className="rounded-xl p-4" style={{ background: '#111827', border: '1px solid rgba(255,255,255,0.07)' }}>
               <p className="text-[12px] font-medium text-white mb-1">Step 2 — Brochure AI Extract</p>
               <p className="text-[11px] text-[#9CA3AF] mb-4">Upload PDF → Claude API reads and fills 40+ fields automatically</p>
               <div className="border-2 border-dashed border-white/10 rounded-xl p-8 text-center">
@@ -551,7 +551,7 @@ export default function ProjectEditPage() {
 
           {/* Step 4: Trust scores */}
           {step === 4 && (
-            <div className="rounded-xl p-4" style={{ background: '#111827', border: '1px solid rgba(255,255,255,0.07)' }}">
+            <div className="rounded-xl p-4" style={{ background: '#111827', border: '1px solid rgba(255,255,255,0.07)' }}>
               <p className="text-[12px] font-medium text-white mb-1">Step 4 — 5 Trust Scores</p>
               <p className="text-[11px] text-[#9CA3AF] mb-4">Your assessment — refer Scoring Anchors sheet for calibration. Score based on evidence, not gut feel.</p>
               <div className="space-y-4">
@@ -576,7 +576,7 @@ export default function ProjectEditPage() {
 
           {/* Step 5: SOP fields */}
           {step === 5 && (
-            <div className="rounded-xl p-4" style={{ background: '#111827', border: '1px solid rgba(255,255,255,0.07)' }}">
+            <div className="rounded-xl p-4" style={{ background: '#111827', border: '1px solid rgba(255,255,255,0.07)' }}>
               <p className="text-[12px] font-medium text-white mb-1">Step 5 — 4 SOP Manual Fields</p>
               <p className="text-[11px] text-[#9CA3AF] mb-4">Only these 4 need your judgment — everything else is auto. Rate 1–10. Requires your physical observation.</p>
               <div className="space-y-4">
@@ -642,7 +642,7 @@ export default function ProjectEditPage() {
 
           {/* Step 6: Review */}
           {step === 6 && (
-            <div className="rounded-xl p-4" style={{ background: '#111827', border: '1px solid rgba(255,255,255,0.07)' }}">
+            <div className="rounded-xl p-4" style={{ background: '#111827', border: '1px solid rgba(255,255,255,0.07)' }}>
               <p className="text-[12px] font-medium text-white mb-4">Step 6 — Review & Save</p>
               <div className="space-y-3">
                 {[
@@ -702,7 +702,7 @@ export default function ProjectEditPage() {
 
         {/* Live preview sidebar */}
         <div className="space-y-3">
-          <div className="rounded-xl p-4" style={{ background: '#111827', border: '1px solid rgba(255,255,255,0.07)' }} sticky top-4">
+          <div className="rounded-xl p-4 sticky top-4" style={{ background: '#111827', border: '1px solid rgba(255,255,255,0.07)' }}>
             <p className="text-[11px] font-medium text-[#9CA3AF] uppercase tracking-wider mb-3">Live preview</p>
             <div className="space-y-2">
               {[

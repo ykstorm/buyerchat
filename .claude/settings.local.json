@@ -25,7 +25,8 @@
       "Bash(wait)",
       "Bash(node:*)",
       "Bash(npx next:*)",
-      "Bash(npm i:*)"
+      "Bash(npm i:*)",
+      "Bash(npx tsc:*)"
     ]
   }
 }
