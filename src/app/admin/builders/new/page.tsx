@@ -7,8 +7,8 @@ function ScoreField({ label, max, value, onChange }: { label: string; max: numbe
   return (
     <div>
       <div className="flex justify-between mb-1">
-        <label className="text-[11px] text-[#52525B]">{label}</label>
-        <span className="text-[11px] font-medium text-[#1B3A6B]">{value}/{max}</span>
+        <label className="text-[11px] text-[#9CA3AF]">{label}</label>
+        <span className="text-[11px] font-medium text-white">{value}/{max}</span>
       </div>
       <input type="range" min={0} max={max} value={value}
         onChange={e => onChange(Number(e.target.value))}
@@ -54,36 +54,36 @@ export default function NewBuilderPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#EFEFED] p-6">
+    <div className="min-h-screen bg-[#0A0F1E] p-6">
       <div className="max-w-xl mx-auto">
-        <Link href="/admin/builders" className="text-[12px] text-[#52525B] hover:text-[#1B3A6B] mb-4 inline-block">← Back to Builders</Link>
-        <div className="bg-white rounded-xl p-6" style={{ border: '0.5px solid #E0DFDD' }}>
-          <h1 className="text-[16px] font-semibold text-[#1B3A6B] mb-5">Add New Builder</h1>
+        <Link href="/admin/builders" className="text-[12px] text-[#9CA3AF] hover:text-white mb-4 inline-block">← Back to Builders</Link>
+        <div className="rounded-xl p-6" style={{ background: '#111827', border: '1px solid rgba(255,255,255,0.07)' }}>
+          <h1 className="text-[16px] font-semibold text-white mb-5">Add New Builder</h1>
           <div className="space-y-4">
             <div>
-              <label className="text-[11px] text-[#52525B] block mb-1">Builder Name (unique ID) *</label>
+              <label className="text-[11px] text-[#9CA3AF] block mb-1">Builder Name (unique ID) *</label>
               <input value={form.builderName} onChange={e => set('builderName', e.target.value)}
-                className="w-full border border-[#E0DFDD] rounded-lg px-3 py-2 text-[13px] outline-none focus:border-[#1B3A6B]" placeholder="e.g. venus-group" />
+                className="w-full rounded-lg px-3 py-2 text-[13px] text-white outline-none" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}" placeholder="e.g. venus-group" />
             </div>
             <div>
-              <label className="text-[11px] text-[#52525B] block mb-1">Brand Name (what buyers see)</label>
+              <label className="text-[11px] text-[#9CA3AF] block mb-1">Brand Name (what buyers see)</label>
               <input value={form.brandName} onChange={e => set('brandName', e.target.value)}
-                className="w-full border border-[#E0DFDD] rounded-lg px-3 py-2 text-[13px] outline-none focus:border-[#1B3A6B]" placeholder="e.g. Venus Group" />
+                className="w-full rounded-lg px-3 py-2 text-[13px] text-white outline-none" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}" placeholder="e.g. Venus Group" />
             </div>
-            <div className="bg-[#F8F8F7] rounded-lg p-4 space-y-3">
-              <p className="text-[11px] font-medium text-[#1B3A6B] mb-2">Trust Scores</p>
+            <div className="bg-white/[0.03] rounded-lg p-4 space-y-3">
+              <p className="text-[11px] font-medium text-white mb-2">Trust Scores</p>
               <ScoreField label="Delivery Score" max={30} value={form.deliveryScore} onChange={v => set('deliveryScore', v)} />
               <ScoreField label="RERA Score" max={20} value={form.reraScore} onChange={v => set('reraScore', v)} />
               <ScoreField label="Quality Score" max={20} value={form.qualityScore} onChange={v => set('qualityScore', v)} />
               <ScoreField label="Financial Score" max={15} value={form.financialScore} onChange={v => set('financialScore', v)} />
               <ScoreField label="Responsiveness Score" max={15} value={form.responsivenessScore} onChange={v => set('responsivenessScore', v)} />
               <div className="flex items-center justify-between pt-2 border-t border-[#E0DFDD]">
-                <span className="text-[12px] text-[#52525B]">Trust Score</span>
-                <span className="text-[16px] font-bold text-[#1B3A6B]">{trust}/100 — Grade {grade}</span>
+                <span className="text-[12px] text-[#9CA3AF]">Trust Score</span>
+                <span className="text-[16px] font-bold text-white">{trust}/100 — Grade {grade}</span>
               </div>
             </div>
             <div>
-              <label className="text-[11px] text-[#52525B] block mb-1">Notes / Concern</label>
+              <label className="text-[11px] text-[#9CA3AF] block mb-1">Notes / Concern</label>
               <textarea value={form.concern} onChange={e => set('concern', e.target.value)} rows={3}
                 className="w-full border border-[#E0DFDD] rounded-lg px-3 py-2 text-[13px] outline-none focus:border-[#1B3A6B] resize-none" />
             </div>

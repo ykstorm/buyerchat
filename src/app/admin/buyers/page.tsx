@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma'
-import { daysBetween, formatLakh, getPersonaLabel, getStageLabel } from '@/lib/admin-utils'
+import { daysBetween, formatLakh, getPersonaLabel, getStageLabel, getSessionQualityScore, getQualityColor } from '@/lib/admin-utils'
 import Link from 'next/link'
 
 const STAGES = [
@@ -172,7 +172,12 @@ export default async function BuyersPage({
                               </div>
                               <p className="text-[11px] font-medium text-white truncate">{getPersonaLabel(session.buyerPersona)} · {session.buyerConfig ?? '—'}</p>
                               <p className="text-[10px] mt-0.5" style={{ color: '#6B7280' }}>{session.buyerBudget ? `₹${formatLakh(session.buyerBudget)}` : 'Budget ?'} · {days}d ago</p>
-                              <div className="mt-1"><LeakageBadge score={risk} /></div>
+                              <div className="mt-1 flex items-center gap-1.5">
+                                <LeakageBadge score={risk} />
+                                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: getQualityColor(getSessionQualityScore(session)) + '22', color: getQualityColor(getSessionQualityScore(session)) }}>
+                                  Q{getSessionQualityScore(session)}
+                                </span>
+                              </div>
                             </div>
                           </Link>
                         )

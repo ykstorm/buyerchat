@@ -100,20 +100,20 @@ function ScoreInput({ label, value, max, onChange, hint, type, options }: {
   if (type === 'textarea') {
     return (
       <div>
-        <label className="block text-[11px] text-[#52525B] mb-1">{label}</label>
+        <label className="block text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: '#4B5563' }}>{label}</label>
         {hint && <p className="text-[10px] text-[#71717A] mb-1">{hint}</p>}
         <textarea value={value as string} onChange={e => onChange(e.target.value)} rows={3}
-          className="w-full border border-black/10 rounded-lg px-3 py-2 text-[12px] focus:outline-none focus:border-[#185FA5] resize-none" />
+          className="w-full rounded-lg px-3 py-2 text-[12px] text-white outline-none resize-none" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}" />
       </div>
     )
   }
   if (type === 'select' && options) {
     return (
       <div>
-        <label className="block text-[11px] text-[#52525B] mb-1">{label}</label>
+        <label className="block text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: '#4B5563' }}>{label}</label>
         {hint && <p className="text-[10px] text-[#71717A] mb-1">{hint}</p>}
         <select value={value as string} onChange={e => onChange(e.target.value)}
-          className="w-full border border-black/10 rounded-lg px-3 py-2 text-[12px] focus:outline-none focus:border-[#185FA5]">
+          className="w-full rounded-lg px-3 py-2 text-[12px] text-white outline-none" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}">
           {options.map(o => <option key={o}>{o}</option>)}
         </select>
       </div>
@@ -125,12 +125,12 @@ function ScoreInput({ label, value, max, onChange, hint, type, options }: {
   return (
     <div>
       <div className="flex items-center justify-between mb-1">
-        <label className="text-[11px] text-[#52525B]">{label}</label>
+        <label className="text-[11px] text-[#9CA3AF]">{label}</label>
         <div className="flex items-center gap-1">
           <input type="number" min={0} max={max} value={numVal}
             onChange={e => onChange(Math.min(max ?? 100, Math.max(0, Number(e.target.value))))}
             className="w-12 text-right border border-black/10 rounded px-1 py-0.5 text-[12px] font-mono focus:outline-none focus:border-[#185FA5]" />
-          <span className="text-[11px] text-[#52525B]">/{max}</span>
+          <span className="text-[11px] text-[#9CA3AF]">/{max}</span>
         </div>
       </div>
       {hint && <p className="text-[10px] text-[#71717A] mb-1">{hint}</p>}
@@ -257,20 +257,20 @@ export default function ProjectEditPage() {
 
   const STEPS = ['RERA fetch', 'Brochure', 'Pricing', 'Trust scores', 'SOP fields', 'Review & save']
 
-  if (loading) return <div className="text-[13px] text-[#52525B] p-6">Loading…</div>
+  if (loading) return <div className="text-[13px] text-[#9CA3AF] p-6">Loading…</div>
 
   return (
     <div className="max-w-4xl">
       {/* Header */}
       <div className="flex items-center justify-between mb-5">
         <div>
-          <h1 className="text-[14px] font-medium text-[#1A1A2E]">
+          <h1 className="text-[14px] font-medium text-white">
             Projects / {isNew ? 'Add New Project' : `Edit — ${form.projectName || 'Project'}`}
           </h1>
         </div>
         <div className="flex items-center gap-2">
           <button type="button" onClick={() => router.back()}
-            className="text-[12px] text-[#52525B] border border-black/10 px-3 py-1.5 rounded-lg hover:bg-[#F4F4F5] transition-colors">
+            className="text-[12px] text-[#9CA3AF] border border-black/10 px-3 py-1.5 rounded-lg hover:bg-white/5 transition-colors">
             Cancel
           </button>
           <button type="button" onClick={handleSave} disabled={saving}
@@ -285,10 +285,10 @@ export default function ProjectEditPage() {
         {STEPS.map((s, i) => (
           <button key={s} type="button" onClick={() => setStep(i + 1)}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium whitespace-nowrap transition-colors ${
-              step === i + 1 ? 'bg-[#185FA5] text-white' : 'bg-white border border-black/[0.08] text-[#52525B] hover:border-[#185FA5]/30'
+              step === i + 1 ? 'bg-[#185FA5] text-white' : 'bg-[#111827] border border-white/[0.08] text-[#9CA3AF] hover:border-[#60A5FA]/30'
             }`}>
             <span className={`w-4 h-4 rounded-full text-[10px] flex items-center justify-center ${
-              step === i + 1 ? 'bg-white/20' : 'bg-[#F0F4F8]'
+              step === i + 1 ? 'bg-white/20' : 'bg-white/10'
             }`}>{i + 1}</span>
             {s}
           </button>
@@ -305,83 +305,83 @@ export default function ProjectEditPage() {
 
           {/* Step 1: RERA */}
           {step === 1 && (
-            <div className="bg-white border border-black/[0.08] rounded-xl p-4">
-              <p className="text-[12px] font-medium text-[#1A1A2E] mb-1">Step 1 — RERA Data</p>
-              <p className="text-[11px] text-[#52525B] mb-4">Auto-fetch from gujrera.gujarat.gov.in — enter RERA number and click fetch</p>
+            <div className="rounded-xl p-4" style={{ background: '#111827', border: '1px solid rgba(255,255,255,0.07)' }}>
+              <p className="text-[12px] font-medium text-white mb-1">Step 1 — RERA Data</p>
+              <p className="text-[11px] text-[#9CA3AF] mb-4">Auto-fetch from gujrera.gujarat.gov.in — enter RERA number and click fetch</p>
               <div className="flex gap-2 mb-4">
                 <input value={form.reraNumber} onChange={e => set('reraNumber', e.target.value)}
                   placeholder="PR/GJ/AHMEDABAD/..."
-                  className="flex-1 border border-black/10 rounded-lg px-3 py-2 text-[12px] font-mono focus:outline-none focus:border-[#185FA5]" />
+                  className="flex-1 rounded-lg px-3 py-2 text-[12px] font-mono text-white outline-none" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}" />
                 <button type="button" disabled={reraFetching || !form.reraNumber}
                   className="bg-[#185FA5] text-white text-[11px] font-medium px-4 py-2 rounded-lg hover:bg-[#0C447C] disabled:opacity-50 transition-colors">
                   {reraFetching ? 'Fetching…' : 'Fetch from portal'}
                 </button>
               </div>
-              <div className="bg-[#F0F4F8] border border-[#E4E4E7] rounded-lg p-3 text-[11px] text-[#52525B]">
-                <p className="font-medium text-[#1A1A2E] mb-1">Puppeteer RERA auto-scrape</p>
+              <div className="bg-white/10 border border-[#E4E4E7] rounded-lg p-3 text-[11px] text-[#9CA3AF]">
+                <p className="font-medium text-white mb-1">Puppeteer RERA auto-scrape</p>
                 <p>Enter RERA number above and click Fetch. System will scrape gujrera.gujarat.gov.in and auto-fill: project name, legal entity, status, possession date, complaints, escrow bank.</p>
                 <p className="mt-1 text-[#185FA5]">Note: Auto-fetch is Day 31+ feature. Enter manually for now.</p>
               </div>
               <div className="grid grid-cols-2 gap-3 mt-4">
                 <div>
-                  <label className="block text-[11px] text-[#52525B] mb-1">Project name *</label>
+                  <label className="block text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: '#4B5563' }}>Project name *</label>
                   <input value={form.projectName} onChange={e => set('projectName', e.target.value)}
-                    className="w-full border border-black/10 rounded-lg px-3 py-2 text-[12px] focus:outline-none focus:border-[#185FA5]" />
+                    className="w-full rounded-lg px-3 py-2 text-[12px] text-white outline-none" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}" />
                 </div>
                 <div>
-                  <label className="block text-[11px] text-[#52525B] mb-1">Builder brand name *</label>
+                  <label className="block text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: '#4B5563' }}>Builder brand name *</label>
                   <input value={form.builderName} onChange={e => set('builderName', e.target.value)}
-                    className="w-full border border-black/10 rounded-lg px-3 py-2 text-[12px] focus:outline-none focus:border-[#185FA5]" />
+                    className="w-full rounded-lg px-3 py-2 text-[12px] text-white outline-none" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}" />
                 </div>
                 <div>
-                  <label className="block text-[11px] text-[#52525B] mb-1">Area</label>
+                  <label className="block text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: '#4B5563' }}>Area</label>
                   <select value={form.microMarket} onChange={e => set('microMarket', e.target.value)}
-                    className="w-full border border-black/10 rounded-lg px-3 py-2 text-[12px] focus:outline-none focus:border-[#185FA5]">
+                    className="w-full rounded-lg px-3 py-2 text-[12px] text-white outline-none" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}">
                     <option>Shela</option>
                     <option>South Bopal</option>
                     <option>Bopal</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-[11px] text-[#52525B] mb-1">Possession date</label>
+                  <label className="block text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: '#4B5563' }}>Possession date</label>
                   <input type="date" value={form.possessionDate} onChange={e => set('possessionDate', e.target.value)}
-                    className="w-full border border-black/10 rounded-lg px-3 py-2 text-[12px] focus:outline-none focus:border-[#185FA5]" />
+                    className="w-full rounded-lg px-3 py-2 text-[12px] text-white outline-none" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}" />
                 </div>
                 <div>
-                  <label className="block text-[11px] text-[#52525B] mb-1">Construction status</label>
+                  <label className="block text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: '#4B5563' }}>Construction status</label>
                   <select value={form.constructionStatus} onChange={e => set('constructionStatus', e.target.value)}
-                    className="w-full border border-black/10 rounded-lg px-3 py-2 text-[12px] focus:outline-none focus:border-[#185FA5]">
+                    className="w-full rounded-lg px-3 py-2 text-[12px] text-white outline-none" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}">
                     <option>Under Construction</option>
                     <option>Ready to Move</option>
                     <option>New Launch</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-[11px] text-[#52525B] mb-1">Available units</label>
+                  <label className="block text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: '#4B5563' }}>Available units</label>
                   <input type="number" value={form.availableUnits} onChange={e => set('availableUnits', e.target.value)}
-                    className="w-full border border-black/10 rounded-lg px-3 py-2 text-[12px] font-mono focus:outline-none focus:border-[#185FA5]" />
+                    className="w-full rounded-lg px-3 py-2 text-[12px] font-mono text-white outline-none" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}" />
                 </div>
               </div>
               <div className="mt-3">
-                <label className="block text-[11px] text-[#52525B] mb-1">Unit types (comma-separated e.g. 2BHK, 3BHK)</label>
+                <label className="block text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: '#4B5563' }}>Unit types (comma-separated e.g. 2BHK, 3BHK)</label>
                 <input value={form.unitTypes} onChange={e => set('unitTypes', e.target.value)}
-                  className="w-full border border-black/10 rounded-lg px-3 py-2 text-[12px] focus:outline-none focus:border-[#185FA5]" />
+                  className="w-full rounded-lg px-3 py-2 text-[12px] text-white outline-none" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}" />
               </div>
               <div className="mt-3">
-                <label className="block text-[11px] text-[#52525B] mb-1">Amenities (comma-separated)</label>
+                <label className="block text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: '#4B5563' }}>Amenities (comma-separated)</label>
                 <textarea value={form.amenities} onChange={e => set('amenities', e.target.value)} rows={2}
-                  className="w-full border border-black/10 rounded-lg px-3 py-2 text-[12px] focus:outline-none focus:border-[#185FA5] resize-none" />
+                  className="w-full rounded-lg px-3 py-2 text-[12px] text-white outline-none resize-none" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}" />
               </div>
             </div>
           )}
 
           {/* Step 2: Brochure — placeholder */}
           {step === 2 && (
-            <div className="bg-white border border-black/[0.08] rounded-xl p-4">
-              <p className="text-[12px] font-medium text-[#1A1A2E] mb-1">Step 2 — Brochure AI Extract</p>
-              <p className="text-[11px] text-[#52525B] mb-4">Upload PDF → Claude API reads and fills 40+ fields automatically</p>
+            <div className="rounded-xl p-4" style={{ background: '#111827', border: '1px solid rgba(255,255,255,0.07)' }}>
+              <p className="text-[12px] font-medium text-white mb-1">Step 2 — Brochure AI Extract</p>
+              <p className="text-[11px] text-[#9CA3AF] mb-4">Upload PDF → Claude API reads and fills 40+ fields automatically</p>
               <div className="border-2 border-dashed border-[#E4E4E7] rounded-xl p-8 text-center">
-                <p className="text-[13px] text-[#52525B] mb-1">Click to upload brochure PDF</p>
+                <p className="text-[13px] text-[#9CA3AF] mb-1">Click to upload brochure PDF</p>
                 <p className="text-[11px] text-[#71717A]">Claude API will extract configs, areas, specs, amenities automatically</p>
                 <p className="text-[11px] text-[#185FA5] mt-2">Note: Brochure AI extract is Day 31+ feature. Enter amenities manually in Step 1 for now.</p>
               </div>
@@ -390,52 +390,52 @@ export default function ProjectEditPage() {
 
           {/* Step 3: Pricing */}
           {step === 3 && (
-            <div className="bg-white border border-black/[0.08] rounded-xl p-4">
-              <p className="text-[12px] font-medium text-[#1A1A2E] mb-1">Step 3 — Pricing</p>
+            <div className="rounded-xl p-4" style={{ background: '#111827', border: '1px solid rgba(255,255,255,0.07)' }}>
+              <p className="text-[12px] font-medium text-white mb-1">Step 3 — Pricing</p>
               <div className="bg-[#FAEEDA] border border-[#BA7517]/30 rounded-lg px-3 py-2 mb-4">
                 <p className="text-[11px] font-medium text-[#633806]">⚠ Always call builder for current price</p>
                 <p className="text-[11px] text-[#633806]">Never use 99acres or MagicBricks price — portal prices lag by 2–4 months. Wrong price = wrong buyer recommendation.</p>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[11px] text-[#52525B] mb-1">Base price per sqft (₹) — CALL BUILDER *</label>
+                  <label className="block text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: '#4B5563' }}>Base price per sqft (₹) — CALL BUILDER *</label>
                   <input type="number" value={form.pricePerSqft} onChange={e => set('pricePerSqft', e.target.value)}
-                    className="w-full border border-black/10 rounded-lg px-3 py-2 text-[12px] font-mono focus:outline-none focus:border-[#185FA5]" />
+                    className="w-full rounded-lg px-3 py-2 text-[12px] font-mono text-white outline-none" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}" />
                 </div>
                 <div>
-                  <label className="block text-[11px] text-[#52525B] mb-1">Min price (₹)</label>
+                  <label className="block text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: '#4B5563' }}>Min price (₹)</label>
                   <input type="number" value={form.minPrice} onChange={e => set('minPrice', e.target.value)}
-                    className="w-full border border-black/10 rounded-lg px-3 py-2 text-[12px] font-mono focus:outline-none focus:border-[#185FA5]" />
+                    className="w-full rounded-lg px-3 py-2 text-[12px] font-mono text-white outline-none" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}" />
                 </div>
                 <div>
-                  <label className="block text-[11px] text-[#52525B] mb-1">Max price (₹)</label>
+                  <label className="block text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: '#4B5563' }}>Max price (₹)</label>
                   <input type="number" value={form.maxPrice} onChange={e => set('maxPrice', e.target.value)}
-                    className="w-full border border-black/10 rounded-lg px-3 py-2 text-[12px] font-mono focus:outline-none focus:border-[#185FA5]" />
+                    className="w-full rounded-lg px-3 py-2 text-[12px] font-mono text-white outline-none" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}" />
                 </div>
                 <div>
-                  <label className="block text-[11px] text-[#52525B] mb-1">Latitude</label>
+                  <label className="block text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: '#4B5563' }}>Latitude</label>
                   <input type="number" step="0.0001" value={form.latitude} onChange={e => set('latitude', e.target.value)}
-                    className="w-full border border-black/10 rounded-lg px-3 py-2 text-[12px] font-mono focus:outline-none focus:border-[#185FA5]" />
+                    className="w-full rounded-lg px-3 py-2 text-[12px] font-mono text-white outline-none" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}" />
                 </div>
                 <div>
-                  <label className="block text-[11px] text-[#52525B] mb-1">Longitude</label>
+                  <label className="block text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: '#4B5563' }}>Longitude</label>
                   <input type="number" step="0.0001" value={form.longitude} onChange={e => set('longitude', e.target.value)}
-                    className="w-full border border-black/10 rounded-lg px-3 py-2 text-[12px] font-mono focus:outline-none focus:border-[#185FA5]" />
+                    className="w-full rounded-lg px-3 py-2 text-[12px] font-mono text-white outline-none" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}" />
                 </div>
               </div>
               {allIn > 0 && (
-                <div className="mt-4 bg-[#F0F4F8] rounded-lg p-3">
-                  <p className="text-[11px] font-medium text-[#1A1A2E] mb-2">Auto-calculated all-in estimate</p>
+                <div className="mt-4 bg-white/10 rounded-lg p-3">
+                  <p className="text-[11px] font-medium text-white mb-2">Auto-calculated all-in estimate</p>
                   <div className="grid grid-cols-2 gap-2 text-[11px]">
-                    <span className="text-[#52525B]">Base price</span>
+                    <span className="text-[#9CA3AF]">Base price</span>
                     <span className="font-mono text-right">₹{Number(form.minPrice).toLocaleString('en-IN')}</span>
-                    <span className="text-[#52525B]">+ GST 5%</span>
+                    <span className="text-[#9CA3AF]">+ GST 5%</span>
                     <span className="font-mono text-right">₹{Math.round(form.minPrice * 0.05).toLocaleString('en-IN')}</span>
-                    <span className="text-[#52525B]">+ Stamp duty 6.5%</span>
+                    <span className="text-[#9CA3AF]">+ Stamp duty 6.5%</span>
                     <span className="font-mono text-right">₹{Math.round(form.minPrice * 0.065).toLocaleString('en-IN')}</span>
-                    <span className="text-[#52525B]">+ Registration 1%</span>
+                    <span className="text-[#9CA3AF]">+ Registration 1%</span>
                     <span className="font-mono text-right">₹{Math.round(form.minPrice * 0.01).toLocaleString('en-IN')}</span>
-                    <span className="font-semibold text-[#1A1A2E] border-t border-[#E4E4E7] pt-1">All-in total</span>
+                    <span className="font-semibold text-white border-t border-[#E4E4E7] pt-1">All-in total</span>
                     <span className="font-mono font-semibold text-[#185FA5] border-t border-[#E4E4E7] pt-1 text-right">₹{allIn.toLocaleString('en-IN')}</span>
                   </div>
                 </div>
@@ -445,9 +445,9 @@ export default function ProjectEditPage() {
 
           {/* Step 4: Trust scores */}
           {step === 4 && (
-            <div className="bg-white border border-black/[0.08] rounded-xl p-4">
-              <p className="text-[12px] font-medium text-[#1A1A2E] mb-1">Step 4 — 5 Trust Scores</p>
-              <p className="text-[11px] text-[#52525B] mb-4">Your assessment — refer Scoring Anchors sheet for calibration. Score based on evidence, not gut feel.</p>
+            <div className="rounded-xl p-4" style={{ background: '#111827', border: '1px solid rgba(255,255,255,0.07)' }}>
+              <p className="text-[12px] font-medium text-white mb-1">Step 4 — 5 Trust Scores</p>
+              <p className="text-[11px] text-[#9CA3AF] mb-4">Your assessment — refer Scoring Anchors sheet for calibration. Score based on evidence, not gut feel.</p>
               <div className="space-y-4">
                 <ScoreInput label="Delivery record (0–30)" value={form.deliveryScore} max={30}
                   onChange={v => set('deliveryScore', v)}
@@ -470,9 +470,9 @@ export default function ProjectEditPage() {
 
           {/* Step 5: SOP fields */}
           {step === 5 && (
-            <div className="bg-white border border-black/[0.08] rounded-xl p-4">
-              <p className="text-[12px] font-medium text-[#1A1A2E] mb-1">Step 5 — 4 SOP Manual Fields</p>
-              <p className="text-[11px] text-[#52525B] mb-4">Only these 4 need your judgment — everything else is auto. Rate 1–10. Requires your physical observation.</p>
+            <div className="rounded-xl p-4" style={{ background: '#111827', border: '1px solid rgba(255,255,255,0.07)' }}>
+              <p className="text-[12px] font-medium text-white mb-1">Step 5 — 4 SOP Manual Fields</p>
+              <p className="text-[11px] text-[#9CA3AF] mb-4">Only these 4 need your judgment — everything else is auto. Rate 1–10. Requires your physical observation.</p>
               <div className="space-y-4">
                 <ScoreInput label="Location (1–10)" value={form.sopLocation} max={10}
                   onChange={v => set('sopLocation', v)}
@@ -489,32 +489,32 @@ export default function ProjectEditPage() {
               </div>
               <div className="grid grid-cols-1 gap-3 mt-4">
                 <div>
-                  <label className="block text-[11px] text-[#52525B] mb-1">Best for (1 line)</label>
+                  <label className="block text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: '#4B5563' }}>Best for (1 line)</label>
                   <input value={form.bestFor} onChange={e => set('bestFor', e.target.value)}
                     placeholder="e.g. Families with school-going kids wanting Shela lifestyle"
-                    className="w-full border border-black/10 rounded-lg px-3 py-2 text-[12px] focus:outline-none focus:border-[#185FA5]" />
+                    className="w-full rounded-lg px-3 py-2 text-[12px] text-white outline-none" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}" />
                 </div>
                 <div>
-                  <label className="block text-[11px] text-[#52525B] mb-1">Main concern (MANDATORY)</label>
+                  <label className="block text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: '#4B5563' }}>Main concern (MANDATORY)</label>
                   <input value={form.mainConcern} onChange={e => set('mainConcern', e.target.value)}
                     placeholder="e.g. First project by this builder — no delivery track record"
-                    className="w-full border border-black/10 rounded-lg px-3 py-2 text-[12px] focus:outline-none focus:border-[#185FA5]" />
+                    className="w-full rounded-lg px-3 py-2 text-[12px] text-white outline-none" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}" />
                 </div>
                 <div>
-                  <label className="block text-[11px] text-[#52525B] mb-1">Analyst notes</label>
+                  <label className="block text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: '#4B5563' }}>Analyst notes</label>
                   <textarea value={form.analystNotes} onChange={e => set('analystNotes', e.target.value)} rows={3}
-                    className="w-full border border-black/10 rounded-lg px-3 py-2 text-[12px] focus:outline-none focus:border-[#185FA5] resize-none" />
+                    className="w-full rounded-lg px-3 py-2 text-[12px] text-white outline-none resize-none" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}" />
                 </div>
                 <ScoreInput label="Honest Concern (what buyers must know)" value={form.honestConcern} onChange={v => set('honestConcern', v)} type="textarea" />
                 <ScoreInput label="Analyst Note (insider intel)" value={form.analystNote} onChange={v => set('analystNote', v)} type="textarea" />
                 <ScoreInput label="Possession Flag" value={form.possessionFlag} onChange={v => set('possessionFlag', v)} type="select" options={['green','amber','red']} />
                 <ScoreInput label="Configurations" value={form.configurations} onChange={v => set('configurations', v)} type="textarea" />
                 <ScoreInput label="Bank Approvals" value={form.bankApprovals} onChange={v => set('bankApprovals', v)} type="textarea" />
-                <div className="text-[12px] text-[#1A1A2E] font-medium pt-1">Decision Tag (auto): {form.decisionTag || '—'}</div>
+                <div className="text-[12px] text-white font-medium pt-1">Decision Tag (auto): {form.decisionTag || '—'}</div>
               </div>
               {/* Decision Engine scores */}
               <div className="mt-4 pt-4 border-t border-[#F4F4F5]">
-                <p className="text-[11px] font-medium text-[#52525B] mb-3">Decision Engine scores (0–100)</p>
+                <p className="text-[11px] font-medium text-[#9CA3AF] mb-3">Decision Engine scores (0–100)</p>
                 <div className="grid grid-cols-2 gap-3">
                   {[
                     { label: 'Location score', field: 'locationScore' as keyof ProjectForm },
@@ -523,10 +523,10 @@ export default function ProjectEditPage() {
                     { label: 'Demand score', field: 'demandScore' as keyof ProjectForm },
                   ].map(({ label, field }) => (
                     <div key={field}>
-                      <label className="block text-[11px] text-[#52525B] mb-1">{label} /100</label>
+                      <label className="block text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: '#4B5563' }}>{label} /100</label>
                       <input type="number" min={0} max={100} value={form[field] as number}
                         onChange={e => set(field, Number(e.target.value))}
-                        className="w-full border border-black/10 rounded-lg px-3 py-2 text-[12px] font-mono focus:outline-none focus:border-[#185FA5]" />
+                        className="w-full rounded-lg px-3 py-2 text-[12px] font-mono text-white outline-none" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}" />
                     </div>
                   ))}
                 </div>
@@ -536,8 +536,8 @@ export default function ProjectEditPage() {
 
           {/* Step 6: Review */}
           {step === 6 && (
-            <div className="bg-white border border-black/[0.08] rounded-xl p-4">
-              <p className="text-[12px] font-medium text-[#1A1A2E] mb-4">Step 6 — Review & Save</p>
+            <div className="rounded-xl p-4" style={{ background: '#111827', border: '1px solid rgba(255,255,255,0.07)' }}>
+              <p className="text-[12px] font-medium text-white mb-4">Step 6 — Review & Save</p>
               <div className="space-y-3">
                 {[
                   ['Project name', form.projectName || '—'],
@@ -552,15 +552,15 @@ export default function ProjectEditPage() {
                   ['Main concern', form.mainConcern || '—'],
                 ].map(([label, value]) => (
                   <div key={label} className="flex items-start justify-between py-1.5 border-b border-[#F4F4F5] last:border-0">
-                    <span className="text-[11px] text-[#52525B] w-32 shrink-0">{label}</span>
-                    <span className="text-[12px] text-[#1A1A2E] text-right">{value}</span>
+                    <span className="text-[11px] text-[#9CA3AF] w-32 shrink-0">{label}</span>
+                    <span className="text-[12px] text-white text-right">{value}</span>
                   </div>
                 ))}
               </div>
               <div className="flex items-center gap-2 mt-4">
                 <input type="checkbox" id="isActive" checked={form.isActive}
                   onChange={e => set('isActive', e.target.checked)} className="w-4 h-4" />
-                <label htmlFor="isActive" className="text-[12px] text-[#1A1A2E]">
+                <label htmlFor="isActive" className="text-[12px] text-white">
                   Active — visible to buyers on frontend
                 </label>
               </div>
@@ -582,7 +582,7 @@ export default function ProjectEditPage() {
           {/* Navigation */}
           <div className="flex items-center justify-between">
             <button type="button" onClick={() => setStep(s => Math.max(1, s - 1))} disabled={step === 1}
-              className="text-[12px] text-[#52525B] border border-black/10 px-4 py-2 rounded-lg disabled:opacity-30 hover:bg-[#F4F4F5] transition-colors">
+              className="text-[12px] text-[#9CA3AF] border border-black/10 px-4 py-2 rounded-lg disabled:opacity-30 hover:bg-white/5 transition-colors">
               ← Back
             </button>
             {step < 6 && (
@@ -596,8 +596,8 @@ export default function ProjectEditPage() {
 
         {/* Live preview sidebar */}
         <div className="space-y-3">
-          <div className="bg-white border border-black/[0.08] rounded-xl p-4 sticky top-4">
-            <p className="text-[11px] font-medium text-[#52525B] uppercase tracking-wider mb-3">Live preview</p>
+          <div className="rounded-xl p-4 sticky top-4" style={{ background: '#111827', border: '1px solid rgba(255,255,255,0.07)' }}>
+            <p className="text-[11px] font-medium text-[#9CA3AF] uppercase tracking-wider mb-3">Live preview</p>
             <div className="space-y-2">
               {[
                 { label: 'Project', value: form.projectName || '—' },
@@ -607,8 +607,8 @@ export default function ProjectEditPage() {
                 { label: 'Possession', value: form.possessionDate ? new Date(form.possessionDate).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' }) : '—' },
               ].map(item => (
                 <div key={item.label} className="flex justify-between">
-                  <span className="text-[10px] text-[#52525B]">{item.label}</span>
-                  <span className="text-[11px] font-medium text-[#1A1A2E]">{item.value}</span>
+                  <span className="text-[10px] text-[#9CA3AF]">{item.label}</span>
+                  <span className="text-[11px] font-medium text-white">{item.value}</span>
                 </div>
               ))}
             </div>
@@ -616,18 +616,18 @@ export default function ProjectEditPage() {
             {total > 0 && (
               <div className="mt-3 pt-3 border-t border-[#F4F4F5]">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-[10px] text-[#52525B]">Trust score</span>
+                  <span className="text-[10px] text-[#9CA3AF]">Trust score</span>
                   <span className="font-mono text-[14px] font-bold" style={{ color: flag.color }}>{total}/100</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] text-[#52525B]">Grade</span>
+                  <span className="text-[10px] text-[#9CA3AF]">Grade</span>
                   <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full`}
                     style={{ backgroundColor: flag.color + '18', color: flag.color }}>
                     Grade {grade}
                   </span>
                 </div>
                 <div className="flex items-center justify-between mt-1">
-                  <span className="text-[10px] text-[#52525B]">Risk flag</span>
+                  <span className="text-[10px] text-[#9CA3AF]">Risk flag</span>
                   <span className="text-[11px] font-semibold" style={{ color: flag.color }}>{flag.label}</span>
                 </div>
               </div>
@@ -636,7 +636,7 @@ export default function ProjectEditPage() {
             {allIn > 0 && (
               <div className="mt-3 pt-3 border-t border-[#F4F4F5]">
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] text-[#52525B]">All-in ₹</span>
+                  <span className="text-[10px] text-[#9CA3AF]">All-in ₹</span>
                   <span className="font-mono text-[12px] font-semibold text-[#185FA5]">
                     ~₹{Math.round(allIn / 100000)}L
                   </span>
@@ -646,8 +646,8 @@ export default function ProjectEditPage() {
 
             {form.bestFor && (
               <div className="mt-3 pt-3 border-t border-[#F4F4F5]">
-                <p className="text-[10px] text-[#52525B] mb-1">Best for</p>
-                <p className="text-[11px] text-[#1A1A2E] leading-relaxed">{form.bestFor}</p>
+                <p className="text-[10px] text-[#9CA3AF] mb-1">Best for</p>
+                <p className="text-[11px] text-white leading-relaxed">{form.bestFor}</p>
               </div>
             )}
             {form.mainConcern && (

@@ -75,16 +75,16 @@ export default function EditBuilderPage() {
   }
 
   if (loading) return (
-    <div className="min-h-screen bg-[#EFEFED] flex items-center justify-center">
+    <div className="min-h-screen bg-[#0A0F1E] flex items-center justify-center">
       <div className="w-5 h-5 border-2 border-[#E0DFDD] border-t-[#1B3A6B] rounded-full animate-spin" />
     </div>
   )
 
   return (
-    <div className="min-h-screen bg-[#EFEFED] p-6">
+    <div className="min-h-screen bg-[#0A0F1E] p-6">
       <div className="max-w-xl mx-auto">
         <Link href="/admin/builders" className="text-[12px] text-[#52525B] hover:text-[#1B3A6B] mb-4 inline-block">← Back to Builders</Link>
-        <div className="bg-white rounded-xl p-6" style={{ border: '0.5px solid #E0DFDD' }}>
+        <div className="rounded-xl p-6" style={{ background: '#111827', border: '1px solid rgba(255,255,255,0.07)' }}>
           <h1 className="text-[16px] font-semibold text-[#1B3A6B] mb-5">Edit Builder</h1>
           <div className="space-y-4">
             <div>
