@@ -28,8 +28,12 @@ export default async function ProjectsPage() {
       </div>
 
       <div className="rounded-2xl overflow-hidden" style={{ background: '#111827', border: '1px solid rgba(255,255,255,0.07)' }}>
-        <div className="px-4 py-3" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+        <div className="px-4 py-3 flex items-center justify-between" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
           <p className="text-[13px] font-semibold text-white">{projects.length} projects</p>
+          <div className="flex items-center gap-3 text-[11px]">
+            <span style={{ color: '#34D399' }}>● {projects.filter(p => p.isActive).length} active</span>
+            <span style={{ color: '#FBBF24' }}>⚠ {projects.filter(p => !p.decisionTag || !p.honestConcern).length} need scoring</span>
+          </div>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-[12px]">
@@ -78,9 +82,14 @@ export default async function ProjectsPage() {
                       </span>
                     </td>
                     <td className="py-2.5 px-3">
-                      <Link href={`/admin/projects/${project.id}`} className="text-[11px] hover:underline" style={{ color: '#60A5FA' }}>
-                        Edit →
-                      </Link>
+                      <div className="flex items-center gap-2">
+                        {(!project.decisionTag || !project.honestConcern) && (
+                          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(251,191,36,0.15)', color: '#FBBF24' }}>Score needed</span>
+                        )}
+                        <Link href={`/admin/projects/${project.id}`} className="text-[11px] hover:underline" style={{ color: '#60A5FA' }}>
+                          Edit →
+                        </Link>
+                      </div>
                     </td>
                   </tr>
                 )

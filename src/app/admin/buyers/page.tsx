@@ -264,7 +264,7 @@ export default async function BuyersPage({
                       <span className="text-[10px]" style={{ color: '#4B5563' }}>{s._count.messages} msgs</span>
                     </div>
                     <p className="text-[11px] text-white truncate mb-0.5">
-                      {firstMsg ? (firstMsg.content.length > 60 ? firstMsg.content.slice(0, 60) + '…' : firstMsg.content) : 'No messages'}
+                      {s.customName || (s.buyerBudget ? `₹${Math.round(s.buyerBudget/100000)}L · ${s.buyerConfig ?? 'buyer'}` : firstMsg ? firstMsg.content.slice(0, 50) + '…' : 'New session')}
                     </p>
                     <p className="text-[10px]" style={{ color: '#4B5563' }}>
                       {new Date(s.lastMessageAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}

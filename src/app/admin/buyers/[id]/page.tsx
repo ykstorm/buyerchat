@@ -14,8 +14,7 @@ export default async function BuyerDetailPage({ params }: { params: Promise<{ id
     session = await prisma.chatSession.findUnique({
       where: { id },
       include: {
-        messages: { orderBy: { createdAt: 'asc' } },
-        siteVisits: { select: { visitToken: true, visitScheduledDate: true, visitCompleted: true, project: { select: { projectName: true } } } }
+        messages: { orderBy: { createdAt: 'asc' } }
       }
     })
   } catch (err) {
@@ -86,30 +85,6 @@ export default async function BuyerDetailPage({ params }: { params: Promise<{ id
           )}
         </div>
       </div>
-        {/* Site visits */}
-        {session.siteVisits?.length > 0 && (
-          <div className="rounded-2xl overflow-hidden mt-4" style={{ background: '#111827', border: '1px solid rgba(255,255,255,0.07)' }}>
-            <div className="px-4 py-3" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-              <p className="text-[13px] font-semibold text-white">Site Visits ({session.siteVisits.length})</p>
-            </div>
-            <div className="p-4 space-y-2">
-              {session.siteVisits.map((v: any) => (
-                <div key={v.visitToken} className="flex items-center justify-between rounded-xl px-3 py-2.5" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
-                  <div>
-                    <p className="text-[12px] font-medium text-white">{v.project?.projectName ?? '—'}</p>
-                    <p className="text-[10px] mt-0.5" style={{ color: '#6B7280' }}>
-                      {new Date(v.visitScheduledDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono text-[13px] font-bold" style={{ color: '#34D399' }}>{v.visitToken}</span>
-                    <DarkBadge label={v.visitCompleted ? 'Completed' : 'Upcoming'} color={v.visitCompleted ? 'green' : 'blue'} />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
     </div>
   )
 }
