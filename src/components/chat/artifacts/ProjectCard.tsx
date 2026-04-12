@@ -15,6 +15,9 @@ type ProjectType = {
   configurations?: string | null
   bankApprovals?: string | null
   priceNote?: string | null
+  pricePerSqftType?: string | null
+  loadingFactor?: number | null
+  allInPrice?: number | null
 }
 
 const formatL = (n: number | null | undefined) => n ? Math.round(n / 100000) : null
@@ -97,15 +100,32 @@ export default function ProjectCard({ project }: { project: ProjectType }) {
 
       {/* Price block */}
       <div className="px-5 py-4 border-b border-[#F4F3F0]">
-        <p style={{ fontFamily: 'var(--font-mono)' }} className="text-[26px] font-bold text-[#1B4F8A] leading-none">
-          {project.pricePerSqft ? `₹${project.pricePerSqft.toLocaleString('en-IN')}` : '—'}
-          <span className="text-[13px] font-normal text-[#A8A29E] ml-1">/sqft</span>
-        </p>
-        <p className="text-[12px] text-[#78716C] mt-1.5">
-          {formatL(project.minPrice) && formatL(project.maxPrice)
-            ? `₹${formatL(project.minPrice)}L – ₹${formatL(project.maxPrice)}L all-in`
-            : 'Price on request'}
-        </p>
+        {project.pricePerSqft ? (
+          <>
+            <div className="flex items-baseline gap-3 mb-1.5">
+              <p style={{ fontFamily: 'var(--font-mono)' }} className="text-[26px] font-bold text-[#1B4F8A] leading-none">
+                ₹{project.pricePerSqft.toLocaleString('en-IN')}
+                <span className="text-[13px] font-normal text-[#A8A29E] ml-1">/sqft SBU</span>
+              </p>
+            </div>
+            {project.loadingFactor && (
+              <p className="text-[11px] text-[#A8A29E] mb-2">
+                ₹{Math.round(project.pricePerSqft * (project.loadingFactor ?? 1.37)).toLocaleString('en-IN')}/sqft Carpet
+              </p>
+            )}
+            {project.allInPrice && project.allInPrice > 0 ? (
+              <div className="rounded-xl px-3 py-2 mt-2" style={{ background: '#F0FDF4', border: '1px solid #BBF7D0' }}>
+                <p className="text-[10px] font-semibold text-[#0F6E56] uppercase tracking-wider mb-0.5">ALL-IN Total</p>
+                <p className="text-[18px] font-bold text-[#0F6E56]">₹{Math.round(project.allInPrice / 100000)}L</p>
+                <p className="text-[10px] text-[#52525B]">EMI ~₹{Math.round(project.allInPrice * 0.00875 / 12 * Math.pow(1.00729, 240) / (Math.pow(1.00729, 240) - 1)).toLocaleString('en-IN')}/mo · 20yr @ 8.75%</p>
+              </div>
+            ) : formatL(project.minPrice) && formatL(project.maxPrice) ? (
+              <p className="text-[12px] text-[#78716C] mt-1">₹{formatL(project.minPrice)}L – ₹{formatL(project.maxPrice)}L</p>
+            ) : null}
+          </>
+        ) : (
+          <p className="text-[13px] text-[#A8A29E]">Price on request</p>
+        )}
       </div>
 
       {/* Details */}

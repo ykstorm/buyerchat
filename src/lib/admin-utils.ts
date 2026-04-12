@@ -69,3 +69,29 @@ export function getStageLabel(stage: string): string {
   }
   return map[stage] ?? stage
 }
+
+export function getSessionQualityScore(session: {
+  qualificationDone: boolean
+  buyerBudget: number | null
+  buyerConfig: string | null
+  buyerPurpose: string | null
+  buyerStage: string
+  messages?: { length: number } | null
+}): number {
+  let score = 0
+  if (session.qualificationDone) score += 3
+  if (session.buyerBudget) score += 1
+  if (session.buyerConfig) score += 1
+  if (session.buyerPurpose) score += 1
+  if (['comparison', 'visit_trigger', 'pre_visit', 'post_visit', 'decision'].includes(session.buyerStage)) score += 2
+  if (['pre_visit', 'post_visit', 'decision'].includes(session.buyerStage)) score += 1
+  if (session.buyerStage === 'decision') score += 1
+  return Math.min(score, 10)
+}
+
+export function getQualityColor(score: number): string {
+  if (score >= 8) return '#34D399'
+  if (score >= 5) return '#FBBF24'
+  if (score >= 3) return '#F87171'
+  return '#4B5563'
+}

@@ -87,8 +87,8 @@ if (existing) {
     }
   })
 
-  // Send confirmation email
-  await resend.emails.send({
+  // Send confirmation email — non-blocking
+  try { await resend.emails.send({
     from: process.env.FROM_EMAIL!,
     to: session.user.email!,
     subject: `Site Visit Confirmed — ${project.projectName}`,
@@ -100,7 +100,7 @@ if (existing) {
       <p><strong>Your visit token:</strong> ${visitToken}</p>
       <p>Please bring this token to your site visit.</p>
     `
-  })
+  }) } catch (emailErr) { console.error('Email failed:', emailErr) }
 
   return NextResponse.json(
     { success: true, visitToken: siteVisit.visitToken },

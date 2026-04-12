@@ -6,7 +6,9 @@ export default function DraftMessageButton({ sessionId }: { sessionId: string })
   const [loading, setLoading] = useState(false)
   const [copied, setCopied] = useState(false)
 
-  const generate = async () => {
+  const generate = async (e?: React.MouseEvent) => {
+    e?.stopPropagation()
+    e?.preventDefault()
     setLoading(true)
     try {
       const res = await fetch('/api/admin/draft-message', {
@@ -32,7 +34,7 @@ export default function DraftMessageButton({ sessionId }: { sessionId: string })
       {!draft ? (
         <button
           type="button"
-          onClick={generate}
+          onClick={(e) => generate(e)}
           disabled={loading}
           className="text-[11px] font-medium px-3 py-1.5 rounded-lg transition-colors"
           style={{ background: loading ? 'rgba(96,165,250,0.05)' : 'rgba(96,165,250,0.1)', color: '#60A5FA', border: '1px solid rgba(96,165,250,0.2)' }}

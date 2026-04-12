@@ -277,7 +277,7 @@ export default function ProjectsPage() {
             Active projects in South Bopal & Shela
           </h1>
           <p className="font-sans text-sm text-[#636380] mt-3">
-            25+ verified listings · Prices updated every 2 weeks · All RERA confirmed
+            Prices updated every 2 weeks · All RERA confirmed
           </p>
         </motion.div>
 
