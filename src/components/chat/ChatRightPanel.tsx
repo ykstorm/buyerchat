@@ -1,5 +1,6 @@
 'use client'
 
+import React from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import ProjectCard from './artifacts/ProjectCard'
 import { VisitBooking } from './artifacts/VisitBooking'
@@ -36,7 +37,11 @@ export default function ChatRightPanel({
   canGoForward?: boolean
   artifactCurrent?: number
   artifactTotal?: number
+  artifactHistory?: Artifact[]
+  onSelectArtifact?: (index: number) => void
 }) {
+  const [showHistoryMenu, setShowHistoryMenu] = React.useState(false)
+
   return (
     <>
       {/* Desktop right panel */}
@@ -61,7 +66,31 @@ export default function ChatRightPanel({
                     Forward →
                   </button>
                   {artifactTotal && artifactTotal > 1 && (
-                    <span className="ml-auto text-[10px] text-[#A8A29E]">{artifactCurrent} of {artifactTotal}</span>
+                    <span className="text-[10px] text-[#A8A29E]">{artifactCurrent} of {artifactTotal}</span>
+                  )}
+                  {artifactHistory && artifactHistory.length > 1 && (
+                    <div className="relative ml-auto">
+                      <button type="button"
+                        onClick={e => { e.stopPropagation(); setShowHistoryMenu(v => !v) }}
+                        className="w-7 h-7 rounded-lg border border-[#E7E5E4] flex items-center justify-center hover:bg-[#F4F3F0] transition-colors"
+                      >
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#78716C" strokeWidth="2">
+                          <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
+                        </svg>
+                      </button>
+                      {showHistoryMenu && (
+                        <div className="absolute right-0 top-9 bg-white border border-[#E7E5E4] rounded-xl shadow-lg py-1.5 min-w-[180px] z-50">
+                          {artifactHistory.map((a, i) => (
+                            <button key={i} type="button"
+                              onClick={() => { onSelectArtifact?.(i); setShowHistoryMenu(false) }}
+                              className="w-full px-3 py-2 text-left hover:bg-[#F4F3F0] transition-colors">
+                              <p className="text-[11px] font-medium text-[#1C1917] truncate">{a.data.projectName}</p>
+                              <p className="text-[10px] text-[#A8A29E]">Project card</p>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   )}
                 </div>
               )}

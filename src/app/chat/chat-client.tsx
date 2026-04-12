@@ -334,6 +334,13 @@ export default function ChatClient({
         canGoForward={artifactIndex < artifactHistory.length - 1}
         artifactCurrent={artifactIndex + 1}
         artifactTotal={artifactHistory.length}
+        artifactHistory={artifactHistory}
+        onSelectArtifact={(index) => {
+          artifactIndexRef.current = index
+          setArtifactIndex(index)
+          setCurrentArtifact({ type: 'project_card', data: artifactHistoryRef.current[index].data })
+          setShowArtifact(true)
+        }}
       />
     </div>
   )
