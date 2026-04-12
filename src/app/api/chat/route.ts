@@ -163,7 +163,7 @@ if (hasInjection) {
       const completedVisit = await prisma.siteVisit.findFirst({
         where: { userId: session.user.id, visitCompleted: true },
         include: { project: { select: { projectName: true } } },
-        orderBy: { updatedAt: 'desc' }
+        orderBy: { createdAt: 'desc' }
       })
       if (completedVisit) {
         postVisitContext = `IMPORTANT: This buyer has completed a site visit to ${completedVisit.project.projectName}. If this is their first message after the visit, warmly ask how the visit went, what they liked/disliked, and whether they are ready to move forward. Be conversational and supportive, not pushy.`
