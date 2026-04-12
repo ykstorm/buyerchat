@@ -29,6 +29,8 @@ export default function ChatRightPanel({
   canGoForward,
   artifactCurrent,
   artifactTotal,
+  artifactHistory,
+  onSelectArtifact,
 }: {
   artifact: Artifact | null
   onArtifactBack?: () => void
