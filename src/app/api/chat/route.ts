@@ -175,19 +175,22 @@ if (hasInjection) {
     
         // Extract buyer signals and update session metadata
         const budgetMatch = sanitizedMsg.match(/(\d+)\s*(lakh|L|Cr|crore)/i)
-        const configMatch = sanitizedMsg.match(/([234])\s*bhk/i)
+        const configMatch = sanitizedMsg.match(/([2345])\s*bhk/i)
         const investorMatch = /invest|rental|resale|returns|roi/i.test(sanitizedMsg)
-        const familyMatch = /family|school|kids|children|end.use|self.use/i.test(sanitizedMsg)
+        const familyMatch = /family|school|kids|children|end.use|self.use|ghar|home/i.test(sanitizedMsg)
+        const purposeMatch = investorMatch ? 'investment' : familyMatch ? 'self-use' : null
+        const qualDone = detectQualification(sanitizedMsg, text)
         await prisma.chatSession.update({
           where: { id: savedSession.id },
           data: {
             lastMessageAt: new Date(),
             buyerStage: detectStage(sanitizedMsg, text),
-            qualificationDone: detectQualification(sanitizedMsg, text),
+            ...(qualDone && { qualificationDone: true }),
             ...(budgetMatch && { buyerBudget: parseInt(budgetMatch[1]) * (budgetMatch[2].toLowerCase().startsWith('cr') ? 10000000 : 100000) }),
             ...(configMatch && { buyerConfig: configMatch[1] + 'BHK' }),
             ...(investorMatch && { buyerPersona: 'investor' }),
             ...(familyMatch && !investorMatch && { buyerPersona: 'family' }),
+            ...(purposeMatch && { buyerPurpose: purposeMatch }),
           }
         })
     

@@ -242,18 +242,26 @@ export default function ChatClient({
         }))
         setMessages(loaded)
         setSessionId(urlSessionId)
-        // Restore last artifact from session history
-        const lastAssistant = [...loaded].reverse().find(m => m.role === 'assistant')
-        if (lastAssistant) {
-          const lower = lastAssistant.content.toLowerCase()
-          const found = projects.find(p => lower.includes(p.projectName.toLowerCase()))
-          if (found) {
-            const restored: Artifact = { type: 'project_card', data: found }
-            setArtifactHistory([restored])
-            setArtifactIndex(0)
-            setCurrentArtifact(restored)
-            setShowArtifact(true)
+        // Reconstruct full artifact history from all assistant messages
+        const restoredHistory: Artifact[] = []
+        const seenIds = new Set<string>()
+        for (const msg of loaded) {
+          if (msg.role !== 'assistant') continue
+          const lower = msg.content.toLowerCase()
+          for (const p of projects) {
+            if (lower.includes(p.projectName.toLowerCase()) && !seenIds.has(p.id)) {
+              seenIds.add(p.id)
+              restoredHistory.push({ type: 'project_card', data: p })
+            }
           }
+        }
+        if (restoredHistory.length > 0) {
+          artifactHistoryRef.current = restoredHistory
+          artifactIndexRef.current = restoredHistory.length - 1
+          setArtifactHistory(restoredHistory)
+          setArtifactIndex(restoredHistory.length - 1)
+          setCurrentArtifact(restoredHistory[restoredHistory.length - 1])
+          setShowArtifact(false)
         }
       } catch {}
       finally { setLoadingSession(false) }
