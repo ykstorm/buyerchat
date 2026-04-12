@@ -80,10 +80,36 @@ export function VisitBooking({ projectId, projectName }: VisitBookingProps) {
       </h3>
       <p className="text-sm text-[#78716C] mb-4">{projectName}</p>
       {status === 'success' ? (
-        <div className="flex flex-col items-center gap-3 py-2 text-center">
-          <p className="text-sm text-[#78716C]">Your visit is confirmed</p>
-          <p className="text-2xl font-bold text-[#0F6E56]">{token}</p>
-          <p className="text-xs text-[#78716C]">Bring this token to the site visit</p>
+        <div className="flex flex-col items-center gap-4 py-3 text-center">
+          <div className="w-14 h-14 rounded-full flex items-center justify-center" style={{ background: 'rgba(15,110,86,0.1)' }}>
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#0F6E56" strokeWidth="2.5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/>
+            </svg>
+          </div>
+          <div>
+            <p className="text-[15px] font-semibold text-[#1C1917]">Visit confirmed!</p>
+            <p className="text-[12px] text-[#78716C] mt-0.5">{projectName}</p>
+          </div>
+          <div className="w-full rounded-2xl p-4" style={{ background: '#F0FDF4', border: '1px solid #BBF7D0' }}>
+            <p className="text-[10px] uppercase tracking-widest text-[#0F6E56] font-semibold mb-1">Your OTP Token</p>
+            <p className="text-[32px] font-bold text-[#0F6E56] tracking-widest font-mono">{token}</p>
+            <p className="text-[11px] text-[#52525B] mt-1">Show this at the site. Your commission is protected.</p>
+          </div>
+          <div className="w-full text-left space-y-2">
+            {[
+              '📋 Note down this token before leaving',
+              '🏗 Builder will verify at the site gate',
+              '📱 Balvir will coordinate your visit',
+              '⏰ Arrive 5 min early',
+            ].map(tip => (
+              <p key={tip} className="text-[12px] text-[#78716C]">{tip}</p>
+            ))}
+          </div>
+          <button type="button"
+            onClick={() => window.dispatchEvent(new CustomEvent('show-project-card', { detail: { projectId } }))}
+            className="w-full py-2 rounded-full text-[13px] font-medium border border-[#E7E5E4] text-[#78716C] hover:border-[#1B4F8A] hover:text-[#1B4F8A] transition-colors">
+            ← Back to project details
+          </button>
         </div>
       ) : (
         <>

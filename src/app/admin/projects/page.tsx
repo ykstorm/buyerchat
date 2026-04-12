@@ -1,8 +1,4 @@
-// src/app/admin/projects/page.tsx
 import { prisma } from '@/lib/prisma'
-import { AdminCard } from '@/components/admin/AdminComponents'
-import { GradePill } from '@/components/admin/AdminComponents'
-import { BadgeStatus } from '@/components/admin/AdminComponents'
 import { formatLakh, getTrustScoreColor } from '@/lib/admin-utils'
 import Link from 'next/link'
 
@@ -11,9 +7,7 @@ export default async function ProjectsPage() {
   try {
     projects = await prisma.project.findMany({
       include: {
-        builder: {
-          select: { brandName: true, grade: true, totalTrustScore: true }
-        }
+        builder: { select: { brandName: true, grade: true, totalTrustScore: true } }
       },
       orderBy: { createdAt: 'desc' },
     })
@@ -22,70 +16,82 @@ export default async function ProjectsPage() {
   }
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-4">
-        <h1 className="text-[18px] font-semibold text-[#1A1A2E]">Projects</h1>
-        <Link
-          href="/admin/projects/new"
-          className="bg-[#185FA5] text-white text-[12px] font-medium px-4 py-2 rounded-lg hover:bg-[#0C447C] transition-colors"
-        >
+    <div style={{ background: '#0A0F1E', minHeight: '100vh' }}>
+      <div className="flex items-center justify-between mb-5">
+        <div>
+          <h1 className="text-[18px] font-bold text-white">Projects</h1>
+          <p className="text-[12px] mt-0.5" style={{ color: '#6B7280' }}>{projects.length} total · {projects.filter(p => p.isActive).length} active</p>
+        </div>
+        <Link href="/admin/projects/new" className="text-[11px] font-medium px-3 py-1.5 rounded-lg transition-colors" style={{ background: '#1B4F8A', color: 'white' }}>
           + Add Project
         </Link>
       </div>
 
-      <AdminCard title={`${projects.length} projects`}>
+      <div className="rounded-2xl overflow-hidden" style={{ background: '#111827', border: '1px solid rgba(255,255,255,0.07)' }}>
+        <div className="px-4 py-3" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+          <p className="text-[13px] font-semibold text-white">{projects.length} projects</p>
+        </div>
         <div className="overflow-x-auto">
           <table className="w-full text-[12px]">
             <thead>
-              <tr className="border-b border-[#F4F4F5]">
-                {['Project', 'Builder', 'Trust Score', '₹/sqft', 'Price Range', 'RERA', 'Grade'].map(h => (
-                  <th key={h} className="text-left text-[11px] text-[#52525B] font-medium py-2 pr-4">{h}</th>
+              <tr>
+                {['Project', 'Builder', 'Score', '₹/sqft', 'Price Range', 'RERA', 'Grade', 'Status', 'Action'].map(h => (
+                  <th key={h} className="text-left py-2.5 px-3 text-[10px] font-semibold uppercase tracking-wider whitespace-nowrap" style={{ color: '#4B5563', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>{h}</th>
                 ))}
-                <th className="text-left text-[11px] text-[#52525B] font-medium py-2">Actions</th>
               </tr>
             </thead>
             <tbody>
-              {projects.map(project => (
-                <tr key={project.id} className="border-b border-[#F4F4F5] hover:bg-[#F8FAFC]">
-                  <td className="py-2.5 pr-4">
-                    <p className="font-medium text-[#1A1A2E]">{project.projectName}</p>
-                    <p className="text-[11px] text-[#52525B]">{project.microMarket} · {project.constructionStatus}</p>
-                  </td>
-                  <td className="py-2.5 pr-4 text-[#1A1A2E]">{project.builder?.brandName ?? project.builderName}</td>
-                  <td className="py-2.5 pr-4">
-                    <span className="font-mono font-medium" style={{ color: getTrustScoreColor(project.builder?.totalTrustScore ?? 0) }}>
-                      {project.builder?.totalTrustScore ?? '—'}/100
-                    </span>
-                  </td>
-                  <td className="py-2.5 pr-4 font-mono text-[#1A1A2E]">
-                    ₹{project.pricePerSqft?.toLocaleString('en-IN')}
-                    {project.urgencySignals?.priceIncreasedRecently && (
-                      <span className="text-[#A32D2D] ml-1">↑</span>
-                    )}
-                  </td>
-                  <td className="py-2.5 pr-4 font-mono text-[#1A1A2E]">
-                    ₹{formatLakh(project.minPrice)} – ₹{formatLakh(project.maxPrice)}
-                  </td>
-                  <td className="py-2.5 pr-4">
-                    <span className="font-mono text-[11px] text-[#52525B]">{project.reraNumber?.slice(0, 18)}…</span>
-                  </td>
-                  <td className="py-2.5 pr-4">
-                    {project.builder?.grade ? <GradePill grade={project.builder.grade} /> : '—'}
-                  </td>
-                  <td className="py-2.5">
-                    <Link href={`/admin/projects/${project.id}`} className="text-[#185FA5] hover:underline text-[11px]">
-                      Edit
-                    </Link>
-                  </td>
-                </tr>
-              ))}
+              {projects.map(project => {
+                const gradeColor = project.builder?.grade === 'A' ? '#34D399' : project.builder?.grade === 'B' ? '#60A5FA' : project.builder?.grade === 'C' ? '#FBBF24' : '#F87171'
+                const scoreColor = getTrustScoreColor(project.builder?.totalTrustScore ?? 0)
+                return (
+                  <tr key={project.id} className="hover:bg-white/5 transition-colors" style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                    <td className="py-2.5 px-3">
+                      <p className="font-medium text-white">{project.projectName}</p>
+                      <p className="text-[10px] mt-0.5" style={{ color: '#6B7280' }}>{project.microMarket} · {project.constructionStatus}</p>
+                    </td>
+                    <td className="py-2.5 px-3" style={{ color: '#9CA3AF' }}>{project.builder?.brandName ?? project.builderName}</td>
+                    <td className="py-2.5 px-3">
+                      <span className="font-mono font-medium" style={{ color: scoreColor }}>
+                        {project.builder?.totalTrustScore ?? '—'}/100
+                      </span>
+                    </td>
+                    <td className="py-2.5 px-3 font-mono" style={{ color: '#D1D5DB' }}>
+                      {project.pricePerSqft > 0 ? `₹${project.pricePerSqft.toLocaleString('en-IN')}` : '—'}
+                    </td>
+                    <td className="py-2.5 px-3 font-mono" style={{ color: '#D1D5DB' }}>
+                      {project.minPrice > 0 ? `₹${formatLakh(project.minPrice)} – ₹${formatLakh(project.maxPrice)}` : 'Price on request'}
+                    </td>
+                    <td className="py-2.5 px-3">
+                      <span className="font-mono text-[10px]" style={{ color: '#6B7280' }}>{project.reraNumber?.slice(0, 16)}…</span>
+                    </td>
+                    <td className="py-2.5 px-3">
+                      {project.builder?.grade ? (
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: gradeColor + '22', color: gradeColor }}>
+                          {project.builder.grade}
+                        </span>
+                      ) : <span style={{ color: '#4B5563' }}>—</span>}
+                    </td>
+                    <td className="py-2.5 px-3">
+                      <span className="text-[10px] font-semibold" style={{ color: project.isActive ? '#34D399' : '#F87171' }}>
+                        {project.isActive ? '● Active' : '○ Inactive'}
+                      </span>
+                    </td>
+                    <td className="py-2.5 px-3">
+                      <Link href={`/admin/projects/${project.id}`} className="text-[11px] hover:underline" style={{ color: '#60A5FA' }}>
+                        Edit →
+                      </Link>
+                    </td>
+                  </tr>
+                )
+              })}
+              {projects.length === 0 && (
+                <tr><td colSpan={9} className="py-8 text-center text-[12px]" style={{ color: '#4B5563' }}>No projects yet.</td></tr>
+              )}
             </tbody>
           </table>
-          {projects.length === 0 && (
-            <p className="text-[12px] text-[#52525B] py-8 text-center">No projects yet. Add your first project.</p>
-          )}
         </div>
-      </AdminCard>
+      </div>
     </div>
   )
 }

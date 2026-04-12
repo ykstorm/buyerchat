@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma'
 import { daysBetween, formatLakh, getPersonaLabel, getStageLabel } from '@/lib/admin-utils'
 import { DarkMetricCard, DarkCard, DarkBadge } from '@/components/admin/DarkCard'
 import Link from 'next/link'
+import DraftMessageButton from '@/components/admin/DraftMessageButton'
 
 const STAGE_RULES: Record<string, { urgency: string; color: string; days: number; action: string }> = {
   intent_capture:     { urgency: 'Normal',  color: '#52525B', days: 3,  action: 'Qualify buyer — ask purpose and budget' },
@@ -110,6 +111,9 @@ export default async function FollowUpPage() {
                       <p className="text-[12px] font-medium text-white">{getPersonaLabel(session.buyerPersona)} · {session.buyerConfig ?? '—'}</p>
                       <p className="text-[11px] mt-0.5" style={{ color: '#9CA3AF' }}>{getStageLabel(session.buyerStage)} · {daysBetween(session.lastMessageAt)}d silent</p>
                       <p className="text-[10px] mt-1" style={{ color: '#F87171' }}>{STAGE_RULES[session.buyerStage]?.action}</p>
+                      <div className="mt-2" onClick={e => e.preventDefault()}>
+                        <DraftMessageButton sessionId={session.id} />
+                      </div>
                     </div>
                     <DarkBadge label="Urgent" color="red" />
                   </a>

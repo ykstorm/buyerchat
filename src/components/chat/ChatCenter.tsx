@@ -50,9 +50,11 @@ type Props = {
 }
 
 const STARTERS = [
-  'Best 3BHK under ₹85L — family, Shela preferred',
-  'What are strong options under ₹90L?',
+  'Best 3BHK options under ₹85L in Shela?',
+  'Strong options under ₹90L — family use',
   'Honest opinion on Riviera projects',
+  'Compare two projects for me',
+  'Which builder is most reliable?',
   "I'm confused — help me decide",
 ]
 
@@ -242,15 +244,19 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
                     </ReactMarkdown>
                   )}
                 </div>
-                {/* Suggested chips — only after last AI message */}
+                {/* Context-aware chips — only after last AI message */}
                 {msg.role === 'assistant' && i === messages.length - 1 && !isLoading && (
                   <div className="flex flex-wrap gap-1.5 mt-2 ml-8">
-                    {[
-                      'Book a site visit',
-                      'Compare with another project',
-                      'What are the risks?',
-                      'Tell me about the builder',
-                    ].map(chip => (
+                    {(() => {
+                      const lower = msg.content.toLowerCase()
+                      const hasProject = lower.includes('possession') || lower.includes('sqft') || lower.includes('bhk')
+                      const hasComparison = lower.includes('vs') || lower.includes('compare') || lower.includes('both')
+                      const hasVisit = lower.includes('visit') || lower.includes('site')
+                      if (hasVisit) return ['Book OTP-verified visit', 'What to check at site?', 'Tell me about the builder']
+                      if (hasComparison) return ['Which one should I choose?', 'Book a site visit', 'What are the risks?']
+                      if (hasProject) return ['Book a site visit', 'Compare with another project', 'What are the risks?', 'Tell me about the builder']
+                      return ['Show me strong options', 'What is my ideal budget?', 'Which area is better?', 'Help me decide']
+                    })().map(chip => (
                       <button
                         key={chip}
                         type="button"
