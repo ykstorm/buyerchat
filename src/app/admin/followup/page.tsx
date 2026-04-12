@@ -111,9 +111,7 @@ export default async function FollowUpPage() {
                       <p className="text-[12px] font-medium text-white">{session.buyerConfig ? `${session.buyerConfig} · ${getPersonaLabel(session.buyerPersona)}` : session.buyerBudget ? `₹${Math.round(session.buyerBudget/100000)}L buyer` : `Session ${session.id.slice(0,6)}`}</p>
                       <p className="text-[11px] mt-0.5" style={{ color: '#9CA3AF' }}>{getStageLabel(session.buyerStage)} · {daysBetween(session.lastMessageAt)}d silent</p>
                       <p className="text-[10px] mt-1" style={{ color: '#F87171' }}>{STAGE_RULES[session.buyerStage]?.action}</p>
-                      <div className="mt-2" onClick={e => e.preventDefault()}>
                         <DraftMessageButton sessionId={session.id} />
-                      </div>
                     </div>
                     <DarkBadge label="Urgent" color="red" />
                   </a>
@@ -132,9 +130,7 @@ export default async function FollowUpPage() {
                       <p className="text-[12px] font-medium text-white">{session.buyerConfig ? `${session.buyerConfig} · ${getPersonaLabel(session.buyerPersona)}` : session.buyerBudget ? `₹${Math.round(session.buyerBudget/100000)}L buyer` : `Session ${session.id.slice(0,6)}`}</p>
                       <p className="text-[11px] mt-0.5" style={{ color: '#9CA3AF' }}>{getStageLabel(session.buyerStage)} · {daysBetween(session.lastMessageAt)}d silent</p>
                       <p className="text-[10px] mt-1" style={{ color: '#FBBF24' }}>{STAGE_RULES[session.buyerStage]?.action}</p>
-                      <div className="mt-2" onClick={e => e.preventDefault()}>
                         <DraftMessageButton sessionId={session.id} />
-                      </div>
                     </div>
                     <DarkBadge label="High" color="amber" />
                   </a>

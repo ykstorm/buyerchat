@@ -44,12 +44,14 @@ export default async function OverviewPage() {
   } | null = null
   let pipelineBudgetSum = 0
   let todayConversations = 0
+  let scoringQueueCount = 0
+  let postVisitSilenceCount = 0
 
   try {
     const [
       buyers, projects, earned, pendingVisits, rera,
       urgents, weekChats, weekVisits, qualified, stageGroups,
-      pipeline, deal, pipelineBudget, todayConvs,
+      pipeline, deal, pipelineBudget, todayConvs, scoringQueue, postVisitSilence,
     ] = await Promise.all([
       prisma.chatSession.count({ where: { buyerStage: { not: 'decision' } } }),
       prisma.project.count({ where: { isActive: true } }),
@@ -86,6 +88,8 @@ export default async function OverviewPage() {
         where: { buyerStage: { not: 'decision' }, buyerBudget: { not: null } },
       }),
       prisma.chatSession.count({ where: { lastMessageAt: { gte: startOfToday } } }),
+      prisma.project.count({ where: { isActive: true, OR: [{ decisionTag: null }, { decisionTag: '' }, { honestConcern: null }, { honestConcern: '' }] } }),
+      prisma.chatSession.count({ where: { buyerStage: 'post_visit', lastMessageAt: { lt: new Date(Date.now() - 48 * 60 * 60 * 1000) } } }),
     ])
 
     activeBuyerCount = buyers
@@ -105,6 +109,8 @@ export default async function OverviewPage() {
     latestDeal = deal
     pipelineBudgetSum = (pipelineBudget._sum.buyerBudget ?? 0) * 0.015
     todayConversations = todayConvs
+    scoringQueueCount = scoringQueue
+    postVisitSilenceCount = postVisitSilence
   } catch (err) {
     console.error('Overview error:', err)
   }
@@ -193,9 +199,10 @@ export default async function OverviewPage() {
       <div className="grid gap-3 mb-5" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))' }}>
         {[
           { label: 'Active Buyers', value: activeBuyerCount, sub: '30-day window', color: '#60A5FA', href: '/admin/buyers' },
-          { label: 'Live Projects', value: projectsLiveCount, sub: '67 in queue', color: '#A78BFA', href: '/admin/projects' },
+          { label: 'Live Projects', value: projectsLiveCount, sub: `${scoringQueueCount} need scoring`, color: '#A78BFA', href: '/admin/projects' },
           { label: 'Commission Earned', value: `₹${formatLakh(totalEarned)}`, sub: 'All time', color: '#34D399', href: '/admin/revenue' },
           { label: 'Pending Visits', value: pendingVisitCount, sub: 'Unconfirmed', color: pendingVisitCount > 0 ? '#F87171' : '#34D399', href: '/admin/followup' },
+          { label: 'Post-Visit Silence', value: postVisitSilenceCount, sub: '48h+ no reply', color: postVisitSilenceCount > 0 ? '#F87171' : '#34D399', href: '/admin/followup' },
           { label: 'RERA Alerts', value: reraAlertCount, sub: 'Within 90 days', color: reraAlertCount > 0 ? '#FBBF24' : '#34D399', href: '/admin/intelligence' },
           { label: 'Hot Pipeline', value: activeStageCount, sub: 'Comparison+', color: '#FBBF24', href: '/admin/buyers' },
           { label: 'This Week Chats', value: weekChatCount, sub: `${qualifiedThisWeek} qualified`, color: '#60A5FA', href: '/admin/buyers' },
