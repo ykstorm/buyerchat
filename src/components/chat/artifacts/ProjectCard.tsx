@@ -37,6 +37,7 @@ export default function ProjectCard({ project }: { project: ProjectType }) {
           body: JSON.stringify({ projectId: project.id })
         })
         if (!res.ok) setSaved(true)
+        else window.dispatchEvent(new CustomEvent('saved-projects-updated'))
       } else {
         const res = await fetch('/api/saved', {
           method: 'POST',
@@ -44,6 +45,7 @@ export default function ProjectCard({ project }: { project: ProjectType }) {
           body: JSON.stringify({ projectId: project.id })
         })
         if (!res.ok && res.status !== 409) setSaved(false)
+        else window.dispatchEvent(new CustomEvent('saved-projects-updated'))
       }
     } catch { setSaved(prev) }
     setSaving(false)

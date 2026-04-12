@@ -50,7 +50,16 @@ export default function DashboardPage() {
         const projects = await projectsRes.json()
         const visits = await visitsRes.json()
         setSavedProjects(projects?.savedProjects ?? [])
-        setVisitRequests(visits ?? [])
+        const mapped = (visits ?? []).map((v: any) => ({
+          id: v.id,
+          projectName: v.project?.projectName ?? '—',
+          builderName: v.project?.builderName ?? '—',
+          visitDate: v.visitScheduledDate,
+          status: v.visitCompleted ? 'completed' : v.otpVerified ? 'confirmed' : 'pending',
+          bookedAt: v.createdAt,
+          visitToken: v.visitToken,
+        }))
+        setVisitRequests(mapped)
       } catch (error) {
         console.error('Error fetching dashboard data:', error)
       } finally {

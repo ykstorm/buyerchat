@@ -156,9 +156,26 @@ if (hasInjection) {
     } catch {}
   }
 
+  // Check if buyer has a completed visit needing feedback
+  let postVisitContext: string | null = null
+  if (session?.user?.id) {
+    try {
+      const completedVisit = await prisma.siteVisit.findFirst({
+        where: { userId: session.user.id, visitCompleted: true },
+        include: { project: { select: { projectName: true } } },
+        orderBy: { updatedAt: 'desc' }
+      })
+      if (completedVisit) {
+        postVisitContext = `IMPORTANT: This buyer has completed a site visit to ${completedVisit.project.projectName}. If this is their first message after the visit, warmly ask how the visit went, what they liked/disliked, and whether they are ready to move forward. Be conversational and supportive, not pushy.`
+      }
+    } catch {}
+  }
+
+  const finalMemory = postVisitContext ?? buyerMemory
+
   const result = streamText({
     model: openai('gpt-4o'),
-    system: buildSystemPrompt(context, decisionCard, buyerMemory),
+    system: buildSystemPrompt(context, decisionCard, finalMemory),
     messages: cappedMessages,
     temperature: 0.3,
     maxOutputTokens: 500,
@@ -216,7 +233,20 @@ if (hasInjection) {
             ...(purposeMatch && { buyerPurpose: purposeMatch }),
           }
         })
-    
+
+        // Auto-name session from first meaningful message
+        if (!chatSession?.customName && messages.length <= 2) {
+          const autoName = sanitizedMsg.length > 6
+            ? sanitizedMsg.slice(0, 40).replace(/[^\w\s₹]/g, '').trim()
+            : null
+          if (autoName) {
+            await prisma.chatSession.update({
+              where: { id: savedSession.id },
+              data: { customName: autoName }
+            })
+          }
+        }
+
         // Alert on critical violations
         const isCritical = violations.some(v =>
           v.includes('HALLUCINATION') || v.includes('CONTACT_LEAK')

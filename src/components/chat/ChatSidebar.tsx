@@ -244,16 +244,23 @@ const [renamingSession, setRenamingSession] = useState<string | null>(null)
     setChatNames(getChatNames())
   }, [])
 
+  const fetchSaved = () => {
+    if (!userId) return
+    fetch('/api/saved')
+      .then(r => r.json())
+      .then(data => setSavedProjects(data.savedProjects ?? []))
+      .catch(() => {})
+  }
+
   useEffect(() => {
     if (!userId) return
     fetch('/api/chat-sessions')
       .then(r => r.json())
       .then(setSessions)
       .catch(() => {})
-    fetch('/api/saved')
-      .then(r => r.json())
-      .then(data => setSavedProjects(data.savedProjects ?? []))
-      .catch(() => {})
+    fetchSaved()
+    window.addEventListener('saved-projects-updated', fetchSaved)
+    return () => window.removeEventListener('saved-projects-updated', fetchSaved)
   }, [userId])
 
   useEffect(() => {

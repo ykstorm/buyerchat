@@ -135,7 +135,7 @@ export default async function BuyersPage({
           Buyers
         </Link>
         <Link href="/admin/buyers?tab=chat-logs" className={`px-4 py-2 text-[12px] font-medium border-b-2 -mb-px transition-colors ${activeTab === 'chat-logs' ? 'border-[#60A5FA] text-[#60A5FA]' : 'border-transparent text-[#6B7280] hover:text-white'}`}>
-          Chat Logs
+          Sessions
         </Link>
       </div>
 
@@ -251,7 +251,7 @@ export default async function BuyersPage({
               <p className="text-[12px] font-medium text-white">{chatSessions.length} conversations</p>
             </div>
             <div className="overflow-y-auto" style={{ maxHeight: '72vh' }}>
-              {chatSessions.length === 0 && <p className="text-[12px] p-4" style={{ color: '#4B5563' }}>No conversations yet.</p>}
+              {chatSessions.length === 0 && <p className="text-[12px] p-4" style={{ color: '#4B5563' }}>Click any session to view full conversation</p>}
               {chatSessions.map(s => {
                 const firstMsg = s.messages?.[0]
                 const isSelected = s.id === selectedSessionId

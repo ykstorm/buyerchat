@@ -2,6 +2,7 @@ import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { redirect } from 'next/navigation'
 import { DarkBadge } from '@/components/admin/DarkCard'
+import MarkVisitComplete from '@/components/admin/MarkVisitComplete'
 
 function getStatus(visit: { visitCompleted: boolean; visitScheduledDate: Date }) {
   if (visit.visitCompleted) return { label: 'Completed', color: 'green' as const }
@@ -53,7 +54,7 @@ export default async function VisitsPage() {
           <table className="w-full text-[12px]">
             <thead>
               <tr>
-                {['OTP Token', 'Buyer', 'Project', 'Builder', 'Scheduled', 'Status', 'OTP Verified'].map(h => (
+                {['OTP Token', 'Buyer', 'Project', 'Builder', 'Scheduled', 'Status', 'OTP Verified', 'Action'].map(h => (
                   <th key={h} className="text-left py-3 px-4 text-[10px] font-semibold uppercase tracking-wider" style={{ color: '#4B5563', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>{h}</th>
                 ))}
               </tr>
@@ -77,6 +78,9 @@ export default async function VisitsPage() {
                     <td className="px-4 py-3"><DarkBadge label={label} color={color} /></td>
                     <td className="px-4 py-3">
                       <DarkBadge label={visit.otpVerified ? 'Verified' : 'Not verified'} color={visit.otpVerified ? 'green' : 'red'} />
+                    </td>
+                    <td className="px-4 py-3">
+                      {!visit.visitCompleted && <MarkVisitComplete visitId={visit.id} />}
                     </td>
                   </tr>
                 )

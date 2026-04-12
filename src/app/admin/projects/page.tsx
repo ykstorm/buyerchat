@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma'
 import { formatLakh, getTrustScoreColor } from '@/lib/admin-utils'
 import Link from 'next/link'
+import MatchedBuyersButton from '@/components/admin/MatchedBuyersButton'
 
 export default async function ProjectsPage() {
   let projects: any[] = []
@@ -82,13 +83,16 @@ export default async function ProjectsPage() {
                       </span>
                     </td>
                     <td className="py-2.5 px-3">
-                      <div className="flex items-center gap-2">
-                        {(!project.decisionTag || !project.honestConcern) && (
-                          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(251,191,36,0.15)', color: '#FBBF24' }}>Score needed</span>
-                        )}
-                        <Link href={`/admin/projects/${project.id}`} className="text-[11px] hover:underline" style={{ color: '#60A5FA' }}>
-                          Edit →
-                        </Link>
+                      <div className="flex flex-col gap-1.5">
+                        <div className="flex items-center gap-2">
+                          {(!project.decisionTag || !project.honestConcern) && (
+                            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(251,191,36,0.15)', color: '#FBBF24' }}>Score needed</span>
+                          )}
+                          <Link href={`/admin/projects/${project.id}`} className="text-[11px] hover:underline" style={{ color: '#60A5FA' }}>
+                            Edit →
+                          </Link>
+                        </div>
+                        <MatchedBuyersButton projectId={project.id} />
                       </div>
                     </td>
                   </tr>

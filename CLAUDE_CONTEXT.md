@@ -33,17 +33,34 @@ Next.js 15, Neon PostgreSQL, Prisma 7, GPT-4o, Auth.js v5, Vercel, Upstash Redis
 - Claude Code: cd C:\Users\pc\Documents\buyerchat && claude --dangerously-skip-permissions
 - One file per task. Never run tsc. Commit after every task.
 
+## COMPLETED DAY 37
+- Visit confirmation screen with OTP token card
+- Context-aware suggested chips
+- Artifact history reconstructed on session load
+- Artifact dedup + multi-project detection
+- Artifact menu outside-click close
+- Saved projects real-time sidebar update
+- Dashboard visits field mapping fix
+- Auto session naming from first message
+- Pricing system UI in admin Step 3
+- Scoring queue on projects page
+- Post-visit silence KPI on overview
+- Follow-up draft button on all priority cards
+- Mark visit complete button + post_visit transition
+- OTP sign-in prompt for anonymous buyers
+- Settings page with functional tabs
+- Buyer CRM Sessions tab rename
+
 ## PENDING (priority order)
-1. Visit confirmation screen after OTP booking
-2. New chat welcome screen with suggested prompts  
-3. Context-aware suggested chips (change by buyer stage)
-4. Buyer match engine
-5. Post-visit feedback flow (48h)
-6. Commission lock PDF
-7. RERA auto-scraper
-8. Dark/light mode toggle (Day 40)
-9. MSG91 SMS OTP (DLT pending — Balvir)
-10. WhatsApp nudge (blocked on DLT)
+1. Post-visit feedback prompt in chat (buyer return after visit)
+2. Buyer match engine UI on projects page
+3. Mobile UX final pass
+4. Dark/light mode toggle (Day 40)
+5. Homesty rebrand (Day 42)
+6. MSG91 SMS OTP (DLT pending — Balvir)
+7. WhatsApp nudge (blocked on DLT)
+8. Commission lock PDF
+9. RERA auto-scraper
 
 ## Data Issues (Balvir)
 - 10 projects minPrice=maxPrice=0 — enter via admin

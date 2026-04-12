@@ -22,7 +22,7 @@ export function VisitBooking({ projectId, projectName }: VisitBookingProps) {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
   const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
-  const [status, setStatus] = useState<'idle'|'loading'|'success'|'error'>('idle')
+  const [status, setStatus] = useState<'idle'|'loading'|'success'|'error'|'signin'>('idle')
   const [token, setToken] = useState('')
   const [errorMsg, setErrorMsg] = useState('Something went wrong. Try again.')
   const pills = getDatePills()
@@ -49,8 +49,7 @@ export function VisitBooking({ projectId, projectName }: VisitBookingProps) {
         return
       }
       if (res.status === 401) {
-        setStatus('error')
-        setErrorMsg('Please sign in to book a site visit.')
+        setStatus('signin')
         return
       }
       if (!res.ok) throw new Error('failed')
@@ -79,7 +78,26 @@ export function VisitBooking({ projectId, projectName }: VisitBookingProps) {
         Book a site visit
       </h3>
       <p className="text-sm text-[#78716C] mb-4">{projectName}</p>
-      {status === 'success' ? (
+      {status === 'signin' ? (
+        <div className="flex flex-col items-center gap-4 py-4 text-center">
+          <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ background: 'rgba(27,79,138,0.1)' }}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1B4F8A" strokeWidth="2">
+              <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
+              <circle cx="12" cy="7" r="4"/>
+            </svg>
+          </div>
+          <div>
+            <p className="text-[14px] font-semibold text-[#1C1917]">Sign in to book</p>
+            <p className="text-[12px] text-[#78716C] mt-1">Your OTP token protects your commission. Sign in to claim it.</p>
+          </div>
+          <a href="/api/auth/signin" className="w-full py-2.5 rounded-full text-[13px] font-medium text-white text-center transition-opacity hover:opacity-90" style={{ background: '#1B4F8A' }}>
+            Sign in with Google
+          </a>
+          <button type="button" onClick={() => setStatus('idle')} className="text-[11px] text-[#A8A29E] hover:text-[#1C1917]">
+            ← Back
+          </button>
+        </div>
+      ) : status === 'success' ? (
         <div className="flex flex-col items-center gap-4 py-3 text-center">
           <div className="w-14 h-14 rounded-full flex items-center justify-center" style={{ background: 'rgba(15,110,86,0.1)' }}>
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#0F6E56" strokeWidth="2.5">
