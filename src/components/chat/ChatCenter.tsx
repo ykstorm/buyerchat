@@ -62,10 +62,18 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
   const bottomRef = useRef<HTMLDivElement>(null)
   const [mouse, setMouse] = useState({ x: 0, y: 0 })
   const [showArtifactMenu, setShowArtifactMenu] = useState(false)
+  const artifactMenuRef = useRef<HTMLDivElement>(null)
+
   useEffect(() => {
-    const close = () => setShowArtifactMenu(false)
-    if (showArtifactMenu) document.addEventListener('click', close)
-    return () => document.removeEventListener('click', close)
+    const close = (e: MouseEvent) => {
+      if (artifactMenuRef.current && !artifactMenuRef.current.contains(e.target as Node)) {
+        setShowArtifactMenu(false)
+      }
+    }
+    if (showArtifactMenu) {
+      document.addEventListener('mousedown', close)
+      return () => document.removeEventListener('mousedown', close)
+    }
   }, [showArtifactMenu])
 
   useEffect(() => {
@@ -376,11 +384,10 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
       {/* Artifact history button — top right of chat */}
       {artifactHistory && artifactHistory.length > 0 && messages.length > 0 && !showArtifact && (
         <div className="lg:hidden absolute top-3 right-3 z-40">
-          <div className="relative">
+          <div className="relative" ref={artifactMenuRef}>
             <button
               type="button"
               onClick={e => { e.stopPropagation(); setShowArtifactMenu(prev => !prev) }}
-              onBlur={() => setTimeout(() => setShowArtifactMenu(false), 150)}
               className="w-9 h-9 bg-white border border-[#E7E5E4] rounded-xl flex items-center justify-center shadow-sm relative"
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1B4F8A" strokeWidth="2">

@@ -146,27 +146,35 @@ export default function ChatClient({
         ))
       }
 
-      // Detect project artifact
+      // Detect project artifacts — find ALL mentioned projects
       const lower = full.toLowerCase()
-      const found = projects.find(p => lower.includes(p.projectName.toLowerCase()))
-      if (found && /book.*visit|visit.*book|schedule.*visit/i.test(full)) {
-        const newArtifact1: Artifact = { type: 'visit_booking', data: found }
-        const newHistory1 = [...artifactHistoryRef.current.slice(0, artifactIndexRef.current + 1), newArtifact1]
-        artifactHistoryRef.current = newHistory1
-        artifactIndexRef.current = newHistory1.length - 1
-        setArtifactHistory(newHistory1)
-        setArtifactIndex(newHistory1.length - 1)
-        setCurrentArtifact(newArtifact1)
-        setShowArtifact(true)
-      } else if (found) {
-        const newArtifact2: Artifact = { type: 'project_card', data: found }
-        const newHistory2 = [...artifactHistoryRef.current.slice(0, artifactIndexRef.current + 1), newArtifact2]
-        artifactHistoryRef.current = newHistory2
-        artifactIndexRef.current = newHistory2.length - 1
-        setArtifactHistory(newHistory2)
-        setArtifactIndex(newHistory2.length - 1)
-        setCurrentArtifact(newArtifact2)
-        setShowArtifact(true)
+      const foundProjects = projects.filter(p => lower.includes(p.projectName.toLowerCase()))
+      const isVisitBooking = /book.*visit|visit.*book|schedule.*visit/i.test(full)
+
+      if (foundProjects.length > 0) {
+        let newHistory = [...artifactHistoryRef.current.slice(0, artifactIndexRef.current + 1)]
+        const seenIds = new Set(newHistory.map(a => a.data.id))
+        let lastArtifact: Artifact | null = null
+
+        for (const p of foundProjects) {
+          if (seenIds.has(p.id)) continue
+          seenIds.add(p.id)
+          const artifact: Artifact = {
+            type: isVisitBooking && foundProjects.length === 1 ? 'visit_booking' : 'project_card',
+            data: p
+          }
+          newHistory = [...newHistory, artifact]
+          lastArtifact = artifact
+        }
+
+        if (lastArtifact) {
+          artifactHistoryRef.current = newHistory
+          artifactIndexRef.current = newHistory.length - 1
+          setArtifactHistory(newHistory)
+          setArtifactIndex(newHistory.length - 1)
+          setCurrentArtifact(lastArtifact)
+          setShowArtifact(true)
+        }
       }
     } catch {
       setMessages(prev => prev.map(m =>
