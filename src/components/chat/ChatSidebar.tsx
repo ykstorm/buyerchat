@@ -303,7 +303,7 @@ const sidebar = (
       {/* Header */}
       <div className="px-4 py-4 border-b border-[#E7E5E4]">
         <div className="flex items-center justify-between mb-3">
-          <span className="text-[15px] font-semibold text-[#1C1917] tracking-tight">BuyerChat</span>
+          <Link href="/" className="text-[15px] font-semibold text-[#1C1917] tracking-tight hover:text-[#1B4F8A] transition-colors">BuyerChat</Link>
           <button type="button" onClick={onClose} className="lg:hidden text-[#A8A29E] hover:text-[#1C1917]">✕</button>
         </div>
         <button type="button" onClick={onNewChat} className="w-full bg-[#1B4F8A] text-white text-[12px] font-medium py-2 rounded-lg hover:bg-[#163d6b] transition-all duration-200 shadow-luxury-sm hover:shadow-[0_2px_8px_rgba(27,79,138,0.15)]">

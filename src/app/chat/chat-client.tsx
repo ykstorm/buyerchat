@@ -55,7 +55,10 @@ export default function ChatClient({
       const project = projects.find(p => p.id === projectId)
       if (project) {
         const newArtifact: Artifact = { type: 'visit_booking', data: project }
-        const newHistory = [...artifactHistoryRef.current.slice(0, artifactIndexRef.current + 1), newArtifact]
+        const prevHistory = artifactHistoryRef.current.slice(0, artifactIndexRef.current + 1)
+        const alreadyExists = prevHistory.some(a => a.data.id === newArtifact.data.id)
+        if (alreadyExists) return
+        const newHistory = [...prevHistory, newArtifact]
         artifactHistoryRef.current = newHistory
         artifactIndexRef.current = newHistory.length - 1
         setArtifactHistory(newHistory)
@@ -73,8 +76,18 @@ export default function ChatClient({
       const { projectId } = (e as CustomEvent).detail
       const project = projects.find(p => p.id === projectId)
       if (project) {
+        // Check if project already exists in history — navigate to it instead of adding duplicate
+        const existingIndex = artifactHistoryRef.current.findIndex(a => a.data.id === projectId)
+        if (existingIndex >= 0) {
+          artifactIndexRef.current = existingIndex
+          setArtifactIndex(existingIndex)
+          setCurrentArtifact({ type: 'project_card', data: artifactHistoryRef.current[existingIndex].data })
+          setShowArtifact(true)
+          return
+        }
+        // Not in history — add it
         const restored: Artifact = { type: 'project_card', data: project }
-        const newHistory = [...artifactHistoryRef.current.slice(0, artifactIndexRef.current + 1), restored]
+        const newHistory = [...artifactHistoryRef.current, restored]
         artifactHistoryRef.current = newHistory
         artifactIndexRef.current = newHistory.length - 1
         setArtifactHistory(newHistory)

@@ -203,8 +203,8 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
                 className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'} ${isGrouped ? 'mt-0.5' : 'mt-4'}`}
               >
                 {/* AI avatar — only show on last in group */}
-                {msg.role === 'assistant' && (
-                  <div className={`w-6 h-6 rounded-full flex-shrink-0 flex items-center justify-center ${isGrouped ? 'opacity-0' : 'bg-[#1C1917]'}`}>
+                {msg.role === 'assistant' && !isGrouped && (
+                  <div className="w-6 h-6 rounded-full flex-shrink-0 flex items-center justify-center bg-[#1C1917] self-end mb-0.5">
                     <span className="text-white text-[8px] font-bold tracking-tight">BC</span>
                   </div>
                 )}
@@ -368,12 +368,13 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
 
       {/* Input bar */}
       {/* Artifact history button — top right of chat */}
-      {artifactHistory && artifactHistory.length > 0 && messages.length > 0 && (
+      {artifactHistory && artifactHistory.length > 0 && messages.length > 0 && !showArtifact && (
         <div className="lg:hidden absolute top-3 right-3 z-40">
           <div className="relative">
             <button
               type="button"
               onClick={e => { e.stopPropagation(); setShowArtifactMenu(prev => !prev) }}
+              onBlur={() => setTimeout(() => setShowArtifactMenu(false), 150)}
               className="w-9 h-9 bg-white border border-[#E7E5E4] rounded-xl flex items-center justify-center shadow-sm relative"
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1B4F8A" strokeWidth="2">
