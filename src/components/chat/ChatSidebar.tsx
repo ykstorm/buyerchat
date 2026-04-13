@@ -86,7 +86,9 @@ function SwipeableSessionItem({ session, onLoad, onClose, menuOpen, setMenuOpen,
         dragElastic={0.1}
         onDragEnd={handleDragEnd}
         style={{ x, opacity: itemOpacity }}
-        className="relative px-3 py-2.5 rounded-xl cursor-pointer hover:bg-[#F7F6F4] transition-colors"
+        className="relative px-3 py-2.5 rounded-xl cursor-pointer transition-colors"
+        onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-subtle)')}
+        onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
         onMouseEnter={() => setHoveredSession(session.id)}
         onClick={() => { if (renamingSession !== session.id && !confirmingDelete) { onLoad(session.id); onClose() } }}
       >
@@ -141,7 +143,7 @@ function SwipeableSessionItem({ session, onLoad, onClose, menuOpen, setMenuOpen,
               </span>
               <span className="text-[10px] text-[#A8A29E]">{timeAgo(session.lastMessageAt)}</span>
             </div>
-            <p className="text-[12px] font-medium text-[#1C1917] truncate leading-tight">{displayTitle}</p>
+            <p className="text-[12px] font-medium truncate leading-tight" style={{ color: 'var(--text-primary)' }}>{displayTitle}</p>
           </>
         )}
 
@@ -303,15 +305,15 @@ const [renamingSession, setRenamingSession] = useState<string | null>(null)
   })
 
 const sidebar = (
-    <div className="w-60 h-full bg-[#FAFAF9] border-r border-[#EEECE8] flex flex-col flex-shrink-0 relative grain">
+    <div className="w-60 h-full flex flex-col flex-shrink-0 relative grain" style={{ background: 'var(--bg-surface-alt)', borderRight: '1px solid var(--border-subtle)' }}>
       {/* Grain overlay */}
       <div className="absolute inset-0 opacity-[0.015] pointer-events-none"
         style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 256 256\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noise\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noise)\' opacity=\'1\'/%3E%3C/svg%3E")' }}
       />
       {/* Header */}
-      <div className="px-4 py-4 border-b border-[#E7E5E4]">
+      <div className="px-4 py-4" style={{ borderBottom: '1px solid var(--border)' }}>
         <div className="flex items-center justify-between mb-3">
-          <Link href="/" className="text-[15px] font-semibold text-[#1C1917] tracking-tight hover:text-[#1B4F8A] transition-colors">BuyerChat</Link>
+          <Link href="/" className="text-[15px] font-semibold tracking-tight hover:text-[#1B4F8A] transition-colors" style={{ color: 'var(--text-primary)' }}>BuyerChat</Link>
           <div className="flex items-center gap-2">
             <ThemeToggle />
             <button type="button" onClick={onClose} className="lg:hidden text-[#A8A29E] hover:text-[#1C1917]">✕</button>
@@ -324,14 +326,15 @@ const sidebar = (
 
       {/* Search bar */}
       <div className="px-3 pt-3 pb-2">
-        <div className="flex items-center gap-2 bg-[#F4F3F0] rounded-xl px-3 py-2 border border-[#E7E5E4]">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#A8A29E" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <div className="flex items-center gap-2 rounded-xl px-3 py-2" style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
           <input
             type="text"
             placeholder="Search chats..."
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
-            className="bg-transparent text-[16px] md:text-[12px] text-[#1C1917] placeholder-[#A8A29E] outline-none w-full"
+            className="bg-transparent text-[16px] md:text-[12px] outline-none w-full"
+            style={{ color: 'var(--text-primary)' }}
           />
         </div>
       </div>
@@ -372,7 +375,7 @@ const sidebar = (
       </div>
 
       {/* Footer */}
-      <div className="px-4 py-3 border-t border-[#E7E5E4]">
+      <div className="px-4 py-3" style={{ borderTop: '1px solid var(--border)' }}>
         {userId ? (
           <div>
             {savedProjects.length > 0 && (
@@ -396,7 +399,7 @@ const sidebar = (
             </Link>
             <div className="flex items-center gap-2">
               {userImage && <img src={userImage} className="w-6 h-6 rounded-full" alt="" />}
-              <span className="text-[11px] text-[#1C1917] truncate">{userName ?? 'You'}</span>
+              <span className="text-[11px] truncate" style={{ color: 'var(--text-primary)' }}>{userName ?? 'You'}</span>
               <button type="button" onClick={() => signOut({ callbackUrl: '/' })} className="text-[11px] text-[#A8A29E] hover:text-[#1C1917] ml-auto">Sign out</button>
             </div>
           </div>

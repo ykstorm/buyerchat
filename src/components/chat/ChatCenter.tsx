@@ -85,7 +85,7 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
   }, [messages, isLoading])
 
   return (
-    <div className="flex-1 flex flex-col h-dvh relative overflow-hidden bg-[#FAFAF8]">
+    <div className="flex-1 flex flex-col h-dvh relative overflow-hidden" style={{ background: 'var(--bg-base)' }}>
       {loadingSession ? (
         <div className="flex-1 flex items-center justify-center">
           <motion.div
@@ -97,6 +97,7 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
       ) : messages.length === 0 ? (
         <div
           className="flex-1 flex flex-col items-center justify-center relative overflow-hidden"
+          style={{ background: 'var(--bg-base)' }}
           onMouseMove={(e) => setMouse({ x: (e.clientX / window.innerWidth - 0.5) * 8, y: (e.clientY / window.innerHeight - 0.5) * 8 })}
         >
 
@@ -234,15 +235,21 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
                   </div>
                 )}
 
-                <div className={`
+                <div
+                  className={`
                   max-w-[75%] px-4 py-2.5 text-[13.5px] leading-relaxed
                   ${msg.role === 'user'
-                    ? 'bg-[#1C1917] text-[#FAF9F7] rounded-2xl rounded-br-md shadow-luxury-sm'
-                    : 'bg-white text-[#1C1917] rounded-2xl rounded-bl-md shadow-luxury-sm border border-[#F0EDE8]'
+                    ? 'rounded-2xl rounded-br-md shadow-luxury-sm'
+                    : 'rounded-2xl rounded-bl-md shadow-luxury-sm'
                   }
-                `}>
+                `}
+                  style={msg.role === 'user'
+                    ? { background: 'var(--bg-message-user)', color: 'var(--text-message-user)' }
+                    : { background: 'var(--bg-message-ai)', color: 'var(--text-primary)', border: '1px solid var(--border)' }
+                  }
+                >
                   {msg.role === 'assistant' ? (
-                    <div className="prose prose-sm max-w-none text-[#1C1917]">
+                    <div className="prose prose-sm max-w-none" style={{ color: 'var(--text-primary)' }}>
                       <ReactMarkdown
                         components={{
                           strong: ({ children }) => <span className="font-semibold text-[#1C1917]">{children}</span>,
@@ -287,7 +294,7 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
                         whileHover={{ scale: 1.04, y: -1 }}
                         whileTap={{ scale: 0.96 }}
                         className="text-[11px] px-3 py-1.5 rounded-full border transition-colors"
-                        style={{ borderColor: '#E7E5E4', color: '#78716C', background: 'white' }}
+                        style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)', background: 'var(--bg-surface)' }}
                       >
                         {chip}
                       </motion.button>
@@ -304,7 +311,7 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
               <div className="w-6 h-6 rounded-full bg-[#1C1917] flex items-center justify-center flex-shrink-0">
                 <span className="text-white text-[8px] font-bold">BC</span>
               </div>
-              <div className="bg-white border border-[#F0EDE8] rounded-2xl rounded-bl-md px-4 py-3 shadow-[0_1px_4px_rgba(0,0,0,0.06)]">
+              <div className="rounded-2xl rounded-bl-md px-4 py-3 shadow-[0_1px_4px_rgba(0,0,0,0.06)]" style={{ background: 'var(--bg-message-ai)', border: '1px solid var(--border)' }}>
                 <div className="flex gap-1.5 items-center">
                   {[0, 1, 2].map(i => (
                     <motion.div
@@ -350,7 +357,8 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
                   dragConstraints={{ top: 0 }}
                   dragElastic={0.2}
                   onDragEnd={(_: any, info: any) => { if (info.offset.y > 150 && info.velocity.y > 100) onToggleArtifact?.() }}
-                  className="bg-white rounded-t-2xl shadow-[0_-8px_40px_rgba(0,0,0,0.12)] overflow-hidden"
+                  className="rounded-t-2xl shadow-[0_-8px_40px_rgba(0,0,0,0.12)] overflow-hidden"
+                  style={{ background: 'var(--bg-surface)' }}
                 >
                   {/* Handle */}
                   <div className="flex justify-center pt-3 pb-1 cursor-grab active:cursor-grabbing" style={{ touchAction: 'none' }} onClick={onToggleArtifact}>
@@ -358,7 +366,7 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
                   </div>
                   {/* Nav bar */}
                   {artifactTotal && artifactTotal > 1 && (
-                    <div className="flex items-center gap-2 px-4 py-2 border-b border-[#F4F3F0]">
+                    <div className="flex items-center gap-2 px-4 py-2" style={{ borderBottom: '1px solid var(--border)' }}>
                       <button type="button" onClick={onArtifactBack} disabled={!canGoBack}
                         className={`text-[11px] flex items-center gap-1 px-2 py-1 rounded-lg transition-colors ${canGoBack ? 'text-[#1C1917] hover:bg-[#F4F3F0]' : 'text-[#D6D3D1] cursor-not-allowed'}`}>
                         ← Back
@@ -387,9 +395,10 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
                 animate={{ y: 0, opacity: 1 }}
                 exit={{ y: 20, opacity: 0 }}
                 onClick={onToggleArtifact}
-                className="w-full bg-white border-t border-[#E7E5E4] px-4 py-2 flex items-center justify-between"
+                className="w-full px-4 py-2 flex items-center justify-between"
+                style={{ background: 'var(--bg-surface)', borderTop: '1px solid var(--border)' }}
               >
-                <span className="text-[12px] font-medium text-[#1C1917] truncate">
+                <span className="text-[12px] font-medium truncate" style={{ color: 'var(--text-primary)' }}>
                   {artifact.type === 'visit_booking' ? `Book visit — ${artifact.data.projectName}` : artifact.data.projectName}
                 </span>
                 <span className="text-[11px] text-[#1B4F8A] font-medium">↑ Open</span>
@@ -407,7 +416,8 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
             <button
               type="button"
               onClick={e => { e.stopPropagation(); setShowArtifactMenu(prev => !prev) }}
-              className="w-9 h-9 bg-white border border-[#E7E5E4] rounded-xl flex items-center justify-center shadow-sm relative"
+              className="w-9 h-9 rounded-xl flex items-center justify-center shadow-sm relative"
+              style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1B4F8A" strokeWidth="2">
                 <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
@@ -419,13 +429,16 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
               )}
             </button>
             {showArtifactMenu && (
-              <div className="absolute right-0 top-11 bg-white border border-[#E7E5E4] rounded-2xl shadow-[0_8px_24px_rgba(0,0,0,0.08)] py-2 min-w-[200px] z-50">
+              <div className="absolute right-0 top-11 rounded-2xl shadow-[0_8px_24px_rgba(0,0,0,0.08)] py-2 min-w-[200px] z-50" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
                 {artifactHistory.map((a, i) => (
                   <button key={i} type="button"
                     onClick={() => { onSelectArtifact?.(i); setShowArtifactMenu(false) }}
-                    className="w-full px-4 py-2.5 text-left hover:bg-[#F4F3F0] transition-colors">
-                    <p className="text-[12px] font-medium text-[#1C1917] truncate">{a.data.projectName}</p>
-                    <p className="text-[10px] text-[#A8A29E]">{a.type === 'visit_booking' ? 'Visit booking' : 'Project card'}</p>
+                    className="w-full px-4 py-2.5 text-left transition-colors"
+                    style={{ color: 'var(--text-primary)' }}
+                    onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-subtle)')}
+                    onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
+                    <p className="text-[12px] font-medium truncate" style={{ color: 'var(--text-primary)' }}>{a.data.projectName}</p>
+                    <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{a.type === 'visit_booking' ? 'Visit booking' : a.type === 'comparison' ? 'Comparison' : 'Project card'}</p>
                   </button>
                 ))}
               </div>
@@ -434,14 +447,15 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
         </div>
       )}
 
-      <div className="border-t border-[#EEECE8] bg-[#FAFAF8]/90 backdrop-blur-sm px-4 py-3 sticky bottom-0 z-20 flex-shrink-0" style={{ paddingBottom: 'env(safe-area-inset-bottom, 12px)' }}>
+      <div className="backdrop-blur-sm px-4 py-3 sticky bottom-0 z-20 flex-shrink-0" style={{ borderTop: '1px solid var(--border-subtle)', background: 'color-mix(in srgb, var(--bg-base) 90%, transparent)', paddingBottom: 'env(safe-area-inset-bottom, 12px)' }}>
         <form onSubmit={handleSubmit} className="flex gap-2 items-center">
           <input
             value={input}
             onChange={handleInputChange}
             placeholder="Ask about properties in South Bopal & Shela..."
             maxLength={800}
-            className="flex-1 bg-white border border-[#E7E5E4] rounded-2xl px-4 py-2.5 text-[16px] text-[#1C1917] placeholder:text-[#C8C4BF] focus:outline-none focus:ring-2 focus:ring-[#1B4F8A]/15 focus:border-[#1B4F8A]/50 transition-all duration-200 shadow-luxury-sm"
+            className="flex-1 rounded-2xl px-4 py-2.5 text-[16px] focus:outline-none focus:ring-2 focus:ring-[#1B4F8A]/15 focus:border-[#1B4F8A]/50 transition-all duration-200 shadow-luxury-sm"
+            style={{ background: 'var(--bg-input)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
           />
           <motion.button
             type="submit"
