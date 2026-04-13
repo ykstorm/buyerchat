@@ -15,11 +15,6 @@ export default function Navbar() {
     setIsScrolled(latest > 20)
   })
 
-  // Hide navbar on pages that have their own navigation
-  if (pathname?.startsWith('/chat') || pathname?.startsWith('/dashboard') || pathname?.startsWith('/admin')) {
-    return null
-  }
-
   useEffect(() => {
     if (isMobileMenuOpen) {
       document.body.style.overflow = "hidden"
@@ -28,6 +23,11 @@ export default function Navbar() {
     }
     return () => { document.body.style.overflow = "" }
   }, [isMobileMenuOpen])
+
+  // Hide navbar on pages that have their own navigation
+  if (pathname?.startsWith('/chat') || pathname?.startsWith('/dashboard') || pathname?.startsWith('/admin')) {
+    return null
+  }
 
   const navLinks = [
     { name: "Projects", href: "/projects" },
