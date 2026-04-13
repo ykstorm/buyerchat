@@ -4,6 +4,7 @@ import React from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import ProjectCard from './artifacts/ProjectCardV2'
 import ComparisonCard from './artifacts/ComparisonCard'
+import CostBreakdownCard from './artifacts/CostBreakdownCard'
 import { VisitBooking } from './artifacts/VisitBooking'
 
 type ProjectType = {
@@ -20,7 +21,7 @@ type ProjectType = {
   priceNote?: string | null
 }
 
-type Artifact = { type: 'project_card' | 'visit_booking' | 'comparison'; data: ProjectType; dataB?: ProjectType }
+type Artifact = { type: 'project_card' | 'visit_booking' | 'comparison' | 'cost_breakdown'; data: ProjectType; dataB?: ProjectType }
 
 export default function ChatRightPanel({
   artifact,
@@ -48,7 +49,7 @@ export default function ChatRightPanel({
   return (
     <>
       {/* Desktop right panel */}
-      <div className="w-80 flex-shrink-0 h-full border-l border-[#E7E5E4] bg-[#FAFAF8] overflow-y-auto p-4 hidden lg:block">
+      <div className="w-[380px] flex-shrink-0 h-full overflow-y-auto p-4 hidden lg:block" style={{ borderLeft: '1px solid var(--border)', background: 'var(--bg-base)' }}>
         <AnimatePresence mode="wait">
           {artifact ? (
             <motion.div
@@ -109,6 +110,11 @@ export default function ChatRightPanel({
                 <>
                   <p className="text-[11px] font-medium text-[#A8A29E] uppercase tracking-wider mb-3">Comparison</p>
                   <ComparisonCard projectA={artifact.data} projectB={artifact.dataB} />
+                </>
+              ) : artifact.type === 'cost_breakdown' ? (
+                <>
+                  <p className="text-[11px] font-medium text-[#A8A29E] uppercase tracking-wider mb-3">Cost breakdown</p>
+                  <CostBreakdownCard project={artifact.data} />
                 </>
               ) : (
                 <>

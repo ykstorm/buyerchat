@@ -137,9 +137,13 @@ function SwipeableSessionItem({ session, onLoad, onClose, menuOpen, setMenuOpen,
         ) : (
           <>
             <div className="flex items-center justify-between mb-1">
-              <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${STAGE_COLORS[session.buyerStage] ?? 'bg-[#F4F4F5] text-[#52525B]'}`}>
-                {STAGE_LABELS[session.buyerStage] ?? session.buyerStage}
-              </span>
+              {session.buyerStage && session.buyerStage !== 'intent_capture' ? (
+                <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${STAGE_COLORS[session.buyerStage] ?? 'bg-[#F4F4F5] text-[#52525B]'}`}>
+                  {STAGE_LABELS[session.buyerStage] ?? session.buyerStage}
+                </span>
+              ) : (
+                <span />
+              )}
               <span className="text-[10px] text-[#A8A29E]">{timeAgo(session.lastMessageAt)}</span>
             </div>
             <p className="text-[12px] font-medium truncate leading-tight" style={{ color: 'var(--text-primary)' }}>{displayTitle}</p>

@@ -5,8 +5,9 @@ import { DarkBadge } from '@/components/admin/DarkCard'
 import MarkVisitComplete from '@/components/admin/MarkVisitComplete'
 import PreVisitBriefButton from '@/components/admin/PreVisitBriefButton'
 
-function getStatus(visit: { visitCompleted: boolean; visitScheduledDate: Date }) {
+function getStatus(visit: { visitCompleted: boolean; visitScheduledDate: Date; expiresAt?: Date | null }) {
   if (visit.visitCompleted) return { label: 'Completed', color: 'green' as const }
+  if (visit.expiresAt && new Date(visit.expiresAt) < new Date()) return { label: 'Expired', color: 'red' as const }
   if (new Date(visit.visitScheduledDate) < new Date()) return { label: 'Missed', color: 'red' as const }
   return { label: 'Upcoming', color: 'blue' as const }
 }
@@ -56,7 +57,7 @@ export default async function VisitsPage() {
           <table className="w-full text-[12px]">
             <thead>
               <tr>
-                {['OTP Token', 'Buyer', 'Project', 'Builder', 'Scheduled', 'Status', 'OTP Verified', 'Action'].map(h => (
+                {['OTP Token', 'Buyer', 'Project', 'Builder', 'Scheduled', 'Expires', 'Status', 'OTP Verified', 'Action'].map(h => (
                   <th key={h} className="text-left py-3 px-4 text-[10px] font-semibold uppercase tracking-wider" style={{ color: '#4B5563', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>{h}</th>
                 ))}
               </tr>
@@ -76,6 +77,11 @@ export default async function VisitsPage() {
                     <td className="px-4 py-3" style={{ color: '#9CA3AF' }}>{visit.project?.builderName ?? '—'}</td>
                     <td className="px-4 py-3" style={{ color: '#9CA3AF' }}>
                       {new Date(visit.visitScheduledDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    </td>
+                    <td className="px-4 py-3" style={{ color: visit.expiresAt && new Date(visit.expiresAt) < new Date() ? '#F87171' : '#9CA3AF' }}>
+                      {visit.expiresAt
+                        ? new Date(visit.expiresAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+                        : '—'}
                     </td>
                     <td className="px-4 py-3"><DarkBadge label={label} color={color} /></td>
                     <td className="px-4 py-3">

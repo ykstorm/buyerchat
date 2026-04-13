@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth'
 import { z } from 'zod'
 import { invalidateContextCache } from '@/lib/context-cache'
+import { logAdminAction } from '@/lib/audit-log'
 
 const BuilderSchema = z.object({
   builderName: z.string().min(1),
@@ -59,6 +60,7 @@ try {
     }
   })
   invalidateContextCache()
+  await logAdminAction('create', 'builder', { id: builder.id, builderName: builder.builderName }, session!.user!.email!)
 
   return NextResponse.json(builder, { status: 201 })
 }

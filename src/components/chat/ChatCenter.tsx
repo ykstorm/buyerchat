@@ -2,10 +2,11 @@
 import type React from 'react'
 
 import { motion, AnimatePresence } from 'framer-motion'
-import { FormEvent, useRef, useEffect, useState, useCallback } from 'react'
+import { FormEvent, useRef, useEffect, useState } from 'react'
 import ReactMarkdown from 'react-markdown'
 import ProjectCard from './artifacts/ProjectCardV2'
 import ComparisonCard from './artifacts/ComparisonCard'
+import CostBreakdownCard from './artifacts/CostBreakdownCard'
 import { VisitBooking } from './artifacts/VisitBooking'
 
 /* ── Floating Particles Component ── */
@@ -124,7 +125,7 @@ type ProjectType = {
   bankApprovals?: string | null
   priceNote?: string | null
 }
-type Artifact = { type: 'project_card' | 'visit_booking' | 'comparison'; data: ProjectType; dataB?: ProjectType }
+type Artifact = { type: 'project_card' | 'visit_booking' | 'comparison' | 'cost_breakdown'; data: ProjectType; dataB?: ProjectType }
 
 type Props = {
   messages: Message[]
@@ -347,9 +348,9 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
                 transition={{ type: 'spring', stiffness: 400, damping: 35 }}
                 className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'} ${isGrouped ? 'mt-0.5' : 'mt-4'}`}
               >
-                {/* AI avatar — only show on last in group */}
+                {/* AI avatar — only show on first in group, LEFT-aligned */}
                 {msg.role === 'assistant' && !isGrouped && (
-                  <div className="w-6 h-6 rounded-full flex-shrink-0 flex items-center justify-center bg-[#1C1917] self-end mb-0.5">
+                  <div className="w-6 h-6 rounded-full flex-shrink-0 flex items-center justify-center bg-[#1C1917] self-start mb-0.5">
                     <span className="text-white text-[8px] font-bold tracking-tight">BC</span>
                   </div>
                 )}
@@ -504,7 +505,7 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-[11px] font-medium" style={{ color: 'var(--text-secondary)' }}>
-                    {artifact.type === 'visit_booking' ? 'Book Visit' : artifact.type === 'comparison' ? 'Compare' : 'Project'}
+                    {artifact.type === 'visit_booking' ? 'Book Visit' : artifact.type === 'comparison' ? 'Compare' : artifact.type === 'cost_breakdown' ? 'Cost' : 'Project'}
                   </span>
                   <button
                     type="button"
@@ -529,6 +530,8 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
                   ? <VisitBooking projectId={artifact.data.id} projectName={artifact.data.projectName} />
                   : artifact.type === 'comparison' && artifact.dataB
                   ? <ComparisonCard projectA={artifact.data} projectB={artifact.dataB} />
+                  : artifact.type === 'cost_breakdown'
+                  ? <CostBreakdownCard project={artifact.data} />
                   : <ProjectCard project={artifact.data} />}
               </div>
             </motion.div>

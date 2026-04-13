@@ -171,6 +171,7 @@ model SiteVisit {
   visitScheduledDate DateTime
   visitCompleted     Boolean  @default(false)
   createdAt          DateTime @default(now())
+  expiresAt          DateTime?
   user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   project            Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
   builderAcknowledged Boolean  @default(false)
@@ -182,6 +183,7 @@ model SiteVisit {
   @@index([userId])
   @@index([projectId])
   @@index([visitCompleted])
+  @@index([expiresAt])
 }
 
 
@@ -261,4 +263,19 @@ model MarketAlert {
   projectName String?
   createdAt   DateTime @default(now())
   isRead      Boolean  @default(false)
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  action     String
+  entity     String
+  entityId   String?
+  data       Json?
+  userEmail  String
+  createdAt  DateTime @default(now())
+
+  @@index([action])
+  @@index([entity])
+  @@index([userEmail])
+  @@index([createdAt])
 }

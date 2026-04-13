@@ -27,7 +27,7 @@ function possession(d: Date | string) {
 
 function Winner({ isWinner }: { isWinner: boolean }) {
   if (!isWinner) return null
-  return <span className="text-[9px] font-bold ml-1" style={{ color: '#34D399' }}>✓</span>
+  return <span className="text-[9px] font-bold ml-1" style={{ color: 'var(--text-accent-green)' }}>✓</span>
 }
 
 export default function ComparisonCard({ projectA, projectB }: { projectA: ProjectType; projectB: ProjectType }) {
@@ -88,23 +88,23 @@ export default function ComparisonCard({ projectA, projectB }: { projectA: Proje
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ type: 'spring', stiffness: 300, damping: 28 }}
-      className="bg-white rounded-2xl overflow-hidden shadow-luxury-card"
-      style={{ border: '1px solid #E7E5E4' }}
+      className="rounded-2xl overflow-hidden shadow-luxury-card"
+      style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}
     >
       {/* Top accent */}
       <div className="h-0.5 bg-gradient-to-r from-[#1B4F8A] via-[#2563EB] to-[#1B4F8A]" />
 
       {/* Header */}
-      <div className="px-4 pt-4 pb-3 border-b border-[#F4F3F0]">
-        <p className="text-[10px] font-semibold uppercase tracking-widest text-[#A8A29E] mb-2">Side-by-side comparison</p>
+      <div className="px-4 pt-4 pb-3" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+        <p className="text-[10px] font-semibold uppercase tracking-widest mb-2" style={{ color: 'var(--text-muted)' }}>Side-by-side comparison</p>
         <div className="grid grid-cols-2 gap-3">
-          <div className="rounded-xl p-2.5" style={{ background: '#EFF6FF', border: '1px solid #BFDBFE' }}>
-            <p style={{ fontFamily: 'var(--font-playfair)' }} className="text-[13px] font-semibold text-[#1C1917] truncate">{projectA.projectName}</p>
-            <p className="text-[10px] text-[#78716C] truncate">{projectA.builderName}</p>
+          <div className="rounded-xl p-2.5" style={{ background: 'var(--bg-accent-blue)', border: '1px solid var(--border-accent-blue)' }}>
+            <p style={{ fontFamily: 'var(--font-playfair)', color: 'var(--text-primary)' }} className="text-[13px] font-semibold truncate">{projectA.projectName}</p>
+            <p className="text-[10px] truncate" style={{ color: 'var(--text-secondary)' }}>{projectA.builderName}</p>
           </div>
-          <div className="rounded-xl p-2.5" style={{ background: '#F0FDF4', border: '1px solid #BBF7D0' }}>
-            <p style={{ fontFamily: 'var(--font-playfair)' }} className="text-[13px] font-semibold text-[#1C1917] truncate">{projectB.projectName}</p>
-            <p className="text-[10px] text-[#78716C] truncate">{projectB.builderName}</p>
+          <div className="rounded-xl p-2.5" style={{ background: 'var(--bg-accent-green)', border: '1px solid var(--border-accent-green)' }}>
+            <p style={{ fontFamily: 'var(--font-playfair)', color: 'var(--text-primary)' }} className="text-[13px] font-semibold truncate">{projectB.projectName}</p>
+            <p className="text-[10px] truncate" style={{ color: 'var(--text-secondary)' }}>{projectB.builderName}</p>
           </div>
         </div>
       </div>
@@ -112,12 +112,12 @@ export default function ComparisonCard({ projectA, projectB }: { projectA: Proje
       {/* Comparison rows */}
       <div className="px-4 py-2">
         {rows.map((row, i) => (
-          <div key={row.label} className="grid grid-cols-[80px_1fr_1fr] gap-2 py-2.5 items-center" style={{ borderBottom: i < rows.length - 1 ? '1px solid #F4F3F0' : 'none' }}>
-            <p className="text-[9px] font-semibold uppercase tracking-wider" style={{ color: '#A8A29E' }}>{row.label}</p>
-            <p className="text-[11px] font-medium" style={{ color: row.winA ? '#0F6E56' : '#1C1917' }}>
+          <div key={row.label} className="grid grid-cols-[80px_1fr_1fr] gap-2 py-2.5 items-center" style={{ borderBottom: i < rows.length - 1 ? '1px solid var(--border-subtle)' : 'none' }}>
+            <p className="text-[9px] font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>{row.label}</p>
+            <p className="text-[11px] font-medium" style={{ color: row.winA ? 'var(--text-accent-green)' : 'var(--text-primary)' }}>
               {row.a}<Winner isWinner={row.winA} />
             </p>
-            <p className="text-[11px] font-medium" style={{ color: row.winB ? '#0F6E56' : '#1C1917' }}>
+            <p className="text-[11px] font-medium" style={{ color: row.winB ? 'var(--text-accent-green)' : 'var(--text-primary)' }}>
               {row.b}<Winner isWinner={row.winB} />
             </p>
           </div>
@@ -128,9 +128,9 @@ export default function ComparisonCard({ projectA, projectB }: { projectA: Proje
       {(projectA.honestConcern || projectB.honestConcern) && (
         <div className="px-4 pb-4 grid grid-cols-2 gap-3">
           {[projectA, projectB].map((p, i) => p.honestConcern ? (
-            <div key={i} className="rounded-xl px-3 py-2" style={{ background: '#FEF3C7', border: '1px solid #FDE68A' }}>
-              <p className="text-[9px] font-semibold text-[#92400E] uppercase tracking-wider mb-0.5">⚠ Concern</p>
-              <p className="text-[10px] text-[#78350F] leading-relaxed">{p.honestConcern}</p>
+            <div key={i} className="rounded-xl px-3 py-2" style={{ background: 'var(--bg-accent-amber)', border: '1px solid var(--border-accent-amber)' }}>
+              <p className="text-[9px] font-semibold uppercase tracking-wider mb-0.5" style={{ color: 'var(--text-accent-amber-title)' }}>⚠ Concern</p>
+              <p className="text-[10px] leading-relaxed" style={{ color: 'var(--text-accent-amber)' }}>{p.honestConcern}</p>
             </div>
           ) : <div key={i} />)}
         </div>
@@ -145,7 +145,7 @@ export default function ComparisonCard({ projectA, projectB }: { projectA: Proje
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.97 }}
             onClick={() => window.dispatchEvent(new CustomEvent('book-visit', { detail: { projectId: p.id } }))}
-            className="py-2 rounded-xl text-[11px] font-semibold text-white"
+            className="py-2.5 rounded-xl text-[11px] font-semibold text-white"
             style={{ background: i === 0 ? '#1B4F8A' : '#0F6E56' }}
           >
             Visit {p.projectName.split(' ')[0]} →

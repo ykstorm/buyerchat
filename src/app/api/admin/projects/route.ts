@@ -4,6 +4,7 @@ import { auth } from '@/lib/auth'
 import { z } from 'zod'
 import { sanitizeAdminInput } from '@/lib/sanitize'
 import { invalidateContextCache } from '@/lib/context-cache'
+import { logAdminAction } from '@/lib/audit-log'
 
 const ProjectSchema = z.object({
   projectName: z.string().min(1),
@@ -72,6 +73,7 @@ export async function POST(req: NextRequest) {
         longitude: Number(body.longitude ?? 72.5714),
       }
     })
+    await logAdminAction('create', 'project', { id: project.id, projectName: project.projectName }, session!.user!.email!)
     return NextResponse.json(project, { status: 201 })
   } catch (err) {
     console.error('Project POST error:', err)

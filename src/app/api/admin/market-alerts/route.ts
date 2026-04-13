@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { logAdminAction } from '@/lib/audit-log'
 import { z } from 'zod'
 
 const AlertSchema = z.object({
@@ -27,6 +28,7 @@ export async function POST(req: NextRequest) {
         projectName: parsed.data.projectId,
       }
     })
+    await logAdminAction('create', 'market_alert', { id: alert.id, type: alert.type, projectName: alert.projectName }, session!.user!.email!)
     return NextResponse.json(alert, { status: 201 })
   } catch (err) {
     console.error('Market alert POST error:', err)

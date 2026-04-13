@@ -15,8 +15,26 @@
   --bg-message-user: #1C1917;
   --text-message-user: #FAF9F7;
   --bg-message-ai: #FFFFFF;
-  --background: #09090b;
-  --foreground: #e0e0ea;
+  --background: #FAFAF8;
+  --foreground: #1C1917;
+  /* Accent boxes */
+  --bg-accent-green: #F0FDF4;
+  --border-accent-green: #BBF7D0;
+  --text-accent-green: #0F6E56;
+  --text-accent-green-light: #52525B;
+  --bg-accent-amber: #FEF3C7;
+  --border-accent-amber: #FDE68A;
+  --text-accent-amber-title: #92400E;
+  --text-accent-amber: #78350F;
+  --bg-accent-blue: #EFF6FF;
+  --border-accent-blue: #BFDBFE;
+  --text-accent-blue-title: #1E40AF;
+  --text-accent-blue: #1E3A8A;
+  /* Tag backgrounds */
+  --bg-tag-a: #E6F1FB;
+  --text-tag-a: #0C447C;
+  --bg-tag-b: #F0FDF4;
+  --text-tag-b: #0F6E56;
 }
 
 [data-theme="dark"] {
@@ -33,6 +51,26 @@
   --bg-message-user: #1B4F8A;
   --text-message-user: #FAF9F7;
   --bg-message-ai: #2C2825;
+  --background: #1C1917;
+  --foreground: #FAF9F7;
+  /* Accent boxes — dark */
+  --bg-accent-green: rgba(15,110,86,0.15);
+  --border-accent-green: rgba(52,211,153,0.25);
+  --text-accent-green: #34D399;
+  --text-accent-green-light: #A8A29E;
+  --bg-accent-amber: rgba(251,191,36,0.12);
+  --border-accent-amber: rgba(253,230,138,0.2);
+  --text-accent-amber-title: #FBBF24;
+  --text-accent-amber: #FDE68A;
+  --bg-accent-blue: rgba(27,79,138,0.18);
+  --border-accent-blue: rgba(96,165,250,0.25);
+  --text-accent-blue-title: #60A5FA;
+  --text-accent-blue: #93C5FD;
+  /* Tag backgrounds — dark */
+  --bg-tag-a: rgba(27,79,138,0.2);
+  --text-tag-a: #93C5FD;
+  --bg-tag-b: rgba(15,110,86,0.2);
+  --text-tag-b: #34D399;
 }
 
 html {
@@ -111,7 +149,7 @@ body {
   inset: 0;
   pointer-events: none;
   z-index: 1;
-  opacity: 0.035;
+  opacity: 0.06;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
   background-repeat: repeat;
   background-size: 192px 192px;

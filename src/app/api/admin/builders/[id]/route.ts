@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth'
 import { invalidateContextCache } from '@/lib/context-cache'
+import { logAdminAction } from '@/lib/audit-log'
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth()
@@ -57,6 +58,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       },
     })
     invalidateContextCache()
+    await logAdminAction('update', 'builder', { id, builderName: builder.builderName }, session!.user!.email!)
     return NextResponse.json(builder)
   } catch (err) {
     console.error('Builder PUT error:', err)
@@ -78,7 +80,9 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
         { status: 409 }
       )
     }
+    const builder = await prisma.builder.findUnique({ where: { id }, select: { builderName: true } })
     await prisma.builder.delete({ where: { id } })
+    await logAdminAction('delete', 'builder', { id, builderName: builder?.builderName ?? '—' }, session!.user!.email!)
     return NextResponse.json({ success: true })
   } catch (err) {
     console.error('Builder DELETE error:', err)

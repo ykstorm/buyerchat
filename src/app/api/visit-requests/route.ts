@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth'
-import { generateVisitToken } from '@/lib/visit-token'
+import { generateVisitToken, getTokenExpiryDate } from '@/lib/visit-token'
 import { Resend } from 'resend'
 import { z } from 'zod'
 
@@ -68,6 +68,7 @@ export async function POST(req: NextRequest) {
 
   const visitToken = generateVisitToken()
   const scheduledDate = new Date(visitScheduledDate)
+  const expiresAt = getTokenExpiryDate()
 
 const existing = await prisma.siteVisit.findFirst({
   where: { userId: session.user.id, projectId, visitCompleted: false }
@@ -85,6 +86,7 @@ if (existing) {
       userId: session.user.id,
       projectId,
       visitScheduledDate: scheduledDate,
+      expiresAt,
       otpVerified: false,
       ...(parsed.data.buyerName && { buyerName: parsed.data.buyerName }),
       ...(parsed.data.buyerPhone && { buyerPhone: parsed.data.buyerPhone }),

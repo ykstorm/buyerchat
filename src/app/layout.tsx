@@ -50,7 +50,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={`${playfair.variable} ${dmSans.variable}`}>
-   <body className="bg-[#09090b] antialiased">
+   <body className="antialiased" style={{ background: 'var(--background)' }}>
   <Navbar />
   {children}
   <ChatWidgetWrapper />

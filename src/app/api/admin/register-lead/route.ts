@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { logAdminAction } from '@/lib/audit-log'
 
 function generateToken(): string {
   const num = Math.floor(Math.random() * 9000) + 1000
@@ -26,6 +27,7 @@ export async function POST(req: NextRequest) {
       include: { project: { select: { projectName: true } } }
     })
 
+    await logAdminAction('register_lead', 'visit', { id: visitId, token, projectName: visit.project?.projectName }, session!.user!.email!)
     return NextResponse.json({ token, visit })
   } catch (err) {
     console.error('Register lead error:', err)

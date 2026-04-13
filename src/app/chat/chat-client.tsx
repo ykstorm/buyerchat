@@ -23,9 +23,12 @@ type ProjectType = {
   allInPrice?: number | null
   trustScore?: number | null
   trustGrade?: string | null
+  charges?: unknown
+  carpetSqftMin?: number | null
+  sbaSqftMin?: number | null
 }
 
-type ArtifactType = 'project_card' | 'visit_booking' | 'comparison'
+type ArtifactType = 'project_card' | 'visit_booking' | 'comparison' | 'cost_breakdown'
 type Artifact = { type: ArtifactType; data: ProjectType; dataB?: ProjectType }
 
 let idCounter = 0
@@ -239,6 +242,7 @@ export default function ChatClient({
       const lower = full.toLowerCase()
       const foundProjects = projects.filter(p => lower.includes(p.projectName.toLowerCase()))
       const isVisitBooking = /book.*visit|visit.*book|schedule.*visit/i.test(full)
+      const isCostBreakdown = /cost|breakdown|charges|kitna padega|total.*price|all.?in|stamp.*duty|gst/i.test(full)
 
       if (foundProjects.length > 0) {
         let newHistory = [...artifactHistoryRef.current.slice(0, artifactIndexRef.current + 1)]
@@ -248,10 +252,11 @@ export default function ChatClient({
         for (const p of foundProjects) {
           if (seenIds.has(p.id)) continue
           seenIds.add(p.id)
-          const artifact: Artifact = {
-            type: isVisitBooking && foundProjects.length === 1 ? 'visit_booking' : 'project_card',
-            data: p
-          }
+          const artifactType: ArtifactType =
+            isVisitBooking && foundProjects.length === 1 ? 'visit_booking' :
+            isCostBreakdown && foundProjects.length === 1 ? 'cost_breakdown' :
+            'project_card'
+          const artifact: Artifact = { type: artifactType, data: p }
           newHistory = [...newHistory, artifact]
           lastArtifact = artifact
         }
