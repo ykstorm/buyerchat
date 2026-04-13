@@ -473,4 +473,17 @@ export default function ChatClient({
         canGoBack={artifactIndex > 0}
         canGoForward={artifactIndex < artifactHistory.length - 1}
         artifactCurrent={artifactIndex + 1}
+        artifactTotal={artifactHistory.length}
+        artifactHistory={artifactHistory}
+        onSelectArtifact={(index) => {
+          artifactIndexRef.current = index
+          setArtifactIndex(index)
+          setCurrentArtifact(artifactHistoryRef.current[index])
+          setShowArtifact(true)
+        }}
+      />
+    </div>
+  )
+}
+
  
