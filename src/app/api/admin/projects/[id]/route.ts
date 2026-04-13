@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { z } from 'zod'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { sanitizeAdminInput } from '@/lib/sanitize'
@@ -31,6 +32,34 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     }
     const { id } = await params
     const body = await req.json()
+
+    const ProjectUpdateSchema = z.object({
+      projectName: z.string().min(1).max(200).optional(),
+      builderName: z.string().min(1).max(200).optional(),
+      microMarket: z.string().optional(),
+      constructionStatus: z.string().optional(),
+      minPrice: z.number().min(0).max(5000000000).optional(),
+      maxPrice: z.number().min(0).max(5000000000).optional(),
+      pricePerSqft: z.number().min(0).max(100000).optional(),
+      availableUnits: z.number().min(0).max(10000).optional(),
+      locationScore: z.number().min(0).max(100).optional(),
+      amenitiesScore: z.number().min(0).max(100).optional(),
+      deliveryScore: z.number().min(0).max(30).optional(),
+      reraScore: z.number().min(0).max(20).optional(),
+      qualityScore: z.number().min(0).max(20).optional(),
+      financialScore: z.number().min(0).max(15).optional(),
+      responsivenessScore: z.number().min(0).max(15).optional(),
+      isActive: z.boolean().optional(),
+      decisionTag: z.enum(['Strong Buy', 'Buy w/ Cond', 'Wait', 'Avoid']).optional().nullable(),
+      honestConcern: z.string().max(500).optional().nullable(),
+      analystNote: z.string().max(500).optional().nullable(),
+    }).passthrough()
+
+    const parsed = ProjectUpdateSchema.safeParse(body)
+    if (!parsed.success) {
+      return NextResponse.json({ error: 'Invalid input', details: parsed.error.flatten() }, { status: 400 })
+    }
+
     const project = await prisma.project.update({
       where: { id },
       data: {

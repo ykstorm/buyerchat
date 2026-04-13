@@ -1,4 +1,4 @@
-// src/app/admin/layout.tsx
+import React from 'react'
 import { redirect } from 'next/navigation'
 import { auth } from '@/lib/auth'
 import AdminNavClient from '@/components/admin/AdminNavClient'
