@@ -67,17 +67,20 @@ export function VisitBooking({ projectId, projectName }: VisitBookingProps) {
   }
 
   return (
-    <div className="bg-[#FAFAF9] border border-[#E7E5E4] rounded-2xl p-5 w-full max-w-sm">
+    <div className="rounded-2xl p-5 w-full max-w-sm" style={{ background: 'var(--bg-surface-alt)', border: '1px solid var(--border)' }}>
       {projectId && (
         <button type="button" onClick={() => window.dispatchEvent(new CustomEvent('show-project-card', { detail: { projectId } }))}
-          className="flex items-center gap-1 text-[11px] text-[#A8A29E] hover:text-[#1C1917] mb-3 transition-colors">
+          className="flex items-center gap-1 text-[11px] mb-3 transition-colors"
+          style={{ color: 'var(--text-muted)' }}
+          onMouseEnter={e => (e.currentTarget.style.color = 'var(--text-primary)')}
+          onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-muted)')}>
           ← Back to project
         </button>
       )}
-      <h3 className="text-lg font-semibold text-[#1C1917] mb-0.5" style={{ fontFamily: "'Playfair Display', serif" }}>
+      <h3 className="text-lg font-semibold mb-0.5" style={{ fontFamily: "'Playfair Display', serif", color: 'var(--text-primary)' }}>
         Book a site visit
       </h3>
-      <p className="text-sm text-[#78716C] mb-4">{projectName}</p>
+      <p className="text-sm mb-4" style={{ color: 'var(--text-secondary)' }}>{projectName}</p>
       {status === 'signin' ? (
         <div className="flex flex-col items-center gap-4 py-4 text-center">
           <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ background: 'rgba(27,79,138,0.1)' }}>
@@ -87,31 +90,31 @@ export function VisitBooking({ projectId, projectName }: VisitBookingProps) {
             </svg>
           </div>
           <div>
-            <p className="text-[14px] font-semibold text-[#1C1917]">Sign in to book</p>
-            <p className="text-[12px] text-[#78716C] mt-1">Your OTP token protects your commission. Sign in to claim it.</p>
+            <p className="text-[14px] font-semibold" style={{ color: 'var(--text-primary)' }}>Sign in to book</p>
+            <p className="text-[12px] mt-1" style={{ color: 'var(--text-secondary)' }}>Your OTP token protects your commission. Sign in to claim it.</p>
           </div>
           <a href="/api/auth/signin" className="w-full py-2.5 rounded-full text-[13px] font-medium text-white text-center transition-opacity hover:opacity-90" style={{ background: '#1B4F8A' }}>
             Sign in with Google
           </a>
-          <button type="button" onClick={() => setStatus('idle')} className="text-[11px] text-[#A8A29E] hover:text-[#1C1917]">
+          <button type="button" onClick={() => setStatus('idle')} className="text-[11px] transition-colors" style={{ color: 'var(--text-muted)' }}>
             ← Back
           </button>
         </div>
       ) : status === 'success' ? (
         <div className="flex flex-col items-center gap-4 py-3 text-center">
-          <div className="w-14 h-14 rounded-full flex items-center justify-center" style={{ background: 'rgba(15,110,86,0.1)' }}>
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#0F6E56" strokeWidth="2.5">
+          <div className="w-14 h-14 rounded-full flex items-center justify-center" style={{ background: 'var(--bg-accent-green)' }}>
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--text-accent-green)" strokeWidth="2.5">
               <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/>
             </svg>
           </div>
           <div>
-            <p className="text-[15px] font-semibold text-[#1C1917]">Visit confirmed!</p>
-            <p className="text-[12px] text-[#78716C] mt-0.5">{projectName}</p>
+            <p className="text-[15px] font-semibold" style={{ color: 'var(--text-primary)' }}>Visit confirmed!</p>
+            <p className="text-[12px] mt-0.5" style={{ color: 'var(--text-secondary)' }}>{projectName}</p>
           </div>
-          <div className="w-full rounded-2xl p-4" style={{ background: '#F0FDF4', border: '1px solid #BBF7D0' }}>
-            <p className="text-[10px] uppercase tracking-widest text-[#0F6E56] font-semibold mb-1">Your OTP Token</p>
-            <p className="text-[32px] font-bold text-[#0F6E56] tracking-widest font-mono">{token}</p>
-            <p className="text-[11px] text-[#52525B] mt-1">Show this at the site. Your commission is protected.</p>
+          <div className="w-full rounded-2xl p-4" style={{ background: 'var(--bg-accent-green)', border: '1px solid var(--border-accent-green)' }}>
+            <p className="text-[10px] uppercase tracking-widest font-semibold mb-1" style={{ color: 'var(--text-accent-green)' }}>Your OTP Token</p>
+            <p className="text-[32px] font-bold tracking-widest font-mono" style={{ color: 'var(--text-accent-green)' }}>{token}</p>
+            <p className="text-[11px] mt-1" style={{ color: 'var(--text-accent-green-light)' }}>Show this at the site. Your commission is protected.</p>
           </div>
           <div className="w-full text-left space-y-2">
             {[
@@ -120,12 +123,13 @@ export function VisitBooking({ projectId, projectName }: VisitBookingProps) {
               '📱 Balvir will coordinate your visit',
               '⏰ Arrive 5 min early',
             ].map(tip => (
-              <p key={tip} className="text-[12px] text-[#78716C]">{tip}</p>
+              <p key={tip} className="text-[12px]" style={{ color: 'var(--text-secondary)' }}>{tip}</p>
             ))}
           </div>
           <button type="button"
             onClick={() => window.dispatchEvent(new CustomEvent('show-project-card', { detail: { projectId } }))}
-            className="w-full py-2 rounded-full text-[13px] font-medium border border-[#E7E5E4] text-[#78716C] hover:border-[#1B4F8A] hover:text-[#1B4F8A] transition-colors">
+            className="w-full py-2 rounded-full text-[13px] font-medium transition-colors"
+            style={{ border: '1px solid var(--border)', color: 'var(--text-secondary)' }}>
             ← Back to project details
           </button>
         </div>
@@ -137,9 +141,11 @@ export function VisitBooking({ projectId, projectName }: VisitBookingProps) {
               return (
                 <button key={label} type="button"
                   onClick={() => { setSelectedDate(date); if (status === 'error') setStatus('idle') }}
-                  className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
-                    isSelected ? 'bg-[#1B4F8A] text-white border-[#1B4F8A]' : 'bg-white text-[#1C1917] border-[#E7E5E4] hover:border-[#1B4F8A]'
-                  }`}
+                  className="px-3 py-1.5 rounded-full text-xs font-medium border transition-colors"
+                  style={isSelected
+                    ? { background: '#1B4F8A', color: 'white', borderColor: '#1B4F8A' }
+                    : { background: 'var(--bg-surface)', color: 'var(--text-primary)', borderColor: 'var(--border)' }
+                  }
                 >{label}</button>
               )
             })}
@@ -147,13 +153,15 @@ export function VisitBooking({ projectId, projectName }: VisitBookingProps) {
           <div className="flex flex-col gap-2 mb-4">
             <input type="text" placeholder="Your name" value={name}
               onChange={e => setName(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl border border-[#E7E5E4] text-[16px] text-[#1C1917] placeholder-[#A8A29E] focus:outline-none focus:border-[#1B4F8A]"
+              className="w-full px-3 py-2.5 rounded-xl text-[14px] focus:outline-none focus:ring-2 focus:ring-[#1B4F8A]/15 focus:border-[#1B4F8A]/50 transition-all"
+              style={{ background: 'var(--bg-input)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
             />
             <div className="flex gap-2">
-              <span className="flex items-center px-3 rounded-xl border border-[#E7E5E4] text-sm text-[#78716C] bg-white flex-shrink-0">+91</span>
+              <span className="flex items-center px-3 rounded-xl text-sm flex-shrink-0" style={{ border: '1px solid var(--border)', color: 'var(--text-secondary)', background: 'var(--bg-surface)' }}>+91</span>
               <input type="tel" placeholder="10-digit number" value={phone} maxLength={10}
                 onChange={e => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
-                className="flex-1 px-3 py-2 rounded-xl border border-[#E7E5E4] text-[16px] text-[#1C1917] placeholder-[#A8A29E] focus:outline-none focus:border-[#1B4F8A]"
+                className="flex-1 px-3 py-2.5 rounded-xl text-[14px] focus:outline-none focus:ring-2 focus:ring-[#1B4F8A]/15 focus:border-[#1B4F8A]/50 transition-all"
+                style={{ background: 'var(--bg-input)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
               />
             </div>
           </div>
@@ -165,7 +173,7 @@ export function VisitBooking({ projectId, projectName }: VisitBookingProps) {
             {status === 'loading' ? 'Booking...' : 'Confirm visit'}
           </button>
           {!canSubmit && selectedDate && (
-            <p className="text-[11px] text-[#A8A29E] text-center mt-2">Enter name and 10-digit phone to confirm</p>
+            <p className="text-[11px] text-center mt-2" style={{ color: 'var(--text-muted)' }}>Enter name and 10-digit phone to confirm</p>
           )}
         </>
       )}

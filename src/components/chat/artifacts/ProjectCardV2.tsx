@@ -154,16 +154,16 @@ export default function ProjectCardV2({ project }: { project: ProjectType }) {
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
                 className="mt-2 rounded-xl px-3 py-2"
-                style={{ background: '#F0FDF4', border: '1px solid #BBF7D0' }}
+                style={{ background: 'var(--bg-accent-green)', border: '1px solid var(--border-accent-green)' }}
               >
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-[9px] font-semibold text-[#0F6E56] uppercase tracking-wider">ALL-IN</p>
-                    <p className="text-[16px] font-bold text-[#0F6E56]">₹{Math.round(project.allInPrice / 100000)}L</p>
+                    <p className="text-[9px] font-semibold uppercase tracking-wider" style={{ color: 'var(--text-accent-green)' }}>ALL-IN</p>
+                    <p className="text-[16px] font-bold" style={{ color: 'var(--text-accent-green)' }}>₹{Math.round(project.allInPrice / 100000)}L</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-[9px] text-[#52525B] uppercase tracking-wider">EMI ~</p>
-                    <p className="text-[12px] font-semibold text-[#0F6E56]">₹{emi(project.allInPrice).toLocaleString('en-IN')}/mo</p>
+                    <p className="text-[9px] uppercase tracking-wider" style={{ color: 'var(--text-accent-green-light)' }}>EMI ~</p>
+                    <p className="text-[12px] font-semibold" style={{ color: 'var(--text-accent-green)' }}>₹{emi(project.allInPrice).toLocaleString('en-IN')}/mo</p>
                   </div>
                 </div>
               </motion.div>
@@ -198,18 +198,18 @@ export default function ProjectCardV2({ project }: { project: ProjectType }) {
             animate={{ opacity: 1 }}
             transition={{ delay: 0.2 }}
             className="rounded-xl px-3 py-2.5 mb-3"
-            style={{ background: '#FEF3C7', border: '1px solid #FDE68A' }}
+            style={{ background: 'var(--bg-accent-amber)', border: '1px solid var(--border-accent-amber)' }}
           >
-            <p className="text-[9px] font-semibold text-[#92400E] uppercase tracking-wider mb-0.5">⚠ Honest Concern</p>
-            <p className="text-[11px] text-[#78350F] leading-relaxed">{project.honestConcern}</p>
+            <p className="text-[9px] font-semibold uppercase tracking-wider mb-0.5" style={{ color: 'var(--text-accent-amber-title)' }}>⚠ Honest Concern</p>
+            <p className="text-[11px] leading-relaxed" style={{ color: 'var(--text-accent-amber)' }}>{project.honestConcern}</p>
           </motion.div>
         )}
 
         {/* Analyst note */}
         {project.analystNote && (
-          <div className="rounded-xl px-3 py-2.5 mb-3" style={{ background: '#EFF6FF', border: '1px solid #BFDBFE' }}>
-            <p className="text-[9px] font-semibold text-[#1E40AF] uppercase tracking-wider mb-0.5">💡 Insider Note</p>
-            <p className="text-[11px] text-[#1E3A8A] leading-relaxed">{project.analystNote}</p>
+          <div className="rounded-xl px-3 py-2.5 mb-3" style={{ background: 'var(--bg-accent-blue)', border: '1px solid var(--border-accent-blue)' }}>
+            <p className="text-[9px] font-semibold uppercase tracking-wider mb-0.5" style={{ color: 'var(--text-accent-blue-title)' }}>💡 Insider Note</p>
+            <p className="text-[11px] leading-relaxed" style={{ color: 'var(--text-accent-blue)' }}>{project.analystNote}</p>
           </div>
         )}
 

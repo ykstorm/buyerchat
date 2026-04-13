@@ -149,20 +149,20 @@ export default function CostBreakdownCard({ project }: { project: ProjectForCost
       </div>
 
       {/* ALL-IN Total */}
-      <div className="mx-5 mb-4 rounded-xl px-4 py-3" style={{ background: '#F0FDF4', border: '1px solid #BBF7D0' }}>
+      <div className="mx-5 mb-4 rounded-xl px-4 py-3" style={{ background: 'var(--bg-accent-green)', border: '1px solid var(--border-accent-green)' }}>
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-[9px] font-bold uppercase tracking-[0.15em]" style={{ color: '#0F6E56' }}>ALL-IN TOTAL</p>
-            <p className="text-[22px] font-bold" style={{ color: '#0F6E56', fontFamily: 'var(--font-mono)' }}>
+            <p className="text-[9px] font-bold uppercase tracking-[0.15em]" style={{ color: 'var(--text-accent-green)' }}>ALL-IN TOTAL</p>
+            <p className="text-[22px] font-bold" style={{ color: 'var(--text-accent-green)', fontFamily: 'var(--font-mono)' }}>
               {formatL(allIn)}
             </p>
           </div>
           <div className="text-right">
-            <p className="text-[9px] uppercase tracking-wider" style={{ color: '#52525B' }}>EMI ~</p>
-            <p className="text-[14px] font-semibold" style={{ color: '#0F6E56', fontFamily: 'var(--font-mono)' }}>
+            <p className="text-[9px] uppercase tracking-wider" style={{ color: 'var(--text-accent-green-light)' }}>EMI ~</p>
+            <p className="text-[14px] font-semibold" style={{ color: 'var(--text-accent-green)', fontFamily: 'var(--font-mono)' }}>
               {formatINR(monthlyEmi)}/mo
             </p>
-            <p className="text-[9px]" style={{ color: '#78716C' }}>@ 8.75% · 20yr</p>
+            <p className="text-[9px]" style={{ color: 'var(--text-secondary)' }}>@ 8.75% · 20yr</p>
           </div>
         </div>
       </div>
