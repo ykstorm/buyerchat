@@ -386,24 +386,36 @@ const sidebar = (
                 <p className="text-[10px] font-semibold text-[#A8A29E] uppercase tracking-wider mb-1.5">★ Saved</p>
                 {savedProjects.slice(0, 3).map(s => (
                   <Link key={s.projectId} href={`/projects/${s.projectId}`}
-                    className="block text-[11px] text-[#1C1917] hover:text-[#1B4F8A] truncate py-0.5 transition-colors">
+                    className="block text-[11px] truncate py-0.5 transition-colors"
+                    style={{ color: 'var(--text-primary)' }}
+                    onMouseEnter={e => (e.currentTarget.style.color = '#1B4F8A')}
+                    onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-primary)')}>
                     {s.project.projectName}
                   </Link>
                 ))}
                 {savedProjects.length > 3 && (
-                  <Link href="/dashboard" className="text-[10px] text-[#A8A29E] hover:text-[#1B4F8A]">
+                  <Link href="/dashboard" className="text-[10px] transition-colors"
+                    style={{ color: 'var(--text-muted)' }}
+                    onMouseEnter={e => (e.currentTarget.style.color = '#1B4F8A')}
+                    onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-muted)')}>
                     +{savedProjects.length - 3} more →
                   </Link>
                 )}
               </div>
             )}
-            <Link href="/dashboard" className="text-[10px] text-[#A8A29E] hover:text-[#1C1917] block mb-1">
+            <Link href="/dashboard" className="text-[10px] block mb-1 transition-colors"
+              style={{ color: 'var(--text-muted)' }}
+              onMouseEnter={e => (e.currentTarget.style.color = 'var(--text-primary)')}
+              onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-muted)')}>
               My saved projects →
             </Link>
             <div className="flex items-center gap-2">
               {userImage && <img src={userImage} className="w-6 h-6 rounded-full" alt="" />}
               <span className="text-[11px] truncate" style={{ color: 'var(--text-primary)' }}>{userName ?? 'You'}</span>
-              <button type="button" onClick={() => signOut({ callbackUrl: '/' })} className="text-[11px] text-[#A8A29E] hover:text-[#1C1917] ml-auto">Sign out</button>
+              <button type="button" onClick={() => signOut({ callbackUrl: '/' })} className="text-[11px] ml-auto transition-colors"
+                style={{ color: 'var(--text-muted)' }}
+                onMouseEnter={e => (e.currentTarget.style.color = 'var(--text-primary)')}
+                onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-muted)')}>Sign out</button>
             </div>
           </div>
         ) : (

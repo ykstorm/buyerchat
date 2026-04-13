@@ -93,7 +93,9 @@ export default function ChatRightPanel({
                               className="w-full px-3 py-2 text-left transition-colors"
                               onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-subtle)')}
                               onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
-                              <p className="text-[11px] font-medium truncate" style={{ color: 'var(--text-primary)' }}>{a.data.projectName}</p>
+                              <p className="text-[11px] font-medium truncate" style={{ color: 'var(--text-primary)' }}>
+                                {a.type === 'comparison' && a.dataB ? `${a.data.projectName.split(' ')[0]} vs ${a.dataB.projectName.split(' ')[0]}` : a.data.projectName}
+                              </p>
                               <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
                                 {a.type === 'visit_booking' ? 'Visit booking' : a.type === 'comparison' ? 'Comparison' : a.type === 'cost_breakdown' ? 'Cost breakdown' : 'Project card'}
                               </p>

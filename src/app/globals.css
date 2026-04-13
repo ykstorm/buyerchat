@@ -73,11 +73,11 @@
   --text-tag-b: #34D399;
 }
 
-html {
-  transition: background-color 300ms ease, color 300ms ease;
-}
-* {
-  transition: background-color 200ms ease, border-color 200ms ease;
+/* Theme transitions — only on elements that actually change theme */
+html,
+body,
+.theme-transition {
+  transition: background-color 250ms ease, color 250ms ease, border-color 250ms ease;
 }
 
 @theme {

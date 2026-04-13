@@ -2,7 +2,7 @@
 import type React from 'react'
 
 import { motion, AnimatePresence } from 'framer-motion'
-import { FormEvent, useRef, useEffect, useState } from 'react'
+import { FormEvent, useRef, useEffect, useState, memo, useMemo } from 'react'
 import ReactMarkdown from 'react-markdown'
 import ProjectCard from './artifacts/ProjectCardV2'
 import ComparisonCard from './artifacts/ComparisonCard'
@@ -28,8 +28,8 @@ function FloatingParticles() {
     resize()
     window.addEventListener('resize', resize)
 
-    // Particle pool
-    const count = 40
+    // Particle pool — reduced for perf
+    const count = 25
     const particles: { x: number; y: number; vx: number; vy: number; r: number; o: number; phase: number }[] = []
     const w = () => canvas.offsetWidth
     const h = () => canvas.offsetHeight
@@ -70,23 +70,6 @@ function FloatingParticles() {
         ctx.fill()
       }
 
-      // Draw faint connection lines between nearby particles
-      for (let i = 0; i < particles.length; i++) {
-        for (let j = i + 1; j < particles.length; j++) {
-          const dx = particles[i].x - particles[j].x
-          const dy = particles[i].y - particles[j].y
-          const d = Math.sqrt(dx * dx + dy * dy)
-          if (d < 120) {
-            ctx.beginPath()
-            ctx.moveTo(particles[i].x, particles[i].y)
-            ctx.lineTo(particles[j].x, particles[j].y)
-            ctx.strokeStyle = `rgba(196, 155, 80, ${0.08 * (1 - d / 120)})`
-            ctx.lineWidth = 0.5
-            ctx.stroke()
-          }
-        }
-      }
-
       animRef.current = requestAnimationFrame(draw)
     }
     draw()
@@ -111,6 +94,44 @@ export type Message = {
   role: 'user' | 'assistant'
   content: string
 }
+
+/* ── Stable markdown component overrides (created once, never re-allocated) ── */
+const MD_COMPONENTS = {
+  strong: ({ children }: any) => <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>{children}</span>,
+  p: ({ children }: any) => <span className="block mb-2 last:mb-0">{children}</span>,
+  ul: ({ children }: any) => <ul className="list-none space-y-1 my-1">{children}</ul>,
+  li: ({ children }: any) => <li className="flex gap-2 pl-1" style={{ color: 'var(--text-secondary)' }}><span style={{ color: 'var(--text-muted)', marginRight: 4 }}>·</span>{children}</li>,
+}
+
+/* ── Memoized single message bubble — only re-renders when its content changes ── */
+const ChatBubble = memo(function ChatBubble({ msg, isGrouped }: { msg: Message; isGrouped: boolean }) {
+  return (
+    <div className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'} ${isGrouped ? 'mt-0.5' : 'mt-4'}`}>
+      {msg.role === 'assistant' && !isGrouped && (
+        <div className="w-6 h-6 rounded-full flex-shrink-0 flex items-center justify-center bg-[#1C1917] self-start mb-0.5">
+          <span className="text-white text-[8px] font-bold tracking-tight">BC</span>
+        </div>
+      )}
+      <div
+        className={`max-w-[75%] px-4 py-2.5 text-[13.5px] leading-relaxed ${
+          msg.role === 'user' ? 'rounded-2xl rounded-br-md shadow-luxury-sm' : 'rounded-2xl rounded-bl-md shadow-luxury-sm'
+        }`}
+        style={msg.role === 'user'
+          ? { background: 'var(--bg-message-user)', color: 'var(--text-message-user)' }
+          : { background: 'var(--bg-message-ai)', color: 'var(--text-primary)', border: '1px solid var(--border)' }
+        }
+      >
+        {msg.role === 'assistant' ? (
+          <div className="prose prose-sm max-w-none" style={{ color: 'var(--text-primary)' }}>
+            <ReactMarkdown components={MD_COMPONENTS}>{msg.content}</ReactMarkdown>
+          </div>
+        ) : (
+          <ReactMarkdown components={MD_COMPONENTS}>{msg.content}</ReactMarkdown>
+        )}
+      </div>
+    </div>
+  )
+})
 
 type ProjectType = {
   id: string; projectName: string; builderName: string
@@ -335,67 +356,17 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
         </div>
 
       ) : (
-        <div className={`flex-1 overflow-y-auto min-h-0 px-5 py-6 space-y-1 lg:pb-6 ${artifact && !showArtifact ? 'pb-16' : 'pb-6'}`}>
+        <div className="flex-1 overflow-y-auto min-h-0 px-5 py-6 space-y-1 pb-6">
           {messages.map((msg, i) => {
             const prevMsg = messages[i - 1]
             const isGrouped = prevMsg?.role === msg.role
+            const isLastAI = msg.role === 'assistant' && i === messages.length - 1 && !isLoading
 
             return (
-              <motion.div
-                key={msg.id}
-                initial={{ opacity: 0, y: 8, scale: 0.98 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                transition={{ type: 'spring', stiffness: 400, damping: 35 }}
-                className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'} ${isGrouped ? 'mt-0.5' : 'mt-4'}`}
-              >
-                {/* AI avatar — only show on first in group, LEFT-aligned */}
-                {msg.role === 'assistant' && !isGrouped && (
-                  <div className="w-6 h-6 rounded-full flex-shrink-0 flex items-center justify-center bg-[#1C1917] self-start mb-0.5">
-                    <span className="text-white text-[8px] font-bold tracking-tight">BC</span>
-                  </div>
-                )}
-
-                <div
-                  className={`
-                  max-w-[75%] px-4 py-2.5 text-[13.5px] leading-relaxed
-                  ${msg.role === 'user'
-                    ? 'rounded-2xl rounded-br-md shadow-luxury-sm'
-                    : 'rounded-2xl rounded-bl-md shadow-luxury-sm'
-                  }
-                `}
-                  style={msg.role === 'user'
-                    ? { background: 'var(--bg-message-user)', color: 'var(--text-message-user)' }
-                    : { background: 'var(--bg-message-ai)', color: 'var(--text-primary)', border: '1px solid var(--border)' }
-                  }
-                >
-                  {msg.role === 'assistant' ? (
-                    <div className="prose prose-sm max-w-none" style={{ color: 'var(--text-primary)' }}>
-                      <ReactMarkdown
-                        components={{
-                          strong: ({ children }) => <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>{children}</span>,
-                          p: ({ children }) => <span className="block mb-2 last:mb-0">{children}</span>,
-                          ul: ({ children }) => <ul className="list-none space-y-1 my-1">{children}</ul>,
-                          li: ({ children }) => <li className="flex gap-2 pl-1" style={{ color: 'var(--text-secondary)' }}><span style={{ color: 'var(--text-muted)', marginRight: 4 }}>·</span>{children}</li>,
-                        }}
-                      >
-                        {msg.content}
-                      </ReactMarkdown>
-                    </div>
-                  ) : (
-                    <ReactMarkdown
-                      components={{
-                        strong: ({ children }) => <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>{children}</span>,
-                        p: ({ children }) => <span className="block mb-2 last:mb-0">{children}</span>,
-                        ul: ({ children }) => <ul className="list-none space-y-1 my-1">{children}</ul>,
-                        li: ({ children }) => <li className="flex gap-2 pl-1" style={{ color: 'var(--text-secondary)' }}><span style={{ color: 'var(--text-muted)', marginRight: 4 }}>·</span>{children}</li>,
-                      }}
-                    >
-                      {msg.content}
-                    </ReactMarkdown>
-                  )}
-                </div>
+              <div key={msg.id}>
+                <ChatBubble msg={msg} isGrouped={isGrouped} />
                 {/* Context-aware chips — only after last AI message */}
-                {msg.role === 'assistant' && i === messages.length - 1 && !isLoading && (
+                {isLastAI && (
                   <div className="flex flex-wrap gap-1.5 mt-2 ml-8">
                     {(() => {
                       const lower = msg.content.toLowerCase()
@@ -407,21 +378,19 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
                       if (hasProject) return ['Book a site visit', 'Compare with another project', 'What are the risks?', 'Tell me about the builder']
                       return ['Show me strong options', 'What is my ideal budget?', 'Which area is better?', 'Help me decide']
                     })().map(chip => (
-                      <motion.button
+                      <button
                         key={chip}
                         type="button"
                         onClick={() => append({ role: 'user', content: chip })}
-                        whileHover={{ scale: 1.04, y: -1 }}
-                        whileTap={{ scale: 0.96 }}
-                        className="text-[11px] px-3 py-1.5 rounded-full border transition-colors"
+                        className="text-[11px] px-3 py-1.5 rounded-full border hover:scale-[1.04] active:scale-[0.96] transition-transform"
                         style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)', background: 'var(--bg-surface)' }}
                       >
                         {chip}
-                      </motion.button>
+                      </button>
                     ))}
                   </div>
                 )}
-              </motion.div>
+              </div>
             )
           })}
 
@@ -467,16 +436,24 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
               exit={{ opacity: 0 }}
             />
 
-            {/* Modal card */}
+            {/* Modal card — swipe left/right to navigate, down to dismiss */}
             <motion.div
               initial={{ y: 60, opacity: 0, scale: 0.95 }}
               animate={{ y: 0, opacity: 1, scale: 1 }}
               exit={{ y: 60, opacity: 0, scale: 0.95 }}
               transition={{ type: 'spring', stiffness: 350, damping: 35 }}
-              drag="y"
-              dragConstraints={{ top: 0, bottom: 0 }}
+              drag
+              dragConstraints={{ top: 0, bottom: 0, left: 0, right: 0 }}
               dragElastic={0.3}
-              onDragEnd={(_: any, info: any) => { if (info.offset.y > 100 || info.velocity.y > 300) onToggleArtifact?.() }}
+              onDragEnd={(_: any, info: any) => {
+                const { offset, velocity } = info
+                // Swipe down → dismiss
+                if (offset.y > 100 || velocity.y > 300) { onToggleArtifact?.(); return }
+                // Swipe left → next artifact
+                if ((offset.x < -60 || velocity.x < -300) && canGoForward) { onArtifactForward?.(); return }
+                // Swipe right → previous artifact
+                if ((offset.x > 60 || velocity.x > 300) && canGoBack) { onArtifactBack?.(); return }
+              }}
               className="relative z-10 mt-12 mx-3 rounded-2xl overflow-hidden flex flex-col shadow-[0_20px_60px_rgba(0,0,0,0.2)]"
               style={{
                 background: 'var(--bg-surface)',
@@ -520,6 +497,19 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
                 </div>
               </div>
 
+              {/* Swipe hint dots */}
+              {artifactTotal && artifactTotal > 1 && (
+                <div className="flex justify-center gap-1.5 py-1.5" style={{ background: 'var(--bg-surface)' }}>
+                  {Array.from({ length: artifactTotal }).map((_, i) => (
+                    <div key={i} className="rounded-full transition-all duration-200" style={{
+                      width: i + 1 === artifactCurrent ? 16 : 5,
+                      height: 5,
+                      background: i + 1 === artifactCurrent ? '#1B4F8A' : 'var(--border)',
+                    }} />
+                  ))}
+                </div>
+              )}
+
               {/* Content — scrollable */}
               <div
                 className="flex-1 overflow-y-auto overscroll-contain px-4 py-4"
@@ -539,30 +529,7 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
         )}
       </AnimatePresence>
 
-      {/* Mobile artifact minimized pill */}
-      <AnimatePresence>
-        {artifact && !showArtifact && messages.length > 0 && (
-          <motion.button
-            type="button"
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: 20, opacity: 0 }}
-            onClick={onToggleArtifact}
-            className="lg:hidden fixed bottom-20 left-4 right-4 z-30 flex items-center justify-between px-4 py-3 rounded-xl shadow-luxury"
-            style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}
-          >
-            <div className="flex items-center gap-2 min-w-0">
-              <div className="w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: '#1B4F8A' }}>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="white"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/></svg>
-              </div>
-              <span className="text-[12px] font-medium truncate" style={{ color: 'var(--text-primary)' }}>
-                {artifact.type === 'visit_booking' ? `Visit — ${artifact.data.projectName}` : artifact.data.projectName}
-              </span>
-            </div>
-            <span className="text-[11px] font-medium flex-shrink-0 ml-2" style={{ color: '#1B4F8A' }}>View</span>
-          </motion.button>
-        )}
-      </AnimatePresence>
+      {/* Mobile artifact minimized pill — removed; top-right artifact icon handles this */}
 
       {/* Compare toast notification */}
       <AnimatePresence>
@@ -611,8 +578,10 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
                     style={{ color: 'var(--text-primary)' }}
                     onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-subtle)')}
                     onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
-                    <p className="text-[12px] font-medium truncate" style={{ color: 'var(--text-primary)' }}>{a.data.projectName}</p>
-                    <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{a.type === 'visit_booking' ? 'Visit booking' : a.type === 'comparison' ? 'Comparison' : 'Project card'}</p>
+                    <p className="text-[12px] font-medium truncate" style={{ color: 'var(--text-primary)' }}>
+                      {a.type === 'comparison' && a.dataB ? `${a.data.projectName.split(' ')[0]} vs ${a.dataB.projectName.split(' ')[0]}` : a.data.projectName}
+                    </p>
+                    <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{a.type === 'visit_booking' ? 'Visit booking' : a.type === 'comparison' ? 'Comparison' : a.type === 'cost_breakdown' ? 'Cost breakdown' : 'Project card'}</p>
                   </button>
                 ))}
               </div>

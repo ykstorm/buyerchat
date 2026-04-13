@@ -28,7 +28,7 @@ type ProjectType = {
   sbaSqftMin?: number | null
 }
 
-type ArtifactType = 'project_card' | 'visit_booking' | 'comparison' | 'cost_breakdown'
+type ArtifactType = 'project_card' | 'visit_booking' | 'comparison' | 'cost_breakdown' | 'visit_prompt' | 'builder_trust'
 type Artifact = { type: ArtifactType; data: ProjectType; dataB?: ProjectType }
 
 let idCounter = 0
@@ -209,16 +209,28 @@ export default function ChatClient({
       const reader = res.body.getReader()
       const decoder = new TextDecoder()
       let full = ''
+      let rafScheduled = false
 
-      while (true) {
-        const { done, value } = await reader.read()
-        if (done) break
-        full += decoder.decode(value, { stream: true })
+      // Batch streaming updates via requestAnimationFrame for 60fps feel
+      const flushUpdate = () => {
+        rafScheduled = false
         const snapshot = full
         setMessages(prev => prev.map(m =>
           m.id === assistantId ? { ...m, content: snapshot } : m
         ))
       }
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        full += decoder.decode(value, { stream: true })
+        if (!rafScheduled) {
+          rafScheduled = true
+          requestAnimationFrame(flushUpdate)
+        }
+      }
+      // Final flush to ensure last chunk is rendered
+      flushUpdate()
 
       // Detect project artifacts — find ALL mentioned projects
       const lower = full.toLowerCase()
@@ -226,9 +238,19 @@ export default function ChatClient({
       const isVisitBooking = /book.*visit|visit.*book|schedule.*visit/i.test(full)
       const isCostBreakdown = /cost|breakdown|charges|kitna padega|total.*price|all.?in|stamp.*duty|gst/i.test(full)
 
+      // Detect builder trust query
+      const isBuilderQuery = /builder|trust|reliable|track record|delivered|complaints/i.test(full)
+      // Detect visit prompt query
+      const isVisitPrompt = /book.*visit|visit.*book|schedule.*site|site.*visit|dekhne.*jaana/i.test(full) && foundProjects.length === 1
+
       if (foundProjects.length > 0) {
         let newHistory = [...artifactHistoryRef.current.slice(0, artifactIndexRef.current + 1)]
-        const seenIds = new Set(newHistory.map(a => a.data.id))
+        // Collect ALL project IDs already in history (including dataB from comparisons)
+        const seenIds = new Set<string>()
+        for (const a of newHistory) {
+          seenIds.add(a.data.id)
+          if (a.dataB) seenIds.add(a.dataB.id)
+        }
         let lastArtifact: Artifact | null = null
 
         for (const p of foundProjects) {
@@ -451,15 +473,4 @@ export default function ChatClient({
         canGoBack={artifactIndex > 0}
         canGoForward={artifactIndex < artifactHistory.length - 1}
         artifactCurrent={artifactIndex + 1}
-        artifactTotal={artifactHistory.length}
-        artifactHistory={artifactHistory}
-        onSelectArtifact={(index) => {
-          artifactIndexRef.current = index
-          setArtifactIndex(index)
-          setCurrentArtifact(artifactHistoryRef.current[index])
-          setShowArtifact(true)
-        }}
-      />
-    </div>
-  )
-}
+ 
