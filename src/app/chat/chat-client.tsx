@@ -57,13 +57,13 @@ export default function ChatClient({
 
   useEffect(() => {
     const handler = (e: Event) => {
-      const { projectId, projectName } = (e as CustomEvent).detail
+      const { projectId } = (e as CustomEvent).detail
       const project = projects.find(p => p.id === projectId)
       if (project) {
         const newArtifact: Artifact = { type: 'visit_booking', data: project }
         const prevHistory = artifactHistoryRef.current.slice(0, artifactIndexRef.current + 1)
-        const alreadyExists = prevHistory.some(a => a.data.id === newArtifact.data.id)
-        if (alreadyExists) return
+        const alreadyVisitBooking = prevHistory.some(a => a.type === 'visit_booking' && a.data.id === newArtifact.data.id)
+        if (alreadyVisitBooking) return
         const newHistory = [...prevHistory, newArtifact]
         artifactHistoryRef.current = newHistory
         artifactIndexRef.current = newHistory.length - 1
