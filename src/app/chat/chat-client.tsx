@@ -5,31 +5,7 @@ import { useSearchParams, useRouter } from 'next/navigation'
 import ChatSidebar from '@/components/chat/ChatSidebar'
 import ChatCenter, { type Message } from '@/components/chat/ChatCenter'
 import ChatRightPanel from '@/components/chat/ChatRightPanel'
-
-type ProjectType = {
-  id: string; projectName: string; builderName: string
-  pricePerSqft: number | null; minPrice: number; maxPrice: number
-  possessionDate: Date | string; constructionStatus: string
-  microMarket: string
-  decisionTag?: string | null
-  honestConcern?: string | null
-  analystNote?: string | null
-  possessionFlag?: string | null
-  configurations?: string | null
-  bankApprovals?: string | null
-  priceNote?: string | null
-  pricePerSqftType?: string | null
-  loadingFactor?: number | null
-  allInPrice?: number | null
-  trustScore?: number | null
-  trustGrade?: string | null
-  charges?: unknown
-  carpetSqftMin?: number | null
-  sbaSqftMin?: number | null
-}
-
-type ArtifactType = 'project_card' | 'visit_booking' | 'comparison' | 'cost_breakdown' | 'visit_prompt' | 'builder_trust'
-type Artifact = { type: ArtifactType; data: ProjectType; dataB?: ProjectType }
+import type { ProjectType, ArtifactType, Artifact } from '@/lib/types/chat'
 
 let idCounter = 0
 const uid = () => `msg-${++idCounter}-${Date.now()}`

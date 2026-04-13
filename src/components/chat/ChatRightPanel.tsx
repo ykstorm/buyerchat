@@ -6,22 +6,7 @@ import ProjectCard from './artifacts/ProjectCardV2'
 import ComparisonCard from './artifacts/ComparisonCard'
 import CostBreakdownCard from './artifacts/CostBreakdownCard'
 import { VisitBooking } from './artifacts/VisitBooking'
-
-type ProjectType = {
-  id: string; projectName: string; builderName: string
-  pricePerSqft: number | null; minPrice: number; maxPrice: number
-  possessionDate: Date | string; constructionStatus: string
-  microMarket: string
-  decisionTag?: string | null
-  honestConcern?: string | null
-  analystNote?: string | null
-  possessionFlag?: string | null
-  configurations?: string | null
-  bankApprovals?: string | null
-  priceNote?: string | null
-}
-
-type Artifact = { type: 'project_card' | 'visit_booking' | 'comparison' | 'cost_breakdown'; data: ProjectType; dataB?: ProjectType }
+import type { ProjectType, Artifact } from '@/lib/types/chat'
 
 export default function ChatRightPanel({
   artifact,

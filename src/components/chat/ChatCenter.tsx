@@ -8,6 +8,7 @@ import ProjectCard from './artifacts/ProjectCardV2'
 import ComparisonCard from './artifacts/ComparisonCard'
 import CostBreakdownCard from './artifacts/CostBreakdownCard'
 import { VisitBooking } from './artifacts/VisitBooking'
+import type { ProjectType, Artifact } from '@/lib/types/chat'
 
 /* ── Floating Particles Component ── */
 function FloatingParticles() {
@@ -133,20 +134,7 @@ const ChatBubble = memo(function ChatBubble({ msg, isGrouped }: { msg: Message; 
   )
 })
 
-type ProjectType = {
-  id: string; projectName: string; builderName: string
-  pricePerSqft: number | null; minPrice: number; maxPrice: number
-  possessionDate: Date | string; constructionStatus: string
-  microMarket: string
-  decisionTag?: string | null
-  honestConcern?: string | null
-  analystNote?: string | null
-  possessionFlag?: string | null
-  configurations?: string | null
-  bankApprovals?: string | null
-  priceNote?: string | null
-}
-type Artifact = { type: 'project_card' | 'visit_booking' | 'comparison' | 'cost_breakdown'; data: ProjectType; dataB?: ProjectType }
+/* ProjectType and Artifact imported from @/lib/types/chat */
 
 type Props = {
   messages: Message[]
