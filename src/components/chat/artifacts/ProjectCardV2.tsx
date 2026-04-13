@@ -72,7 +72,7 @@ export default function ProjectCardV2({ project }: { project: ProjectType }) {
       initial={{ opacity: 0, y: 20, scale: 0.97 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{ type: 'spring', stiffness: 300, damping: 28 }}
-      style={{ rotateX, rotateY, transformStyle: 'preserve-3d', background: '#FAFAF9', border: '1px solid #E7E5E4', boxShadow: hovered ? '0 20px 60px rgba(27,79,138,0.12)' : '0 4px 20px rgba(0,0,0,0.06)' }}
+      style={{ rotateX, rotateY, transformStyle: 'preserve-3d', background: 'var(--bg-surface-alt)', border: '1px solid var(--border)', boxShadow: hovered ? '0 20px 60px rgba(27,79,138,0.12)' : '0 4px 20px rgba(0,0,0,0.06)' }}
       onMouseMove={e => {
         const now = Date.now()
         if (now - lastMoveTs.current < 30) return
@@ -129,10 +129,10 @@ export default function ProjectCardV2({ project }: { project: ProjectType }) {
 
       <div className="p-4">
         {/* Name */}
-        <h2 style={{ fontFamily: 'var(--font-playfair)' }} className="text-[17px] font-semibold text-[#1C1917] leading-tight mb-0.5">
+        <h2 style={{ fontFamily: 'var(--font-playfair)', color: 'var(--text-primary)' }} className="text-[17px] font-semibold leading-tight mb-0.5">
           {project.projectName}
         </h2>
-        <p className="text-[11px] text-[#78716C] mb-3">{project.builderName}</p>
+        <p className="text-[11px] mb-3" style={{ color: 'var(--text-secondary)' }}>{project.builderName}</p>
 
         {/* Price */}
         {project.pricePerSqft ? (
@@ -172,16 +172,16 @@ export default function ProjectCardV2({ project }: { project: ProjectType }) {
 
         {/* Meta row */}
         <div className="flex gap-2 mb-3">
-          <div className="flex-1 rounded-lg px-2.5 py-2" style={{ background: '#F4F3F0' }}>
+          <div className="flex-1 rounded-lg px-2.5 py-2" style={{ background: 'var(--bg-subtle)' }}>
             <p className="text-[9px] uppercase tracking-wider text-[#A8A29E]">Possession</p>
-            <p className="text-[11px] font-medium text-[#1C1917]">{possession}</p>
+            <p className="text-[11px] font-medium" style={{ color: 'var(--text-primary)' }}>{possession}</p>
           </div>
-          <div className="flex-1 rounded-lg px-2.5 py-2" style={{ background: '#F4F3F0' }}>
+          <div className="flex-1 rounded-lg px-2.5 py-2" style={{ background: 'var(--bg-subtle)' }}>
             <p className="text-[9px] uppercase tracking-wider text-[#A8A29E]">Status</p>
-            <p className="text-[11px] font-medium text-[#1C1917]">{project.constructionStatus === 'Under Construction' ? 'UC' : 'RTM'}</p>
+            <p className="text-[11px] font-medium" style={{ color: 'var(--text-primary)' }}>{project.constructionStatus === 'Under Construction' ? 'UC' : 'RTM'}</p>
           </div>
           {project.configurations && (
-            <div className="flex-1 rounded-lg px-2.5 py-2" style={{ background: '#F4F3F0' }}>
+            <div className="flex-1 rounded-lg px-2.5 py-2" style={{ background: 'var(--bg-subtle)' }}>
               <p className="text-[9px] uppercase tracking-wider text-[#A8A29E]">Config</p>
               <p className="text-[11px] font-medium text-[#1C1917] truncate">{project.configurations.split(',')[0]}</p>
             </div>
@@ -219,7 +219,7 @@ export default function ProjectCardV2({ project }: { project: ProjectType }) {
                 {project.trustScore}/100 · Grade {project.trustGrade ?? (project.trustScore >= 80 ? 'A' : project.trustScore >= 65 ? 'B' : project.trustScore >= 50 ? 'C' : 'D')}
               </span>
             </div>
-            <div className="h-1.5 rounded-full overflow-hidden" style={{ background: '#F4F3F0' }}>
+            <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--bg-subtle)' }}>
               <motion.div
                 initial={{ width: 0 }}
                 animate={{ width: `${project.trustScore}%` }}
@@ -249,7 +249,7 @@ export default function ProjectCardV2({ project }: { project: ProjectType }) {
             whileTap={{ scale: 0.97 }}
             onClick={() => window.dispatchEvent(new CustomEvent('compare-project', { detail: { projectId: project.id } }))}
             className="px-4 py-2.5 rounded-xl text-[12px] font-medium border transition-all"
-            style={{ borderColor: '#E7E5E4', color: '#78716C' }}
+            style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}
           >
             Compare
           </motion.button>
