@@ -25,8 +25,8 @@ type ProjectType = {
   trustGrade?: string | null
 }
 
-type ArtifactType = 'project_card' | 'visit_booking'
-type Artifact = { type: ArtifactType; data: ProjectType }
+type ArtifactType = 'project_card' | 'visit_booking' | 'comparison'
+type Artifact = { type: ArtifactType; data: ProjectType; dataB?: ProjectType }
 
 let idCounter = 0
 const uid = () => `msg-${++idCounter}-${Date.now()}`
@@ -105,6 +105,42 @@ export default function ChatClient({
     window.addEventListener('show-project-card', handler)
     return () => window.removeEventListener('show-project-card', handler)
   }, [projects])
+
+  // Compare feature: track first selected project, show comparison when 2 selected
+  const compareQueueRef = useRef<string | null>(null)
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const { projectId } = (e as CustomEvent).detail
+      const project = projects.find(p => p.id === projectId)
+      if (!project) return
+
+      const firstId = compareQueueRef.current
+      if (!firstId) {
+        // First project selected — store it and wait for second
+        compareQueueRef.current = projectId
+        return
+      }
+
+      // Second project selected
+      if (firstId === projectId) return // same project clicked twice — ignore
+      const projectA = projects.find(p => p.id === firstId)
+      if (!projectA) { compareQueueRef.current = null; return }
+
+      compareQueueRef.current = null // reset queue
+
+      const comparisonArtifact: Artifact = { type: 'comparison', data: projectA, dataB: project }
+      const newHistory = [...artifactHistoryRef.current.slice(0, artifactIndexRef.current + 1), comparisonArtifact]
+      artifactHistoryRef.current = newHistory
+      artifactIndexRef.current = newHistory.length - 1
+      setArtifactHistory(newHistory)
+      setArtifactIndex(newHistory.length - 1)
+      setCurrentArtifact(comparisonArtifact)
+      setShowArtifact(true)
+    }
+    window.addEventListener('compare-project', handler)
+    return () => window.removeEventListener('compare-project', handler)
+  }, [projects])
+
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   const sendMessage = useCallback(async (userContent: string) => {

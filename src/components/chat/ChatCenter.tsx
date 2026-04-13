@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { FormEvent, useRef, useEffect, useState } from 'react'
 import ReactMarkdown from 'react-markdown'
 import ProjectCard from './artifacts/ProjectCardV2'
+import ComparisonCard from './artifacts/ComparisonCard'
 import { VisitBooking } from './artifacts/VisitBooking'
 
 export type Message = {
@@ -26,7 +27,7 @@ type ProjectType = {
   bankApprovals?: string | null
   priceNote?: string | null
 }
-type Artifact = { type: 'project_card' | 'visit_booking'; data: ProjectType }
+type Artifact = { type: 'project_card' | 'visit_booking' | 'comparison'; data: ProjectType; dataB?: ProjectType }
 
 type Props = {
   messages: Message[]
@@ -373,6 +374,8 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
                   <div className="px-4 pb-6 overscroll-contain" style={{ height: '50vh', overflowY: 'scroll', touchAction: 'pan-y', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'thin', scrollbarColor: '#E7E5E4 transparent' }} onPointerDown={e => e.stopPropagation()}>
                     {artifact.type === 'visit_booking'
                       ? <VisitBooking projectId={artifact.data.id} projectName={artifact.data.projectName} />
+                      : artifact.type === 'comparison' && artifact.dataB
+                      ? <ComparisonCard projectA={artifact.data} projectB={artifact.dataB} />
                       : <ProjectCard project={artifact.data} />}
                   </div>
                 </motion.div>

@@ -247,6 +247,7 @@ export default function ProjectCardV2({ project }: { project: ProjectType }) {
             type="button"
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.97 }}
+            onClick={() => window.dispatchEvent(new CustomEvent('compare-project', { detail: { projectId: project.id } }))}
             className="px-4 py-2.5 rounded-xl text-[12px] font-medium border transition-all"
             style={{ borderColor: '#E7E5E4', color: '#78716C' }}
           >

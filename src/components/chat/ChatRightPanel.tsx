@@ -3,6 +3,7 @@
 import React from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import ProjectCard from './artifacts/ProjectCardV2'
+import ComparisonCard from './artifacts/ComparisonCard'
 import { VisitBooking } from './artifacts/VisitBooking'
 
 type ProjectType = {
@@ -19,7 +20,7 @@ type ProjectType = {
   priceNote?: string | null
 }
 
-type Artifact = { type: 'project_card' | 'visit_booking'; data: ProjectType }
+type Artifact = { type: 'project_card' | 'visit_booking' | 'comparison'; data: ProjectType; dataB?: ProjectType }
 
 export default function ChatRightPanel({
   artifact,
@@ -103,6 +104,11 @@ export default function ChatRightPanel({
                     projectId={artifact.data.id}
                     projectName={artifact.data.projectName}
                   />
+                </>
+              ) : artifact.type === 'comparison' && artifact.dataB ? (
+                <>
+                  <p className="text-[11px] font-medium text-[#A8A29E] uppercase tracking-wider mb-3">Comparison</p>
+                  <ComparisonCard projectA={artifact.data} projectB={artifact.dataB} />
                 </>
               ) : (
                 <>
