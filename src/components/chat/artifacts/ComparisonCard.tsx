@@ -1,20 +1,6 @@
 'use client'
 import { motion } from 'framer-motion'
-
-type ProjectType = {
-  id: string
-  projectName: string
-  builderName: string
-  pricePerSqft: number | null
-  allInPrice?: number | null
-  possessionDate: Date | string
-  constructionStatus: string
-  microMarket: string
-  decisionTag?: string | null
-  honestConcern?: string | null
-  analystNote?: string | null
-  configurations?: string | null
-}
+import type { ProjectType } from '@/lib/types/chat'
 
 function formatL(n: number | null | undefined) {
   if (!n || n === 0) return '—'

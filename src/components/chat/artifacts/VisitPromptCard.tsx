@@ -1,13 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-
-type ProjectType = {
-  id: string
-  projectName: string
-  builderName: string
-  microMarket: string
-}
+import type { ProjectType } from '@/lib/types/chat'
 
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
