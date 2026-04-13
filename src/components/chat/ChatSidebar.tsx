@@ -87,9 +87,8 @@ function SwipeableSessionItem({ session, onLoad, onClose, menuOpen, setMenuOpen,
         onDragEnd={handleDragEnd}
         style={{ x, opacity: itemOpacity }}
         className="relative px-3 py-2.5 rounded-xl cursor-pointer transition-colors"
-        onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-subtle)')}
+        onMouseEnter={e => { e.currentTarget.style.background = 'var(--bg-subtle)'; setHoveredSession(session.id) }}
         onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-        onMouseEnter={() => setHoveredSession(session.id)}
         onClick={() => { if (renamingSession !== session.id && !confirmingDelete) { onLoad(session.id); onClose() } }}
       >
         {confirmingDelete ? (
