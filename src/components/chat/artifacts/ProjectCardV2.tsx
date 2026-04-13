@@ -35,9 +35,12 @@ export default function ProjectCardV2({ project }: { project: ProjectType }) {
   const lastMoveTs = useRef(0)
 
   useEffect(() => {
+    let cancelled = false
     fetch('/api/saved').then(r => r.json()).then(data => {
+      if (cancelled) return
       if ((data.savedProjects ?? []).some((s: any) => s.projectId === project.id)) setSaved(true)
     }).catch(() => {})
+    return () => { cancelled = true }
   }, [project.id])
 
   const toggleSave = async (e: React.MouseEvent) => {

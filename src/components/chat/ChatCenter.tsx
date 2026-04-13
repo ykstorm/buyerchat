@@ -63,6 +63,7 @@ const STARTERS = [
 export default function ChatCenter({ messages, input, handleInputChange, handleSubmit, isLoading, append, loadingSession, artifact, showArtifact, onToggleArtifact, canGoBack, canGoForward, onArtifactBack, onArtifactForward, artifactCurrent, artifactTotal, artifactHistory, onSelectArtifact }: Props) {
   const bottomRef = useRef<HTMLDivElement>(null)
   const [mouse, setMouse] = useState({ x: 0, y: 0 })
+  const mouseRafRef = useRef<number>(0)
   const [showArtifactMenu, setShowArtifactMenu] = useState(false)
   const artifactMenuRef = useRef<HTMLDivElement>(null)
 
@@ -98,7 +99,14 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
         <div
           className="flex-1 flex flex-col items-center justify-center relative overflow-hidden"
           style={{ background: 'var(--bg-base)' }}
-          onMouseMove={(e) => setMouse({ x: (e.clientX / window.innerWidth - 0.5) * 8, y: (e.clientY / window.innerHeight - 0.5) * 8 })}
+          onMouseMove={(e) => {
+            if (mouseRafRef.current) return
+            const cx = e.clientX, cy = e.clientY
+            mouseRafRef.current = requestAnimationFrame(() => {
+              setMouse({ x: (cx / window.innerWidth - 0.5) * 8, y: (cy / window.innerHeight - 0.5) * 8 })
+              mouseRafRef.current = 0
+            })
+          }}
         >
 
           {/* Layer 1 — fine dot grid with parallax */}
