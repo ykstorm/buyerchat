@@ -61,16 +61,43 @@ export default function ChatClient({
       const project = projects.find(p => p.id === projectId)
       if (project) {
         const newArtifact: Artifact = { type: 'visit_booking', data: project }
-        const prevHistory = artifactHistoryRef.current.slice(0, artifactIndexRef.current + 1)
-        const alreadyVisitBooking = prevHistory.some(a => a.type === 'visit_booking' && a.data.id === newArtifact.data.id)
-        if (alreadyVisitBooking) return
-        const newHistory = [...prevHistory, newArtifact]
-        artifactHistoryRef.current = newHistory
-        artifactIndexRef.current = newHistory.length - 1
-        setArtifactHistory(newHistory)
-        setArtifactIndex(newHistory.length - 1)
-        setCurrentArtifact(newArtifact)
-        setShowArtifact(true)
+        // Replace the current artifact in-place instead of stacking a new one
+        const currentIdx = artifactIndexRef.current
+        const history = [...artifactHistoryRef.current]
+        if (currentIdx >= 0 && history[currentIdx]?.data.id === projectId) {
+          // Same project — just swap the type in place
+          history[currentIdx] = newArtifact
+          artifactHistoryRef.current = history
+          setArtifactHistory(history)
+          setCurrentArtifact(newArtifact)
+          setShowArtifact(true)
+        } else {
+          // Different project or no current — check for existing visit booking
+          const existingIdx = history.findIndex(a => a.type === 'visit_booking' && a.data.id === projectId)
+          if (existingIdx >= 0) {
+            artifactIndexRef.current = existingIdx
+            setArtifactIndex(existingIdx)
+            setCurrentArtifact(history[existingIdx])
+            setShowArtifact(true)
+          } else {
+            // Replace current item with visit booking
+            if (currentIdx >= 0) {
+              history[currentIdx] = newArtifact
+              artifactHistoryRef.current = history
+              setArtifactHistory(history)
+              setCurrentArtifact(newArtifact)
+              setShowArtifact(true)
+            } else {
+              const newHistory = [newArtifact]
+              artifactHistoryRef.current = newHistory
+              artifactIndexRef.current = 0
+              setArtifactHistory(newHistory)
+              setArtifactIndex(0)
+              setCurrentArtifact(newArtifact)
+              setShowArtifact(true)
+            }
+          }
+        }
       }
     }
     window.addEventListener('book-visit', handler)
@@ -106,36 +133,56 @@ export default function ChatClient({
     return () => window.removeEventListener('show-project-card', handler)
   }, [projects])
 
-  // Compare feature: track first selected project, show comparison when 2 selected
+  // Compare feature: auto-pair with another project from history, or queue if only one
   const compareQueueRef = useRef<string | null>(null)
+  const [compareToast, setCompareToast] = useState<string | null>(null)
   useEffect(() => {
     const handler = (e: Event) => {
       const { projectId } = (e as CustomEvent).detail
       const project = projects.find(p => p.id === projectId)
       if (!project) return
 
+      // Check if there's already a queued first project
       const firstId = compareQueueRef.current
-      if (!firstId) {
-        // First project selected — store it and wait for second
-        compareQueueRef.current = projectId
+      if (firstId && firstId !== projectId) {
+        const projectA = projects.find(p => p.id === firstId)
+        if (projectA) {
+          compareQueueRef.current = null
+          setCompareToast(null)
+          const comparisonArtifact: Artifact = { type: 'comparison', data: projectA, dataB: project }
+          const newHistory = [...artifactHistoryRef.current.slice(0, artifactIndexRef.current + 1), comparisonArtifact]
+          artifactHistoryRef.current = newHistory
+          artifactIndexRef.current = newHistory.length - 1
+          setArtifactHistory(newHistory)
+          setArtifactIndex(newHistory.length - 1)
+          setCurrentArtifact(comparisonArtifact)
+          setShowArtifact(true)
+          return
+        }
+      }
+
+      // Try to auto-pair with another project_card from artifact history
+      const otherCard = artifactHistoryRef.current.find(
+        a => a.type === 'project_card' && a.data.id !== projectId
+      )
+      if (otherCard) {
+        compareQueueRef.current = null
+        setCompareToast(null)
+        const comparisonArtifact: Artifact = { type: 'comparison', data: otherCard.data, dataB: project }
+        const newHistory = [...artifactHistoryRef.current.slice(0, artifactIndexRef.current + 1), comparisonArtifact]
+        artifactHistoryRef.current = newHistory
+        artifactIndexRef.current = newHistory.length - 1
+        setArtifactHistory(newHistory)
+        setArtifactIndex(newHistory.length - 1)
+        setCurrentArtifact(comparisonArtifact)
+        setShowArtifact(true)
         return
       }
 
-      // Second project selected
-      if (firstId === projectId) return // same project clicked twice — ignore
-      const projectA = projects.find(p => p.id === firstId)
-      if (!projectA) { compareQueueRef.current = null; return }
-
-      compareQueueRef.current = null // reset queue
-
-      const comparisonArtifact: Artifact = { type: 'comparison', data: projectA, dataB: project }
-      const newHistory = [...artifactHistoryRef.current.slice(0, artifactIndexRef.current + 1), comparisonArtifact]
-      artifactHistoryRef.current = newHistory
-      artifactIndexRef.current = newHistory.length - 1
-      setArtifactHistory(newHistory)
-      setArtifactIndex(newHistory.length - 1)
-      setCurrentArtifact(comparisonArtifact)
-      setShowArtifact(true)
+      // No other project to pair with — queue it and show toast
+      compareQueueRef.current = projectId
+      setCompareToast(project.projectName)
+      setTimeout(() => { setCompareToast(null); compareQueueRef.current = null }, 8000)
     }
     window.addEventListener('compare-project', handler)
     return () => window.removeEventListener('compare-project', handler)
@@ -271,7 +318,7 @@ export default function ChatClient({
       const newIndex = idx - 1
       artifactIndexRef.current = newIndex
       setArtifactIndex(newIndex)
-      setCurrentArtifact({ type: 'project_card', data: hist[newIndex].data })
+      setCurrentArtifact(hist[newIndex])
       setShowArtifact(true)
     }
   }
@@ -283,7 +330,7 @@ export default function ChatClient({
       const newIndex = idx + 1
       artifactIndexRef.current = newIndex
       setArtifactIndex(newIndex)
-      setCurrentArtifact({ type: 'project_card', data: hist[newIndex].data })
+      setCurrentArtifact(hist[newIndex])
       setShowArtifact(true)
     }
   }
@@ -399,13 +446,12 @@ export default function ChatClient({
         artifactCurrent={artifactIndex + 1}
         artifactTotal={artifactHistory.length}
         artifactHistory={artifactHistory}
+        compareToast={compareToast}
         onSelectArtifact={(index) => {
           artifactIndexRef.current = index
           setArtifactIndex(index)
           const selected = artifactHistoryRef.current[index]
-          // Always show project card when navigating history — visit booking only makes sense in context
-          const normalized: Artifact = { type: 'project_card', data: selected.data }
-          setCurrentArtifact(normalized)
+          setCurrentArtifact(selected)
           setShowArtifact(true)
         }}
       />

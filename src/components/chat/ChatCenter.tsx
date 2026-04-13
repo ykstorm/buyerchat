@@ -2,11 +2,108 @@
 import type React from 'react'
 
 import { motion, AnimatePresence } from 'framer-motion'
-import { FormEvent, useRef, useEffect, useState } from 'react'
+import { FormEvent, useRef, useEffect, useState, useCallback } from 'react'
 import ReactMarkdown from 'react-markdown'
 import ProjectCard from './artifacts/ProjectCardV2'
 import ComparisonCard from './artifacts/ComparisonCard'
 import { VisitBooking } from './artifacts/VisitBooking'
+
+/* ── Floating Particles Component ── */
+function FloatingParticles() {
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const animRef = useRef<number>(0)
+
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+
+    const resize = () => {
+      canvas.width = canvas.offsetWidth * (window.devicePixelRatio || 1)
+      canvas.height = canvas.offsetHeight * (window.devicePixelRatio || 1)
+      ctx.scale(window.devicePixelRatio || 1, window.devicePixelRatio || 1)
+    }
+    resize()
+    window.addEventListener('resize', resize)
+
+    // Particle pool
+    const count = 40
+    const particles: { x: number; y: number; vx: number; vy: number; r: number; o: number; phase: number }[] = []
+    const w = () => canvas.offsetWidth
+    const h = () => canvas.offsetHeight
+    for (let i = 0; i < count; i++) {
+      particles.push({
+        x: Math.random() * w(),
+        y: Math.random() * h(),
+        vx: (Math.random() - 0.5) * 0.3,
+        vy: (Math.random() - 0.5) * 0.2 - 0.1,
+        r: Math.random() * 1.5 + 0.5,
+        o: Math.random() * 0.3 + 0.08,
+        phase: Math.random() * Math.PI * 2,
+      })
+    }
+
+    let time = 0
+    const draw = () => {
+      ctx.clearRect(0, 0, w(), h())
+      time += 0.008
+      for (const p of particles) {
+        p.x += p.vx + Math.sin(time + p.phase) * 0.15
+        p.y += p.vy + Math.cos(time * 0.7 + p.phase) * 0.1
+        // Wrap around
+        if (p.x < -10) p.x = w() + 10
+        if (p.x > w() + 10) p.x = -10
+        if (p.y < -10) p.y = h() + 10
+        if (p.y > h() + 10) p.y = -10
+        // Fade based on distance from center
+        const dx = p.x / w() - 0.5
+        const dy = p.y / h() - 0.5
+        const dist = Math.sqrt(dx * dx + dy * dy)
+        const fade = Math.max(0, 1 - dist * 1.8)
+        const alpha = p.o * fade * (0.6 + 0.4 * Math.sin(time * 2 + p.phase))
+
+        ctx.beginPath()
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2)
+        ctx.fillStyle = `rgba(196, 155, 80, ${alpha})`
+        ctx.fill()
+      }
+
+      // Draw faint connection lines between nearby particles
+      for (let i = 0; i < particles.length; i++) {
+        for (let j = i + 1; j < particles.length; j++) {
+          const dx = particles[i].x - particles[j].x
+          const dy = particles[i].y - particles[j].y
+          const d = Math.sqrt(dx * dx + dy * dy)
+          if (d < 120) {
+            ctx.beginPath()
+            ctx.moveTo(particles[i].x, particles[i].y)
+            ctx.lineTo(particles[j].x, particles[j].y)
+            ctx.strokeStyle = `rgba(196, 155, 80, ${0.04 * (1 - d / 120)})`
+            ctx.lineWidth = 0.5
+            ctx.stroke()
+          }
+        }
+      }
+
+      animRef.current = requestAnimationFrame(draw)
+    }
+    draw()
+
+    return () => {
+      cancelAnimationFrame(animRef.current)
+      window.removeEventListener('resize', resize)
+    }
+  }, [])
+
+  return (
+    <canvas
+      ref={canvasRef}
+      className="absolute inset-0 pointer-events-none"
+      style={{ width: '100%', height: '100%' }}
+    />
+  )
+}
 
 export type Message = {
   id: string
@@ -49,6 +146,7 @@ type Props = {
   artifactHistory?: Artifact[]
   onSelectArtifact?: (index: number) => void
   onRetry?: () => void
+  compareToast?: string | null
 }
 
 const STARTERS = [
@@ -60,7 +158,7 @@ const STARTERS = [
   "I'm confused — help me decide",
 ]
 
-export default function ChatCenter({ messages, input, handleInputChange, handleSubmit, isLoading, append, loadingSession, artifact, showArtifact, onToggleArtifact, canGoBack, canGoForward, onArtifactBack, onArtifactForward, artifactCurrent, artifactTotal, artifactHistory, onSelectArtifact }: Props) {
+export default function ChatCenter({ messages, input, handleInputChange, handleSubmit, isLoading, append, loadingSession, artifact, showArtifact, onToggleArtifact, canGoBack, canGoForward, onArtifactBack, onArtifactForward, artifactCurrent, artifactTotal, artifactHistory, onSelectArtifact, compareToast }: Props) {
   const bottomRef = useRef<HTMLDivElement>(null)
   const [mouse, setMouse] = useState({ x: 0, y: 0 })
   const mouseRafRef = useRef<number>(0)
@@ -111,63 +209,69 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
 
           {/* Layer 1 — fine dot grid with parallax */}
           <div className="absolute inset-0" style={{
-            backgroundImage: 'radial-gradient(circle, #C4BFB8 1px, transparent 1px)',
-            backgroundSize: '28px 28px',
+            backgroundImage: 'radial-gradient(circle, rgba(168,162,158,0.35) 1px, transparent 1px)',
+            backgroundSize: '32px 32px',
             transform: `translate(${mouse.x * 0.5}px, ${mouse.y * 0.5}px)`
           }} />
 
-          {/* Layer 2 — deep radial fade */}
+          {/* Layer 2 — deep radial fade to base */}
           <div className="absolute inset-0" style={{
-            background: 'radial-gradient(ellipse 80% 70% at 50% 50%, transparent 0%, #FAFAF8 65%)'
+            background: 'radial-gradient(ellipse 75% 65% at 50% 45%, transparent 0%, var(--bg-base) 60%)'
           }} />
 
-          {/* Layer 3 — warm amber glow bottom-center */}
+          {/* Layer 3 — warm golden glow center */}
           <div className="absolute inset-0 pointer-events-none" style={{
-            background: 'radial-gradient(ellipse 50% 35% at 50% 85%, rgba(196,155,80,0.07) 0%, transparent 70%)'
+            background: 'radial-gradient(ellipse 45% 40% at 50% 50%, rgba(196,155,80,0.06) 0%, transparent 70%)'
           }} />
 
-          {/* Layer 4 — cool blue glow top-right */}
+          {/* Layer 4 — warm amber glow bottom */}
           <div className="absolute inset-0 pointer-events-none" style={{
-            background: 'radial-gradient(ellipse 40% 30% at 80% 15%, rgba(27,79,138,0.05) 0%, transparent 70%)'
+            background: 'radial-gradient(ellipse 55% 30% at 50% 90%, rgba(196,155,80,0.08) 0%, transparent 70%)',
+            animation: 'warm-pulse 6s ease-in-out infinite'
           }} />
 
-          {/* Layer 5 — static grain texture (no animation — avoids continuous repaints) */}
+          {/* Layer 5 — cool blue glow top-right */}
+          <div className="absolute inset-0 pointer-events-none" style={{
+            background: 'radial-gradient(ellipse 35% 25% at 80% 15%, rgba(27,79,138,0.04) 0%, transparent 70%)'
+          }} />
+
+          {/* Floating particles */}
+          <FloatingParticles />
+
+          {/* Layer 6 — grain texture */}
           <div
             className="absolute inset-0 pointer-events-none"
             style={{
-              opacity: 0.035,
+              opacity: 0.03,
               backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
               backgroundSize: '220px 220px',
               backgroundRepeat: 'repeat'
             }}
           />
 
-          {/* Spotlight follow */}
+          {/* Warm spotlight follows cursor */}
           <motion.div
             className="pointer-events-none absolute inset-0 z-0"
             style={{
-              background: `radial-gradient(600px circle at ${mouse.x + 200}px ${mouse.y + 300}px, rgba(27,79,138,0.06), transparent 40%)`,
-            }}
-          />
-          {/* Subtle grid */}
-          <div className="pointer-events-none absolute inset-0 z-0 opacity-[0.015]"
-            style={{
-              backgroundImage: `linear-gradient(#1B4F8A 1px, transparent 1px), linear-gradient(90deg, #1B4F8A 1px, transparent 1px)`,
-              backgroundSize: '40px 40px'
+              background: `radial-gradient(500px circle at ${mouse.x + 200}px ${mouse.y + 300}px, rgba(196,155,80,0.05), transparent 40%)`,
             }}
           />
 
           <div className="relative z-10 text-center px-6 w-full max-w-lg">
 
-            {/* Eyebrow */}
-            <motion.p
+            {/* Eyebrow with gold accent line */}
+            <motion.div
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
-              className="text-[11px] font-medium tracking-[0.18em] text-[#A8A29E] uppercase mb-4"
+              className="flex items-center justify-center gap-3 mb-5"
             >
-              South Bopal & Shela · Ahmedabad
-            </motion.p>
+              <div className="h-[1px] w-8" style={{ background: 'linear-gradient(90deg, transparent, #C49B50)' }} />
+              <p className="text-[10px] font-semibold tracking-[0.22em] uppercase" style={{ color: '#C49B50' }}>
+                South Bopal & Shela · Ahmedabad
+              </p>
+              <div className="h-[1px] w-8" style={{ background: 'linear-gradient(90deg, #C49B50, transparent)' }} />
+            </motion.div>
 
             {/* Headline with parallax + text shimmer */}
             <motion.h1
@@ -175,21 +279,9 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.08 }}
               style={{ fontFamily: 'var(--font-playfair)', transform: `translate(${mouse.x * 0.3}px, ${mouse.y * 0.3}px)` }}
-              className="relative z-10 text-[38px] leading-tight mb-3 font-bold"
+              className="relative z-10 text-[42px] leading-tight mb-3 font-bold text-shimmer"
             >
-              <motion.span
-                style={{
-                  backgroundImage: 'linear-gradient(90deg, var(--text-primary) 0%, #1B4F8A 50%, var(--text-primary) 100%)',
-                  backgroundClip: 'text',
-                  WebkitBackgroundClip: 'text',
-                  color: 'transparent',
-                  backgroundSize: '200%',
-                }}
-                animate={{ backgroundPosition: ['0% center', '100% center', '0% center'] }}
-                transition={{ duration: 4, repeat: Infinity, ease: 'linear' }}
-              >
-                Find your home.
-              </motion.span>
+              Find your home.
             </motion.h1>
 
             {/* Subline */}
@@ -205,30 +297,27 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
             </motion.p>
 
             {/* Starter cards */}
-            <div className="grid grid-cols-2 gap-2.5 w-full mb-8">
+            <div className="grid grid-cols-2 gap-3 w-full mb-8">
               {STARTERS.map((s, i) => (
-                <motion.div
+                <motion.button
                   key={s}
+                  type="button"
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.22 + i * 0.07, duration: 0.3 }}
-                  whileHover={{ y: -2, boxShadow: '0 8px 24px rgba(27,79,138,0.08)' }}
-                  whileTap={{ scale: 0.98 }}
-                  className="relative rounded-2xl p-[1px] overflow-hidden cursor-pointer group"
-                  style={{ background: 'var(--border)' }}
+                  whileHover={{ y: -3, boxShadow: '0 12px 32px rgba(196,155,80,0.1), 0 4px 12px rgba(0,0,0,0.04)' }}
+                  whileTap={{ scale: 0.97 }}
                   onClick={() => append({ role: 'user', content: s })}
+                  className="text-left px-4 py-4 rounded-2xl backdrop-blur-sm cursor-pointer group transition-all duration-300"
+                  style={{
+                    background: 'color-mix(in srgb, var(--bg-surface) 85%, transparent)',
+                    border: '1px solid color-mix(in srgb, var(--border) 60%, transparent)',
+                  }}
+                  onMouseEnter={e => (e.currentTarget.style.borderColor = 'rgba(196,155,80,0.3)')}
+                  onMouseLeave={e => (e.currentTarget.style.borderColor = 'color-mix(in srgb, var(--border) 60%, transparent)')}
                 >
-                  {/* Moving border gradient — visible on hover */}
-                  <motion.div
-                    className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                    style={{ background: 'conic-gradient(from var(--border-angle, 0deg), #1B4F8A, #3B82F6, #0F6E56, #1B4F8A)' }}
-                    animate={{ '--border-angle': ['0deg', '360deg'] } as any}
-                    transition={{ duration: 3, repeat: Infinity, ease: 'linear' }}
-                  />
-                  <div className="relative rounded-[15px] px-4 py-3.5 backdrop-blur-sm" style={{ background: 'color-mix(in srgb, var(--bg-surface) 92%, transparent)' }}>
-                    <p className="text-[12.5px] font-medium leading-snug transition-colors" style={{ color: 'var(--text-secondary)' }}>{s}</p>
-                  </div>
-                </motion.div>
+                  <p className="text-[12.5px] font-medium leading-snug transition-colors" style={{ color: 'var(--text-secondary)' }}>{s}</p>
+                </motion.button>
               ))}
             </div>
 
@@ -359,86 +448,138 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
         </div>
       )}
 
-      {/* Mobile artifact — smooth bottom sheet */}
+      {/* Mobile artifact — full-screen overlay modal */}
       <AnimatePresence>
-        {artifact && (
+        {artifact && showArtifact && (
           <motion.div
-            className="lg:hidden fixed inset-x-0 bottom-0 z-30"
-            style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
+            className="lg:hidden fixed inset-0 z-40 flex flex-col"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
           >
-            {showArtifact ? (
-              <>
-                {/* Backdrop */}
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="fixed inset-0 bg-black/20 z-[-1]"
-                  onClick={onToggleArtifact}
-                  style={{ touchAction: 'none' }}
-                />
-                {/* Sheet */}
-                <motion.div
-                  initial={{ y: '100%' }}
-                  animate={{ y: 0 }}
-                  exit={{ y: '100%' }}
-                  transition={{ type: 'spring', stiffness: 400, damping: 40 }}
-                  drag="y"
-                  dragConstraints={{ top: 0 }}
-                  dragElastic={0.2}
-                  onDragEnd={(_: any, info: any) => { if (info.offset.y > 150 && info.velocity.y > 100) onToggleArtifact?.() }}
-                  className="rounded-t-2xl shadow-[0_-8px_40px_rgba(0,0,0,0.12)] overflow-hidden"
-                  style={{ background: 'var(--bg-surface)' }}
-                >
-                  {/* Handle */}
-                  <div className="flex justify-center pt-3 pb-1 cursor-grab active:cursor-grabbing" style={{ touchAction: 'none' }} onClick={onToggleArtifact}>
-                    <div className="w-10 h-1 rounded-full bg-[#E7E5E4]" />
-                  </div>
-                  {/* Nav bar */}
+            {/* Backdrop */}
+            <motion.div
+              className="absolute inset-0 bg-black/30 backdrop-blur-sm"
+              onClick={onToggleArtifact}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+            />
+
+            {/* Modal card */}
+            <motion.div
+              initial={{ y: 60, opacity: 0, scale: 0.95 }}
+              animate={{ y: 0, opacity: 1, scale: 1 }}
+              exit={{ y: 60, opacity: 0, scale: 0.95 }}
+              transition={{ type: 'spring', stiffness: 350, damping: 35 }}
+              drag="y"
+              dragConstraints={{ top: 0, bottom: 0 }}
+              dragElastic={0.3}
+              onDragEnd={(_: any, info: any) => { if (info.offset.y > 100 || info.velocity.y > 300) onToggleArtifact?.() }}
+              className="relative z-10 mt-12 mx-3 rounded-2xl overflow-hidden flex flex-col shadow-[0_20px_60px_rgba(0,0,0,0.2)]"
+              style={{
+                background: 'var(--bg-surface)',
+                maxHeight: 'calc(100dvh - 80px)',
+                paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+              }}
+            >
+              {/* Header bar */}
+              <div className="flex items-center justify-between px-4 py-3 flex-shrink-0" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+                <div className="flex items-center gap-2">
                   {artifactTotal && artifactTotal > 1 && (
-                    <div className="flex items-center gap-2 px-4 py-2" style={{ borderBottom: '1px solid var(--border)' }}>
+                    <>
                       <button type="button" onClick={onArtifactBack} disabled={!canGoBack}
-                        className={`text-[11px] flex items-center gap-1 px-2 py-1 rounded-lg transition-colors ${canGoBack ? 'text-[#1C1917] hover:bg-[#F4F3F0]' : 'text-[#D6D3D1] cursor-not-allowed'}`}>
-                        ← Back
+                        className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors disabled:opacity-30"
+                        style={{ background: 'var(--bg-subtle)' }}>
+                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M7.5 9L4.5 6L7.5 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
                       </button>
-                      <span className="text-[10px] text-[#A8A29E] mx-auto">{artifactCurrent} of {artifactTotal}</span>
                       <button type="button" onClick={onArtifactForward} disabled={!canGoForward}
-                        className={`text-[11px] flex items-center gap-1 px-2 py-1 rounded-lg transition-colors ${canGoForward ? 'text-[#1C1917] hover:bg-[#F4F3F0]' : 'text-[#D6D3D1] cursor-not-allowed'}`}>
-                        Forward →
+                        className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors disabled:opacity-30"
+                        style={{ background: 'var(--bg-subtle)' }}>
+                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4.5 3L7.5 6L4.5 9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
                       </button>
-                    </div>
+                      <span className="text-[10px] ml-1" style={{ color: 'var(--text-muted)' }}>{artifactCurrent}/{artifactTotal}</span>
+                    </>
                   )}
-                  {/* Content */}
-                  <div className="px-4 pb-6 overscroll-contain" style={{ height: '50vh', overflowY: 'scroll', touchAction: 'pan-y', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'thin', scrollbarColor: '#E7E5E4 transparent' }} onPointerDown={e => e.stopPropagation()}>
-                    {artifact.type === 'visit_booking'
-                      ? <VisitBooking projectId={artifact.data.id} projectName={artifact.data.projectName} />
-                      : artifact.type === 'comparison' && artifact.dataB
-                      ? <ComparisonCard projectA={artifact.data} projectB={artifact.dataB} />
-                      : <ProjectCard project={artifact.data} />}
-                  </div>
-                </motion.div>
-              </>
-            ) : (!artifactHistory?.length || messages.length === 0) ? (
-              <motion.button
-                type="button"
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                exit={{ y: 20, opacity: 0 }}
-                onClick={onToggleArtifact}
-                className="w-full px-4 py-2 flex items-center justify-between"
-                style={{ background: 'var(--bg-surface)', borderTop: '1px solid var(--border)' }}
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] font-medium" style={{ color: 'var(--text-secondary)' }}>
+                    {artifact.type === 'visit_booking' ? 'Book Visit' : artifact.type === 'comparison' ? 'Compare' : 'Project'}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={onToggleArtifact}
+                    className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors"
+                    style={{ background: 'var(--bg-subtle)' }}
+                  >
+                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                      <path d="M9 3L3 9M3 3L9 9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              {/* Content — scrollable */}
+              <div
+                className="flex-1 overflow-y-auto overscroll-contain px-4 py-4"
+                style={{ WebkitOverflowScrolling: 'touch' }}
+                onPointerDown={e => e.stopPropagation()}
               >
-                <span className="text-[12px] font-medium truncate" style={{ color: 'var(--text-primary)' }}>
-                  {artifact.type === 'visit_booking' ? `Book visit — ${artifact.data.projectName}` : artifact.data.projectName}
-                </span>
-                <span className="text-[11px] text-[#1B4F8A] font-medium">↑ Open</span>
-              </motion.button>
-            ) : null}
+                {artifact.type === 'visit_booking'
+                  ? <VisitBooking projectId={artifact.data.id} projectName={artifact.data.projectName} />
+                  : artifact.type === 'comparison' && artifact.dataB
+                  ? <ComparisonCard projectA={artifact.data} projectB={artifact.dataB} />
+                  : <ProjectCard project={artifact.data} />}
+              </div>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Input bar */}
+      {/* Mobile artifact minimized pill */}
+      <AnimatePresence>
+        {artifact && !showArtifact && messages.length > 0 && (
+          <motion.button
+            type="button"
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 20, opacity: 0 }}
+            onClick={onToggleArtifact}
+            className="lg:hidden fixed bottom-20 left-4 right-4 z-30 flex items-center justify-between px-4 py-3 rounded-xl shadow-luxury"
+            style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}
+          >
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: '#1B4F8A' }}>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="white"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/></svg>
+              </div>
+              <span className="text-[12px] font-medium truncate" style={{ color: 'var(--text-primary)' }}>
+                {artifact.type === 'visit_booking' ? `Visit — ${artifact.data.projectName}` : artifact.data.projectName}
+              </span>
+            </div>
+            <span className="text-[11px] font-medium flex-shrink-0 ml-2" style={{ color: '#1B4F8A' }}>View</span>
+          </motion.button>
+        )}
+      </AnimatePresence>
+
+      {/* Compare toast notification */}
+      <AnimatePresence>
+        {compareToast && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 10 }}
+            className="absolute bottom-20 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 px-4 py-2.5 rounded-xl shadow-luxury"
+            style={{ background: 'var(--bg-surface)', border: '1px solid rgba(196,155,80,0.3)' }}
+          >
+            <div className="w-1.5 h-1.5 rounded-full bg-[#C49B50] animate-pulse" />
+            <p className="text-[12px] whitespace-nowrap" style={{ color: 'var(--text-primary)' }}>
+              <span className="font-medium">{compareToast}</span>
+              <span style={{ color: 'var(--text-secondary)' }}> queued — open another project to compare</span>
+            </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Artifact history button — top right of chat */}
       {artifactHistory && artifactHistory.length > 0 && messages.length > 0 && !showArtifact && (
         <div className="lg:hidden absolute top-3 right-3 z-40">

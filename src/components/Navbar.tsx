@@ -1,10 +1,12 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { usePathname } from "next/navigation"
 import Link from "next/link"
 import { motion, useScroll, useMotionValueEvent, AnimatePresence } from "framer-motion"
 
 export default function Navbar() {
+  const pathname = usePathname()
   const [isScrolled, setIsScrolled] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const { scrollY } = useScroll()
@@ -12,6 +14,11 @@ export default function Navbar() {
   useMotionValueEvent(scrollY, "change", (latest) => {
     setIsScrolled(latest > 20)
   })
+
+  // Hide navbar on pages that have their own navigation
+  if (pathname?.startsWith('/chat') || pathname?.startsWith('/dashboard') || pathname?.startsWith('/admin')) {
+    return null
+  }
 
   useEffect(() => {
     if (isMobileMenuOpen) {
