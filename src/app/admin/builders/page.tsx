@@ -116,7 +116,7 @@ export default async function BuildersPage() {
                     {[
                       { label: 'Projects', value: builder.projects?.length ?? 0 },
                       { label: 'Agreement', value: builder.agreementSigned ? '✓ Signed' : '⚠ Missing', color: builder.agreementSigned ? '#34D399' : '#F87171' },
-                      { label: 'Commission', value: `${builder.commissionRate}%` },
+                      { label: 'Commission', value: `${builder.commissionRatePct}%` },
                       { label: 'Earned', value: `₹${formatLakh(totalEarned)}` },
                     ].map(item => (
                       <div key={item.label} className="rounded-lg p-2.5 text-center" style={{ background: item.color ? 'rgba(248,113,113,0.06)' : 'rgba(255,255,255,0.04)', border: item.color && !builder.agreementSigned && item.label === 'Agreement' ? '1px solid rgba(248,113,113,0.2)' : 'none' }}>
