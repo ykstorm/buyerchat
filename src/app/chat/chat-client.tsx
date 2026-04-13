@@ -18,6 +18,11 @@ type ProjectType = {
   configurations?: string | null
   bankApprovals?: string | null
   priceNote?: string | null
+  pricePerSqftType?: string | null
+  loadingFactor?: number | null
+  allInPrice?: number | null
+  trustScore?: number | null
+  trustGrade?: string | null
 }
 
 type ArtifactType = 'project_card' | 'visit_booking'

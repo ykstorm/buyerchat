@@ -17,6 +17,8 @@ type ProjectType = {
   pricePerSqftType?: string | null
   loadingFactor?: number | null
   allInPrice?: number | null
+  trustScore?: number | null
+  trustGrade?: string | null
 }
 
 const formatL = (n: number | null | undefined) => n ? Math.round(n / 100000) : null
@@ -209,24 +211,26 @@ export default function ProjectCardV2({ project }: { project: ProjectType }) {
           </div>
         )}
 
-        {/* Trust score bar — if we had trust score data */}
-        <div className="mb-3">
-          <div className="flex items-center justify-between mb-1">
-            <span className="text-[9px] font-semibold uppercase tracking-wider" style={{ color: '#A8A29E' }}>Builder Trust</span>
-            <span className="text-[9px] font-medium" style={{ color: '#1B4F8A' }}>
-              {project.decisionTag === 'Strong Buy' ? '85+/100' : project.decisionTag === 'Buy w/ Cond' ? '70+/100' : '60+/100'}
-            </span>
+        {/* Trust score bar — real DB value */}
+        {project.trustScore && (
+          <div className="mb-3">
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-[9px] font-semibold uppercase tracking-wider" style={{ color: '#A8A29E' }}>Builder Trust</span>
+              <span className="text-[9px] font-medium" style={{ color: '#1B4F8A' }}>
+                {project.trustScore}/100 · Grade {project.trustGrade ?? (project.trustScore >= 80 ? 'A' : project.trustScore >= 65 ? 'B' : project.trustScore >= 50 ? 'C' : 'D')}
+              </span>
+            </div>
+            <div className="h-1.5 rounded-full overflow-hidden" style={{ background: '#F4F3F0' }}>
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: `${project.trustScore}%` }}
+                transition={{ duration: 0.8, ease: 'easeOut', delay: 0.3 }}
+                className="h-full rounded-full"
+                style={{ background: project.trustScore >= 80 ? '#0F6E56' : project.trustScore >= 65 ? '#1B4F8A' : '#F59E0B' }}
+              />
+            </div>
           </div>
-          <div className="h-1.5 rounded-full overflow-hidden" style={{ background: '#F4F3F0' }}>
-            <motion.div
-              initial={{ width: 0 }}
-              animate={{ width: project.decisionTag === 'Strong Buy' ? '85%' : project.decisionTag === 'Buy w/ Cond' ? '70%' : '60%' }}
-              transition={{ duration: 0.8, ease: 'easeOut', delay: 0.3 }}
-              className="h-full rounded-full"
-              style={{ background: project.decisionTag === 'Strong Buy' ? '#0F6E56' : project.decisionTag === 'Buy w/ Cond' ? '#1B4F8A' : '#F59E0B' }}
-            />
-          </div>
-        </div>
+        )}
 
         {/* Actions */}
         <div className="flex gap-2">

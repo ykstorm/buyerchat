@@ -13,7 +13,8 @@ export default async function ChatPage() {
       possessionDate: true, constructionStatus: true, microMarket: true,
       decisionTag: true, honestConcern: true, analystNote: true,
       possessionFlag: true, configurations: true, bankApprovals: true,
-      priceNote: true
+      priceNote: true, pricePerSqftType: true, loadingFactor: true, allInPrice: true,
+      builder: { select: { totalTrustScore: true, grade: true } }
     }
   })
   return (
