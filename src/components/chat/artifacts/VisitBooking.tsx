@@ -147,13 +147,13 @@ export function VisitBooking({ projectId, projectName }: VisitBookingProps) {
           <div className="flex flex-col gap-2 mb-4">
             <input type="text" placeholder="Your name" value={name}
               onChange={e => setName(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl border border-[#E7E5E4] text-sm text-[#1C1917] placeholder-[#A8A29E] focus:outline-none focus:border-[#1B4F8A]"
+              className="w-full px-3 py-2 rounded-xl border border-[#E7E5E4] text-[16px] text-[#1C1917] placeholder-[#A8A29E] focus:outline-none focus:border-[#1B4F8A]"
             />
             <div className="flex gap-2">
               <span className="flex items-center px-3 rounded-xl border border-[#E7E5E4] text-sm text-[#78716C] bg-white flex-shrink-0">+91</span>
               <input type="tel" placeholder="10-digit number" value={phone} maxLength={10}
                 onChange={e => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
-                className="flex-1 px-3 py-2 rounded-xl border border-[#E7E5E4] text-sm text-[#1C1917] placeholder-[#A8A29E] focus:outline-none focus:border-[#1B4F8A]"
+                className="flex-1 px-3 py-2 rounded-xl border border-[#E7E5E4] text-[16px] text-[#1C1917] placeholder-[#A8A29E] focus:outline-none focus:border-[#1B4F8A]"
               />
             </div>
           </div>

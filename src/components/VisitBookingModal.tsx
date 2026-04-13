@@ -419,7 +419,7 @@ className="relative z-10 w-full max-w-lg rounded-2xl border border-white/10 bg-[
                             value={bookingData[field as keyof BookingData] as string}
                             onChange={e => setBookingData(p => ({ ...p, [field]: e.target.value }))}
                             placeholder={placeholder}
-                            className="w-full px-4 py-3 rounded-xl bg-white/[0.03] border border-white/[0.08] text-[#e0e0ea] placeholder-[#454560] text-sm focus:outline-none focus:border-[#3de8a0] transition-colors"
+                            className="w-full px-4 py-3 rounded-xl bg-white/[0.03] border border-white/[0.08] text-[#e0e0ea] placeholder-[#454560] text-[16px] focus:outline-none focus:border-[#3de8a0] transition-colors"
                           />
                         </motion.div>
                       ))}
@@ -439,7 +439,7 @@ className="relative z-10 w-full max-w-lg rounded-2xl border border-white/10 bg-[
                             onChange={e => setBookingData(p => ({ ...p, phone: e.target.value.replace(/\D/g, "").slice(0, 10) }))}
                             placeholder="98765 43210"
                             maxLength={10}
-                            className="flex-1 px-4 py-3 rounded-xl bg-white/[0.03] border border-white/[0.08] text-[#e0e0ea] placeholder-[#454560] text-sm focus:outline-none focus:border-[#3de8a0] transition-colors font-mono tracking-widest"
+                            className="flex-1 px-4 py-3 rounded-xl bg-white/[0.03] border border-white/[0.08] text-[#e0e0ea] placeholder-[#454560] text-[16px] focus:outline-none focus:border-[#3de8a0] transition-colors font-mono tracking-widest"
                           />
                         </div>
                         {bookingData.phone.length > 0 && bookingData.phone.length < 10 && (
@@ -454,7 +454,7 @@ className="relative z-10 w-full max-w-lg rounded-2xl border border-white/10 bg-[
                           onChange={e => setBookingData(p => ({ ...p, notes: e.target.value }))}
                           placeholder="Any specific requirements or questions?"
                           rows={2}
-                          className="w-full px-4 py-3 rounded-xl bg-white/[0.03] border border-white/[0.08] text-[#e0e0ea] placeholder-[#454560] text-sm focus:outline-none focus:border-[#3de8a0] transition-colors resize-none"
+                          className="w-full px-4 py-3 rounded-xl bg-white/[0.03] border border-white/[0.08] text-[#e0e0ea] placeholder-[#454560] text-[16px] focus:outline-none focus:border-[#3de8a0] transition-colors resize-none"
                         />
                       </motion.div>
                     </div>

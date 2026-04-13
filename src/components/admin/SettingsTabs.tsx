@@ -51,7 +51,7 @@ export default function SettingsTabs({
                 <div key={field.label}>
                   <label className="text-[10px] font-semibold uppercase tracking-wider block mb-1" style={{ color: '#4B5563' }}>{field.label}</label>
                   <input type={field.type} defaultValue={field.value}
-                    className="w-full px-3 py-2 rounded-lg text-[12px] text-white outline-none transition-colors"
+                    className="w-full px-3 py-2 rounded-lg text-[16px] md:text-[13px] text-white outline-none transition-colors"
                     style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}
                     onFocus={e => e.target.style.borderColor = 'rgba(96,165,250,0.4)'}
                     onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.08)'}
@@ -143,11 +143,11 @@ export default function SettingsTabs({
               <div key={name} className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-[10px] font-semibold uppercase tracking-wider block mb-1" style={{ color: '#4B5563' }}>Builder</label>
-                  <input type="text" defaultValue={name} readOnly className="w-full px-3 py-2 rounded-lg text-[12px] text-white outline-none" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }} />
+                  <input type="text" defaultValue={name} readOnly className="w-full px-3 py-2 rounded-lg text-[16px] md:text-[13px] text-white outline-none" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }} />
                 </div>
                 <div>
                   <label className="text-[10px] font-semibold uppercase tracking-wider block mb-1" style={{ color: '#4B5563' }}>WhatsApp</label>
-                  <input type="tel" placeholder="+91 XXXXX XXXXX" className="w-full px-3 py-2 rounded-lg text-[12px] text-white outline-none transition-colors" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }} onFocus={e => e.target.style.borderColor = 'rgba(96,165,250,0.4)'} onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.08)'} />
+                  <input type="tel" placeholder="+91 XXXXX XXXXX" className="w-full px-3 py-2 rounded-lg text-[16px] md:text-[13px] text-white outline-none transition-colors" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }} onFocus={e => e.target.style.borderColor = 'rgba(96,165,250,0.4)'} onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.08)'} />
                 </div>
               </div>
             ))}
@@ -187,7 +187,7 @@ export default function SettingsTabs({
           <div className="rounded-2xl p-4" style={{ background: '#111827', border: '1px solid rgba(255,255,255,0.07)' }}>
             <p className="text-[11px] font-semibold uppercase tracking-wider mb-4" style={{ color: '#4B5563' }}>Alert Email</p>
             <label className="text-[10px] font-semibold uppercase tracking-wider block mb-1" style={{ color: '#4B5563' }}>Email address</label>
-            <input type="email" defaultValue={email} className="w-full px-3 py-2 rounded-lg text-[12px] text-white outline-none mb-3" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }} onFocus={e => e.target.style.borderColor = 'rgba(96,165,250,0.4)'} onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.08)'} />
+            <input type="email" defaultValue={email} className="w-full px-3 py-2 rounded-lg text-[16px] md:text-[13px] text-white outline-none mb-3" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }} onFocus={e => e.target.style.borderColor = 'rgba(96,165,250,0.4)'} onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.08)'} />
             <button type="button" onClick={save} className="text-[11px] font-medium px-4 py-2 rounded-lg" style={{ background: 'rgba(96,165,250,0.1)', color: '#60A5FA', border: '1px solid rgba(96,165,250,0.2)' }}>
               {saved ? '✓ Saved' : 'Save email'}
             </button>

@@ -74,7 +74,7 @@ export default function PriceLogButton({ projectId, projectName }: Props) {
             <select
               value={changeType}
               onChange={e => setChangeType(e.target.value)}
-              className="w-full border border-black/10 rounded-lg px-2 py-1.5 text-[11px] focus:outline-none focus:border-[#185FA5] bg-white"
+              className="w-full border border-black/10 rounded-lg px-2 py-1.5 text-[16px] md:text-[13px] focus:outline-none focus:border-[#185FA5] bg-white"
             >
               {CHANGE_TYPES.map(t => (
                 <option key={t.value} value={t.value}>{t.label}</option>
@@ -90,7 +90,7 @@ export default function PriceLogButton({ projectId, projectName }: Props) {
               onChange={e => setNewPrice(e.target.value)}
               placeholder="e.g. 8500"
               min={1}
-              className="w-full border border-black/10 rounded-lg px-2 py-1.5 text-[11px] focus:outline-none focus:border-[#185FA5]"
+              className="w-full border border-black/10 rounded-lg px-2 py-1.5 text-[16px] md:text-[13px] focus:outline-none focus:border-[#185FA5]"
             />
           </div>
 

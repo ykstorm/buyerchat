@@ -64,17 +64,17 @@ export default function AddMarketAlertButton() {
               <div>
                 <label className="block text-[11px] text-[#52525B] mb-1">Title *</label>
                 <input value={title} onChange={e => setTitle(e.target.value)}
-                  className="w-full border border-black/10 rounded-lg px-3 py-2 text-[12px] focus:outline-none focus:border-[#185FA5]" />
+                  className="w-full border border-black/10 rounded-lg px-3 py-2 text-[16px] md:text-[13px] focus:outline-none focus:border-[#185FA5]" />
               </div>
               <div>
                 <label className="block text-[11px] text-[#52525B] mb-1">Details *</label>
                 <textarea value={description} onChange={e => setDescription(e.target.value)} rows={3}
-                  className="w-full border border-black/10 rounded-lg px-3 py-2 text-[12px] focus:outline-none focus:border-[#185FA5] resize-none" />
+                  className="w-full border border-black/10 rounded-lg px-3 py-2 text-[16px] md:text-[13px] focus:outline-none focus:border-[#185FA5] resize-none" />
               </div>
               <div>
                 <label className="block text-[11px] text-[#52525B] mb-1">Project (optional)</label>
                 <input value={projectName} onChange={e => setProjectName(e.target.value)}
-                  className="w-full border border-black/10 rounded-lg px-3 py-2 text-[12px] focus:outline-none focus:border-[#185FA5]" />
+                  className="w-full border border-black/10 rounded-lg px-3 py-2 text-[16px] md:text-[13px] focus:outline-none focus:border-[#185FA5]" />
               </div>
             </div>
             <div className="flex gap-2 mt-4">
