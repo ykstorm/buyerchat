@@ -10,7 +10,7 @@ const DemandSchema = z.object({
 
 export async function POST(req: NextRequest) {
   const session = await auth()
-  if (session?.user?.email !== process.env.ADMIN_EMAIL) {
+  if (session?.user?.email?.toLowerCase() !== process.env.ADMIN_EMAIL?.toLowerCase()) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 

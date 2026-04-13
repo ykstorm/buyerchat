@@ -13,7 +13,7 @@ const AlertSchema = z.object({
 export async function POST(req: NextRequest) {
   try {
     const session = await auth()
-    if (session?.user?.email !== process.env.ADMIN_EMAIL) {
+    if (session?.user?.email?.toLowerCase() !== process.env.ADMIN_EMAIL?.toLowerCase()) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
     const body = await req.json()

@@ -13,7 +13,7 @@ function getStatus(visit: { visitCompleted: boolean; visitScheduledDate: Date })
 
 export default async function VisitsPage() {
   const session = await auth()
-  if (session?.user?.email !== process.env.ADMIN_EMAIL) redirect('/')
+  if (session?.user?.email?.toLowerCase() !== process.env.ADMIN_EMAIL?.toLowerCase()) redirect('/')
 
   const visits = await prisma.siteVisit.findMany({
     orderBy: { visitScheduledDate: 'asc' },

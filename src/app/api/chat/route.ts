@@ -14,6 +14,9 @@ import { Resend } from 'resend'
 import { randomUUID } from 'crypto'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
+if (!process.env.ADMIN_EMAIL) {
+  console.error('CRITICAL: ADMIN_EMAIL env var not set — admin routes are open to all users')
+}
 
 const INJECTION_KEYWORDS = [
   'ignore', 'pretend', 'jailbreak', 'dan', 'new rule',
@@ -226,7 +229,12 @@ if (hasInjection) {
             lastMessageAt: new Date(),
             buyerStage: detectStage(sanitizedMsg, text),
             ...(qualDone && { qualificationDone: true }),
-            ...(budgetMatch && { buyerBudget: parseInt(budgetMatch[1]) * (budgetMatch[2].toLowerCase().startsWith('cr') ? 10000000 : 100000) }),
+            ...(budgetMatch && (() => {
+              const raw = parseInt(budgetMatch[1])
+              const multiplier = budgetMatch[2].toLowerCase().startsWith('cr') ? 10000000 : 100000
+              const budget = raw * multiplier
+              return budget <= 5000000000 ? { buyerBudget: budget } : {}
+            })()),
             ...(configMatch && { buyerConfig: configMatch[1] + 'BHK' }),
             ...(investorMatch && { buyerPersona: 'investor' }),
             ...(familyMatch && !investorMatch && { buyerPersona: 'family' }),

@@ -51,7 +51,11 @@ model Project {
   siteVisits          SiteVisit[]
   deals               Deal[]
   savedBy             SavedProject[]
-  
+
+  @@index([microMarket])
+  @@index([isActive])
+  @@index([decisionTag])
+  @@index([constructionStatus])
 }
 
 model Builder {
@@ -73,7 +77,6 @@ model Builder {
   updatedAt           DateTime  @updatedAt
   projects            Project[]
   agreementSigned   Boolean @default(false)
-commissionRate    Float   @default(1.5)
 }
 
 model User {
@@ -121,7 +124,7 @@ model PriceHistory {
   projectId    String
   pricePerSqft Float
   recordedAt   DateTime @default(now())
-  project      Project  @relation(fields: [projectId], references: [id])
+  project      Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
 }
 
 model Locality {
@@ -169,12 +172,16 @@ model SiteVisit {
   visitCompleted     Boolean  @default(false)
   createdAt          DateTime @default(now())
   user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  project            Project  @relation(fields: [projectId], references: [id])
+  project            Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
   builderAcknowledged Boolean  @default(false)
   leadRegisteredAt    DateTime?
   buyerName           String?
   buyerPhone          String?
   buyerEmail          String?
+
+  @@index([userId])
+  @@index([projectId])
+  @@index([visitCompleted])
 }
 
 
@@ -201,6 +208,10 @@ projectsDisclosed String[]
 lastMessageAt     DateTime @updatedAt
 customName        String?
 messages          ChatMessageLog[]
+
+  @@index([userId])
+  @@index([buyerStage])
+  @@index([lastMessageAt])
 }
 
 model SavedProject {
@@ -239,6 +250,8 @@ model Deal {
   paymentStatus    String    @default("pending")
   paymentDate      DateTime?
   createdAt        DateTime  @default(now())
+
+  @@index([createdAt])
 }
 model MarketAlert {
   id          String   @id @default(cuid())

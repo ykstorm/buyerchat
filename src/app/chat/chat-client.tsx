@@ -38,6 +38,7 @@ export default function ChatClient({
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [lastFailedMsg, setLastFailedMsg] = useState<string | null>(null)
   const [loadingSession, setLoadingSession] = useState(false)
   const [artifact, setCurrentArtifact] = useState<Artifact | null>(null)
   const [sessionId, setSessionId] = useState<string | null>(null)
@@ -109,6 +110,7 @@ export default function ChatClient({
 
     setMessages(prev => [...prev, userMsg])
     setIsLoading(true)
+    setLastFailedMsg(null)
 
     try {
       const history = messages.map(m => ({ role: m.role, content: m.content }))
@@ -122,9 +124,8 @@ export default function ChatClient({
       })
 
       if (!res.ok || !res.body) {
-        setMessages(prev => prev.map(m =>
-          m.id === assistantId ? { ...m, content: 'Something went wrong. Please try again.' } : m
-        ))
+        setMessages(prev => [...prev, { id: assistantId, role: 'assistant', content: 'Something went wrong. Please try again.' }])
+        setLastFailedMsg(userContent)
         return
       }
 
@@ -177,9 +178,14 @@ export default function ChatClient({
         }
       }
     } catch {
-      setMessages(prev => prev.map(m =>
-        m.id === assistantId ? { ...m, content: 'Network error. Please try again.' } : m
-      ))
+      setMessages(prev => {
+        const hasAssistant = prev.some(m => m.id === assistantId)
+        if (hasAssistant) {
+          return prev.map(m => m.id === assistantId ? { ...m, content: 'Network error. Please try again.' } : m)
+        }
+        return [...prev, { id: assistantId, role: 'assistant' as const, content: 'Network error. Please try again.' }]
+      })
+      setLastFailedMsg(userContent)
     } finally {
       setIsLoading(false)
     }
@@ -201,6 +207,21 @@ export default function ChatClient({
     void role
     sendMessage(content)
   }, [sendMessage])
+
+  const retryLast = useCallback(() => {
+    if (!lastFailedMsg) return
+    // Remove the last error message from the conversation
+    setMessages(prev => {
+      const last = prev[prev.length - 1]
+      if (last?.role === 'assistant' && (last.content.includes('try again') || last.content.includes('Network error'))) {
+        return prev.slice(0, -1)
+      }
+      return prev
+    })
+    const msg = lastFailedMsg
+    setLastFailedMsg(null)
+    sendMessage(msg)
+  }, [lastFailedMsg, sendMessage])
 
   const goArtifactBack = () => {
     const idx = artifactIndexRef.current
@@ -329,6 +350,7 @@ export default function ChatClient({
         artifact={artifact}
         showArtifact={showArtifact}
         onToggleArtifact={() => setShowArtifact(v => !v)}
+        onRetry={lastFailedMsg ? retryLast : undefined}
         canGoBack={artifactIndex > 0}
         canGoForward={artifactIndex < artifactHistory.length - 1}
         onArtifactBack={goArtifactBack}

@@ -34,7 +34,7 @@ export async function DELETE(
     }
     const { id } = await params
     await prisma.chatSession.delete({
-      where: { id }
+      where: { id, userId: session.user.id }
     })
     return NextResponse.json({ success: true })
   } catch (err) {

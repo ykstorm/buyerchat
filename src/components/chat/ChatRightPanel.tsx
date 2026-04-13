@@ -2,7 +2,7 @@
 
 import React from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import ProjectCard from './artifacts/ProjectCard'
+import ProjectCard from './artifacts/ProjectCardV2'
 import { VisitBooking } from './artifacts/VisitBooking'
 
 type ProjectType = {

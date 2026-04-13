@@ -90,3 +90,15 @@ All dark revamped: Overview, Buyers, Projects, Builders, Follow-up, Revenue, Int
 - MSG91 DLT (3-7 days, needs GST + company docs)
 - WhatsApp Business API (needs Meta + DLT)
 - RERA scraper (Puppeteer not set up)
+
+## UI Guidelines
+Full design system at: HOMESTY_UI_GUIDELINES.md (copy from outputs)
+Key rules:
+- Playfair Display for project names
+- Monospace for prices only
+- #1B4F8A blue for CTAs
+- #FAFAF8 warm paper background (buyer chat)
+- #0A0F1E dark navy (admin)
+- Animations: spring stiffness 400 damping 35 for messages, 400/40 for sheets
+- Font-size 16px on all inputs (iOS zoom fix)
+- Max 100 words per AI response

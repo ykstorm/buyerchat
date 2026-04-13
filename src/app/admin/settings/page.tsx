@@ -5,7 +5,7 @@ import Link from 'next/link'
 
 export default async function SettingsPage() {
   const session = await auth()
-  if (!session?.user || session.user.email !== process.env.ADMIN_EMAIL) redirect('/')
+  if (!session?.user || session.user.email?.toLowerCase() !== process.env.ADMIN_EMAIL?.toLowerCase()) redirect('/')
 
   const userName = session.user.name ?? 'Admin'
   const initial = userName.charAt(0).toUpperCase()

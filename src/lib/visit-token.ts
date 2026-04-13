@@ -1,5 +1,6 @@
-import { randomUUID } from 'crypto'
+import { randomBytes } from 'crypto'
 
 export function generateVisitToken(): string {
-  return randomUUID()
+  const hex = randomBytes(3).toString('hex').toUpperCase()
+  return `AG-${hex}`
 }

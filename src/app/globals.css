@@ -1,6 +1,21 @@
 @import "tailwindcss";
 
 :root {
+  --mode: light;
+}
+
+[data-theme="dark"] {
+  --bg-chat: #1C1917;
+  --bg-message-ai: #2C2825;
+  --bg-message-user: #1B4F8A;
+  --text-primary: #FAF9F7;
+  --text-secondary: #A8A29E;
+  --border-color: #3C3834;
+  --bg-input: #2C2825;
+  --bg-surface: #2C2825;
+}
+
+:root {
   --background: #09090b;
   --foreground: #e0e0ea;
 }
@@ -105,4 +120,17 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+}
+
+/* Admin input focus glow */
+.admin-input:focus {
+  border-color: rgba(96, 165, 250, 0.4) !important;
+  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.08);
+  outline: none;
+}
+
+/* Smooth scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.1) transparent;
 }

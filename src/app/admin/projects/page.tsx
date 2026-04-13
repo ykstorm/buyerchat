@@ -3,15 +3,26 @@ import { formatLakh, getTrustScoreColor } from '@/lib/admin-utils'
 import Link from 'next/link'
 import MatchedBuyersButton from '@/components/admin/MatchedBuyersButton'
 
-export default async function ProjectsPage() {
+export default async function ProjectsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ limit?: string }>
+}) {
+  const { limit: limitParam } = await searchParams
+  const projectLimit = Math.min(Number(limitParam) || 50, 500)
+
   let projects: any[] = []
+  let hasMoreProjects = false
   try {
     projects = await prisma.project.findMany({
       include: {
         builder: { select: { brandName: true, grade: true, totalTrustScore: true } }
       },
       orderBy: { createdAt: 'desc' },
+      take: projectLimit + 1,
     })
+    hasMoreProjects = projects.length > projectLimit
+    if (hasMoreProjects) projects = projects.slice(0, projectLimit)
   } catch (err) {
     console.error('Projects fetch error:', err)
   }
@@ -104,6 +115,17 @@ export default async function ProjectsPage() {
             </tbody>
           </table>
         </div>
+        {hasMoreProjects && (
+          <div className="px-4 py-3 flex justify-center" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+            <Link
+              href={`/admin/projects?limit=${projectLimit + 50}`}
+              className="text-[11px] font-medium px-4 py-1.5 rounded-lg transition-colors"
+              style={{ color: '#60A5FA', background: 'rgba(96,165,250,0.1)', border: '1px solid rgba(96,165,250,0.2)' }}
+            >
+              Load more ({projectLimit} shown)
+            </Link>
+          </div>
+        )}
       </div>
     </div>
   )

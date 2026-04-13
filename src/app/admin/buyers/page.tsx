@@ -81,20 +81,23 @@ function StageBadge({ stage }: { stage: string }) {
 export default async function BuyersPage({
   searchParams,
 }: {
-  searchParams: Promise<{ tab?: string; session?: string }>
+  searchParams: Promise<{ tab?: string; session?: string; limit?: string }>
 }) {
-  const { tab, session: selectedSessionId } = await searchParams
+  const { tab, session: selectedSessionId, limit: limitParam } = await searchParams
   const activeTab = tab === 'chat-logs' ? 'chat-logs' : 'buyers'
+  const buyerLimit = Math.min(Number(limitParam) || 50, 500)
 
   // --- Buyers tab data ---
   let sessions: any[] = []
   try {
     sessions = await prisma.chatSession.findMany({
       orderBy: { lastMessageAt: 'desc' },
-      take: 100,
+      take: buyerLimit + 1,
       include: { _count: { select: { messages: true } } },
     })
   } catch (err) { console.error('Buyers fetch error:', err) }
+  const hasMoreBuyers = sessions.length > buyerLimit
+  if (hasMoreBuyers) sessions = sessions.slice(0, buyerLimit)
 
   // --- Chat Logs tab data ---
   let chatSessions: any[] = []
@@ -255,6 +258,17 @@ export default async function BuyersPage({
                 </tbody>
               </table>
             </div>
+            {hasMoreBuyers && (
+              <div className="px-4 py-3 flex justify-center" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+                <Link
+                  href={`/admin/buyers?limit=${buyerLimit + 50}`}
+                  className="text-[11px] font-medium px-4 py-1.5 rounded-lg transition-colors"
+                  style={{ color: '#60A5FA', background: 'rgba(96,165,250,0.1)', border: '1px solid rgba(96,165,250,0.2)' }}
+                >
+                  Load more ({buyerLimit} shown)
+                </Link>
+              </div>
+            )}
           </div>
         </>
       )}
