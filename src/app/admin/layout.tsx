@@ -70,4 +70,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       <main className="lg:ml-14 mt-12 p-5 min-h-screen" style={{ background: '#0A0F1E' }}>
         {children}
         <ToastContainer />
- 
+      </main>
+    </div>
+  )
+}

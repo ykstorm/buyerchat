@@ -72,7 +72,7 @@ export default function ProjectCardV2({ project }: { project: ProjectType }) {
       initial={{ opacity: 0, y: 20, scale: 0.97 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{ type: 'spring', stiffness: 300, damping: 28 }}
-      style={{ rotateX, rotateY, transformStyle: 'preserve-3d' }}
+      style={{ rotateX, rotateY, transformStyle: 'preserve-3d', background: '#FAFAF9', border: '1px solid #E7E5E4', boxShadow: hovered ? '0 20px 60px rgba(27,79,138,0.12)' : '0 4px 20px rgba(0,0,0,0.06)' }}
       onMouseMove={e => {
         const now = Date.now()
         if (now - lastMoveTs.current < 30) return
@@ -84,7 +84,6 @@ export default function ProjectCardV2({ project }: { project: ProjectType }) {
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => { setHovered(false); x.set(0); y.set(0) }}
       className="relative overflow-hidden rounded-2xl"
-      style={{ background: '#FAFAF9', border: '1px solid #E7E5E4', boxShadow: hovered ? '0 20px 60px rgba(27,79,138,0.12)' : '0 4px 20px rgba(0,0,0,0.06)' }}
     >
       {/* Gradient accent top */}
       <div className="h-0.5 bg-gradient-to-r from-[#1B4F8A] via-[#3B82F6] to-[#1B4F8A]" />

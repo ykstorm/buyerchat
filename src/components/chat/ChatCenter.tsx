@@ -47,6 +47,7 @@ type Props = {
   artifactTotal?: number
   artifactHistory?: Artifact[]
   onSelectArtifact?: (index: number) => void
+  onRetry?: () => void
 }
 
 const STARTERS = [
