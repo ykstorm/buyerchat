@@ -44,7 +44,7 @@ export default function AddMarketAlertButton() {
       </button>
       {open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="bg-white rounded-xl border border-black/[0.08] p-5 w-[380px] shadow-xl">
+          <div className="bg-white rounded-xl border border-black/[0.08] p-5 w-[380px] max-w-[calc(100vw-2rem)] shadow-xl">
             <div className="flex items-center justify-between mb-4">
               <p className="text-[13px] font-semibold text-[#1A1A2E]">Log market move</p>
               <button type="button" onClick={() => setOpen(false)} className="text-[#52525B]">✕</button>

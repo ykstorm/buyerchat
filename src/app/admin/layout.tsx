@@ -2,6 +2,7 @@
 import { redirect } from 'next/navigation'
 import { auth } from '@/lib/auth'
 import AdminNavClient from '@/components/admin/AdminNavClient'
+import ToastContainer from '@/components/admin/Toast'
 
 const PROJECT_START = new Date('2026-03-07')
 const DAY_TOTAL = 42
@@ -15,7 +16,7 @@ function getDayNumber() {
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const session = await auth()
-  if (!session?.user || session.user.email !== process.env.ADMIN_EMAIL) {
+  if (!session?.user || session.user.email?.toLowerCase() !== process.env.ADMIN_EMAIL?.toLowerCase()) {
     redirect('/')
   }
 
@@ -68,7 +69,5 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       {/* Content: sidebar offset on desktop */}
       <main className="lg:ml-14 mt-12 p-5 min-h-screen" style={{ background: '#0A0F1E' }}>
         {children}
-      </main>
-    </div>
-  )
-}
+        <ToastContainer />
+ 

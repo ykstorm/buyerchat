@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
+import { showToast } from '@/components/admin/Toast'
 
 function ScoreField({ label, max, value, onChange }: { label: string; max: number; value: number; onChange: (v: number) => void }) {
   return (
@@ -62,14 +63,14 @@ export default function EditBuilderPage() {
         body: JSON.stringify({ ...form, totalTrustScore: trust, grade })
       })
       if (res.ok) {
-        alert('Saved successfully!')
+        showToast('Builder saved', 'success')
         router.push('/admin/builders')
       } else {
         const err = await res.json().catch(() => ({}))
-        alert('Save failed: ' + (err.error || res.status))
+        showToast('Save failed: ' + (err.error || res.status), 'error')
       }
-    } catch (e) {
-      alert('Network error — check connection')
+    } catch {
+      showToast('Network error — check connection', 'error')
     }
     setSaving(false)
   }

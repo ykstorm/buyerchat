@@ -155,12 +155,12 @@ export default async function BuyersPage({
         <>
           {/* Kanban */}
           <div className="overflow-x-auto pb-4 mb-4">
-            <div className="flex gap-3" style={{ minWidth: `${STAGES.length * 190}px` }}>
+            <div className="grid grid-cols-2 lg:flex lg:flex-row gap-3">
               {STAGES.map(stage => {
                 const stageSessions = byStage[stage.key] ?? []
                 const hotStage = ['comparison','visit_trigger','pre_visit','post_visit'].includes(stage.key)
                 return (
-                  <div key={stage.key} className="w-[180px] flex-shrink-0">
+                  <div key={stage.key} className="w-full lg:w-[180px] lg:flex-shrink-0">
                     <div className="flex items-center justify-between mb-2">
                       <p className="text-[11px] font-semibold" style={{ color: hotStage ? '#FBBF24' : '#9CA3AF' }}>{stage.label}</p>
                       <span className="text-[10px] px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(255,255,255,0.08)', color: '#9CA3AF' }}>{stageSessions.length}</span>
