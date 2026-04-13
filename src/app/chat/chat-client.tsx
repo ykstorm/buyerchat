@@ -64,42 +64,24 @@ export default function ChatClient({
       const project = projects.find(p => p.id === projectId)
       if (project) {
         const newArtifact: Artifact = { type: 'visit_booking', data: project }
-        // Replace the current artifact in-place instead of stacking a new one
-        const currentIdx = artifactIndexRef.current
-        const history = [...artifactHistoryRef.current]
-        if (currentIdx >= 0 && history[currentIdx]?.data.id === projectId) {
-          // Same project — just swap the type in place
-          history[currentIdx] = newArtifact
-          artifactHistoryRef.current = history
-          setArtifactHistory(history)
-          setCurrentArtifact(newArtifact)
+        // Check if there's already a visit booking for this project in history
+        const existingIdx = artifactHistoryRef.current.findIndex(a => a.type === 'visit_booking' && a.data.id === projectId)
+        if (existingIdx >= 0) {
+          // Navigate to existing visit booking
+          artifactIndexRef.current = existingIdx
+          setArtifactIndex(existingIdx)
+          setCurrentArtifact(artifactHistoryRef.current[existingIdx])
           setShowArtifact(true)
         } else {
-          // Different project or no current — check for existing visit booking
-          const existingIdx = history.findIndex(a => a.type === 'visit_booking' && a.data.id === projectId)
-          if (existingIdx >= 0) {
-            artifactIndexRef.current = existingIdx
-            setArtifactIndex(existingIdx)
-            setCurrentArtifact(history[existingIdx])
-            setShowArtifact(true)
-          } else {
-            // Replace current item with visit booking
-            if (currentIdx >= 0) {
-              history[currentIdx] = newArtifact
-              artifactHistoryRef.current = history
-              setArtifactHistory(history)
-              setCurrentArtifact(newArtifact)
-              setShowArtifact(true)
-            } else {
-              const newHistory = [newArtifact]
-              artifactHistoryRef.current = newHistory
-              artifactIndexRef.current = 0
-              setArtifactHistory(newHistory)
-              setArtifactIndex(0)
-              setCurrentArtifact(newArtifact)
-              setShowArtifact(true)
-            }
-          }
+          // Push as NEW artifact after current position (don't replace anything)
+          const currentIdx = artifactIndexRef.current
+          const newHistory = [...artifactHistoryRef.current.slice(0, currentIdx + 1), newArtifact]
+          artifactHistoryRef.current = newHistory
+          artifactIndexRef.current = newHistory.length - 1
+          setArtifactHistory(newHistory)
+          setArtifactIndex(newHistory.length - 1)
+          setCurrentArtifact(newArtifact)
+          setShowArtifact(true)
         }
       }
     }
@@ -412,12 +394,13 @@ export default function ChatClient({
   }, [urlSessionId])
 
   return (
-    <div className="flex h-dvh bg-[#FAFAF8] overflow-hidden">
+    <div className="flex h-dvh overflow-hidden" style={{ background: 'var(--bg-base)' }}>
       {/* Mobile hamburger */}
       <button
         type="button"
         onClick={() => setSidebarOpen(true)}
-        className="lg:hidden absolute top-3 left-3 z-40 w-9 h-9 bg-white border border-[#E7E5E4] rounded-lg flex items-center justify-center text-[#52525B] shadow-sm"
+        className="lg:hidden absolute top-3 left-3 z-40 w-9 h-9 rounded-lg flex items-center justify-center shadow-sm"
+        style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-secondary)' }}
       >
         ☰
       </button>
@@ -473,7 +456,7 @@ export default function ChatClient({
         onSelectArtifact={(index) => {
           artifactIndexRef.current = index
           setArtifactIndex(index)
-          setCurrentArtifact({ type: 'project_card', data: artifactHistoryRef.current[index].data })
+          setCurrentArtifact(artifactHistoryRef.current[index])
           setShowArtifact(true)
         }}
       />

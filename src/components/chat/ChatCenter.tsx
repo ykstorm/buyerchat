@@ -40,7 +40,7 @@ function FloatingParticles() {
         vx: (Math.random() - 0.5) * 0.3,
         vy: (Math.random() - 0.5) * 0.2 - 0.1,
         r: Math.random() * 1.5 + 0.5,
-        o: Math.random() * 0.3 + 0.08,
+        o: Math.random() * 0.4 + 0.15,
         phase: Math.random() * Math.PI * 2,
       })
     }
@@ -80,7 +80,7 @@ function FloatingParticles() {
             ctx.beginPath()
             ctx.moveTo(particles[i].x, particles[i].y)
             ctx.lineTo(particles[j].x, particles[j].y)
-            ctx.strokeStyle = `rgba(196, 155, 80, ${0.04 * (1 - d / 120)})`
+            ctx.strokeStyle = `rgba(196, 155, 80, ${0.08 * (1 - d / 120)})`
             ctx.lineWidth = 0.5
             ctx.stroke()
           }
@@ -243,7 +243,7 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
           <div
             className="absolute inset-0 pointer-events-none"
             style={{
-              opacity: 0.03,
+              opacity: 0.06,
               backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
               backgroundSize: '220px 220px',
               backgroundRepeat: 'repeat'
@@ -372,10 +372,10 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
                     <div className="prose prose-sm max-w-none" style={{ color: 'var(--text-primary)' }}>
                       <ReactMarkdown
                         components={{
-                          strong: ({ children }) => <span className="font-semibold text-[#1C1917]">{children}</span>,
+                          strong: ({ children }) => <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>{children}</span>,
                           p: ({ children }) => <span className="block mb-2 last:mb-0">{children}</span>,
                           ul: ({ children }) => <ul className="list-none space-y-1 my-1">{children}</ul>,
-                          li: ({ children }) => { const s: React.CSSProperties = {}; return <li style={s} className="flex gap-2 pl-1 text-[#52525B]"><span style={{ color: '#A8A29E', marginRight: 4 }}>·</span>{children}</li> },
+                          li: ({ children }) => <li className="flex gap-2 pl-1" style={{ color: 'var(--text-secondary)' }}><span style={{ color: 'var(--text-muted)', marginRight: 4 }}>·</span>{children}</li>,
                         }}
                       >
                         {msg.content}
@@ -384,10 +384,10 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
                   ) : (
                     <ReactMarkdown
                       components={{
-                        strong: ({ children }) => <span className="font-semibold text-[#1C1917]">{children}</span>,
+                        strong: ({ children }) => <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>{children}</span>,
                         p: ({ children }) => <span className="block mb-2 last:mb-0">{children}</span>,
                         ul: ({ children }) => <ul className="list-none space-y-1 my-1">{children}</ul>,
-                        li: ({ children }) => { const s: React.CSSProperties = {}; return <li style={s} className="flex gap-2 pl-1 text-[#52525B]"><span style={{ color: '#A8A29E', marginRight: 4 }}>·</span>{children}</li> },
+                        li: ({ children }) => <li className="flex gap-2 pl-1" style={{ color: 'var(--text-secondary)' }}><span style={{ color: 'var(--text-muted)', marginRight: 4 }}>·</span>{children}</li>,
                       }}
                     >
                       {msg.content}
@@ -628,7 +628,7 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
             onChange={handleInputChange}
             placeholder="Ask about properties in South Bopal & Shela..."
             maxLength={800}
-            className="flex-1 rounded-2xl px-4 py-2.5 text-[16px] focus:outline-none focus:ring-2 focus:ring-[#1B4F8A]/15 focus:border-[#1B4F8A]/50 transition-all duration-200 shadow-luxury-sm"
+            className="flex-1 min-w-0 rounded-2xl px-4 py-3 text-[14px] focus:outline-none focus:ring-2 focus:ring-[#1B4F8A]/15 focus:border-[#1B4F8A]/50 transition-all duration-200 shadow-luxury-sm"
             style={{ background: 'var(--bg-input)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
           />
           <motion.button

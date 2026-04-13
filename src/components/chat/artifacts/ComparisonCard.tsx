@@ -112,12 +112,12 @@ export default function ComparisonCard({ projectA, projectB }: { projectA: Proje
       {/* Comparison rows */}
       <div className="px-4 py-2">
         {rows.map((row, i) => (
-          <div key={row.label} className="grid grid-cols-[80px_1fr_1fr] gap-2 py-2.5 items-center" style={{ borderBottom: i < rows.length - 1 ? '1px solid var(--border-subtle)' : 'none' }}>
-            <p className="text-[9px] font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>{row.label}</p>
-            <p className="text-[11px] font-medium" style={{ color: row.winA ? 'var(--text-accent-green)' : 'var(--text-primary)' }}>
+          <div key={row.label} className="grid grid-cols-[80px_1fr_1fr] gap-2 py-3 items-center" style={{ borderBottom: i < rows.length - 1 ? '1px solid var(--border-subtle)' : 'none' }}>
+            <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>{row.label}</p>
+            <p className="text-[12px] font-medium" style={{ color: row.winA ? 'var(--text-accent-green)' : 'var(--text-primary)' }}>
               {row.a}<Winner isWinner={row.winA} />
             </p>
-            <p className="text-[11px] font-medium" style={{ color: row.winB ? 'var(--text-accent-green)' : 'var(--text-primary)' }}>
+            <p className="text-[12px] font-medium" style={{ color: row.winB ? 'var(--text-accent-green)' : 'var(--text-primary)' }}>
               {row.b}<Winner isWinner={row.winB} />
             </p>
           </div>
@@ -145,7 +145,7 @@ export default function ComparisonCard({ projectA, projectB }: { projectA: Proje
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.97 }}
             onClick={() => window.dispatchEvent(new CustomEvent('book-visit', { detail: { projectId: p.id } }))}
-            className="py-2.5 rounded-xl text-[11px] font-semibold text-white"
+            className="py-3 rounded-xl text-[12px] font-semibold text-white"
             style={{ background: i === 0 ? '#1B4F8A' : '#0F6E56' }}
           >
             Visit {p.projectName.split(' ')[0]} →

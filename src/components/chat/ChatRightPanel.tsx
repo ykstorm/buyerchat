@@ -62,34 +62,41 @@ export default function ChatRightPanel({
               {(canGoBack || canGoForward) && (
                 <div className="flex items-center gap-2 mb-3">
                   <button type="button" onClick={onArtifactBack} disabled={!canGoBack}
-                    className="text-[11px] text-[#78716C] disabled:text-[#D6D3D1] hover:text-[#1C1917] disabled:cursor-not-allowed flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-[#F4F3F0] transition-colors">
+                    className="text-[11px] disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-1 px-2 py-1 rounded-lg transition-colors"
+                    style={{ color: 'var(--text-secondary)' }}>
                     ← Back
                   </button>
                   <button type="button" onClick={onArtifactForward} disabled={!canGoForward}
-                    className="text-[11px] text-[#78716C] disabled:text-[#D6D3D1] hover:text-[#1C1917] disabled:cursor-not-allowed flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-[#F4F3F0] transition-colors">
+                    className="text-[11px] disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-1 px-2 py-1 rounded-lg transition-colors"
+                    style={{ color: 'var(--text-secondary)' }}>
                     Forward →
                   </button>
                   {artifactTotal && artifactTotal > 1 && (
-                    <span className="text-[10px] text-[#A8A29E]">{artifactCurrent} of {artifactTotal}</span>
+                    <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{artifactCurrent} of {artifactTotal}</span>
                   )}
                   {artifactHistory && artifactHistory.length > 1 && (
                     <div className="relative ml-auto">
                       <button type="button"
                         onClick={e => { e.stopPropagation(); setShowHistoryMenu(v => !v) }}
-                        className="w-7 h-7 rounded-lg border border-[#E7E5E4] flex items-center justify-center hover:bg-[#F4F3F0] transition-colors"
+                        className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors"
+                        style={{ border: '1px solid var(--border)' }}
                       >
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#78716C" strokeWidth="2">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" strokeWidth="2">
                           <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
                         </svg>
                       </button>
                       {showHistoryMenu && (
-                        <div className="absolute right-0 top-9 bg-white border border-[#E7E5E4] rounded-xl shadow-lg py-1.5 min-w-[180px] z-50">
+                        <div className="absolute right-0 top-9 rounded-xl shadow-lg py-1.5 min-w-[180px] z-50" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
                           {artifactHistory.map((a, i) => (
                             <button key={i} type="button"
                               onClick={() => { onSelectArtifact?.(i); setShowHistoryMenu(false) }}
-                              className="w-full px-3 py-2 text-left hover:bg-[#F4F3F0] transition-colors">
-                              <p className="text-[11px] font-medium text-[#1C1917] truncate">{a.data.projectName}</p>
-                              <p className="text-[10px] text-[#A8A29E]">Project card</p>
+                              className="w-full px-3 py-2 text-left transition-colors"
+                              onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-subtle)')}
+                              onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
+                              <p className="text-[11px] font-medium truncate" style={{ color: 'var(--text-primary)' }}>{a.data.projectName}</p>
+                              <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
+                                {a.type === 'visit_booking' ? 'Visit booking' : a.type === 'comparison' ? 'Comparison' : a.type === 'cost_breakdown' ? 'Cost breakdown' : 'Project card'}
+                              </p>
                             </button>
                           ))}
                         </div>
