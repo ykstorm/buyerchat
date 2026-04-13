@@ -161,15 +161,27 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
               South Bopal & Shela · Ahmedabad
             </motion.p>
 
-            {/* Headline with parallax */}
+            {/* Headline with parallax + text shimmer */}
             <motion.h1
               initial={{ opacity: 0, y: 14 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.08 }}
               style={{ fontFamily: 'var(--font-playfair)', transform: `translate(${mouse.x * 0.3}px, ${mouse.y * 0.3}px)` }}
-              className="relative z-10 text-[38px] leading-tight text-[#1C1917] mb-3 font-bold"
+              className="relative z-10 text-[38px] leading-tight mb-3 font-bold"
             >
-              Find your home.
+              <motion.span
+                style={{
+                  backgroundImage: 'linear-gradient(90deg, var(--text-primary) 0%, #1B4F8A 50%, var(--text-primary) 100%)',
+                  backgroundClip: 'text',
+                  WebkitBackgroundClip: 'text',
+                  color: 'transparent',
+                  backgroundSize: '200%',
+                }}
+                animate={{ backgroundPosition: ['0% center', '100% center', '0% center'] }}
+                transition={{ duration: 4, repeat: Infinity, ease: 'linear' }}
+              >
+                Find your home.
+              </motion.span>
             </motion.h1>
 
             {/* Subline */}
@@ -177,7 +189,8 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.5, delay: 0.16 }}
-              className="text-[14px] text-[#78716C] mb-10 leading-relaxed"
+              className="text-[14px] mb-10 leading-relaxed"
+              style={{ color: 'var(--text-secondary)' }}
             >
               Tell me your budget, timeline, and what matters to you.<br />
               I&apos;ll do the rest.
@@ -186,19 +199,28 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
             {/* Starter cards */}
             <div className="grid grid-cols-2 gap-2.5 w-full mb-8">
               {STARTERS.map((s, i) => (
-                <motion.button
+                <motion.div
                   key={s}
-                  type="button"
-                  onClick={() => append({ role: 'user', content: s })}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.22 + i * 0.07, duration: 0.3 }}
                   whileHover={{ y: -2, boxShadow: '0 8px 24px rgba(27,79,138,0.08)' }}
                   whileTap={{ scale: 0.98 }}
-                  className="text-left px-4 py-3.5 bg-white/80 backdrop-blur-sm rounded-2xl border border-[#E7E5E4] hover:border-[#1B4F8A]/40 transition-all duration-200 cursor-pointer group"
+                  className="relative rounded-2xl p-[1px] overflow-hidden cursor-pointer group"
+                  style={{ background: 'var(--border)' }}
+                  onClick={() => append({ role: 'user', content: s })}
                 >
-                  <p className="text-[12.5px] text-[#44403C] font-medium leading-snug group-hover:text-[#1C1917] transition-colors">{s}</p>
-                </motion.button>
+                  {/* Moving border gradient — visible on hover */}
+                  <motion.div
+                    className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                    style={{ background: 'conic-gradient(from var(--border-angle, 0deg), #1B4F8A, #3B82F6, #0F6E56, #1B4F8A)' }}
+                    animate={{ '--border-angle': ['0deg', '360deg'] } as any}
+                    transition={{ duration: 3, repeat: Infinity, ease: 'linear' }}
+                  />
+                  <div className="relative rounded-[15px] px-4 py-3.5 backdrop-blur-sm" style={{ background: 'color-mix(in srgb, var(--bg-surface) 92%, transparent)' }}>
+                    <p className="text-[12.5px] font-medium leading-snug transition-colors" style={{ color: 'var(--text-secondary)' }}>{s}</p>
+                  </div>
+                </motion.div>
               ))}
             </div>
 
