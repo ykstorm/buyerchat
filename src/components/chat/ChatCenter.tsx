@@ -4,7 +4,7 @@ import type React from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { FormEvent, useRef, useEffect, useState } from 'react'
 import ReactMarkdown from 'react-markdown'
-import ProjectCard from './artifacts/ProjectCard'
+import ProjectCard from './artifacts/ProjectCardV2'
 import { VisitBooking } from './artifacts/VisitBooking'
 
 export type Message = {
@@ -77,7 +77,9 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
   }, [showArtifactMenu])
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+    requestAnimationFrame(() => {
+      bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+    })
   }, [messages, isLoading])
 
   return (
@@ -118,18 +120,29 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
             background: 'radial-gradient(ellipse 40% 30% at 80% 15%, rgba(27,79,138,0.05) 0%, transparent 70%)'
           }} />
 
-          {/* Layer 5 — animated floating grain */}
-          <motion.div
+          {/* Layer 5 — static grain texture (no animation — avoids continuous repaints) */}
+          <div
             className="absolute inset-0 pointer-events-none"
-            animate={{
-              backgroundPosition: ['0px 0px', '30px 20px', '0px 40px', '0px 0px']
-            }}
-            transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
             style={{
               opacity: 0.035,
               backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
               backgroundSize: '220px 220px',
               backgroundRepeat: 'repeat'
+            }}
+          />
+
+          {/* Spotlight follow */}
+          <motion.div
+            className="pointer-events-none absolute inset-0 z-0"
+            style={{
+              background: `radial-gradient(600px circle at ${mouse.x + 200}px ${mouse.y + 300}px, rgba(27,79,138,0.06), transparent 40%)`,
+            }}
+          />
+          {/* Subtle grid */}
+          <div className="pointer-events-none absolute inset-0 z-0 opacity-[0.015]"
+            style={{
+              backgroundImage: `linear-gradient(#1B4F8A 1px, transparent 1px), linear-gradient(90deg, #1B4F8A 1px, transparent 1px)`,
+              backgroundSize: '40px 40px'
             }}
           />
 
@@ -151,7 +164,7 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.08 }}
               style={{ fontFamily: 'var(--font-playfair)', transform: `translate(${mouse.x * 0.3}px, ${mouse.y * 0.3}px)` }}
-              className="text-[38px] leading-tight text-[#1C1917] mb-3 font-bold"
+              className="relative z-10 text-[38px] leading-tight text-[#1C1917] mb-3 font-bold"
             >
               Find your home.
             </motion.h1>
@@ -207,9 +220,9 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
             return (
               <motion.div
                 key={msg.id}
-                initial={{ opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.18, ease: 'easeOut' }}
+                initial={{ opacity: 0, y: 8, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ type: 'spring', stiffness: 400, damping: 35 }}
                 className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'} ${isGrouped ? 'mt-0.5' : 'mt-4'}`}
               >
                 {/* AI avatar — only show on last in group */}
@@ -265,15 +278,17 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
                       if (hasProject) return ['Book a site visit', 'Compare with another project', 'What are the risks?', 'Tell me about the builder']
                       return ['Show me strong options', 'What is my ideal budget?', 'Which area is better?', 'Help me decide']
                     })().map(chip => (
-                      <button
+                      <motion.button
                         key={chip}
                         type="button"
                         onClick={() => append({ role: 'user', content: chip })}
-                        className="text-[11px] px-3 py-1.5 rounded-full border transition-all hover:border-[#1B4F8A]/40 hover:bg-[#1B4F8A]/5 hover:text-[#1B4F8A]"
+                        whileHover={{ scale: 1.04, y: -1 }}
+                        whileTap={{ scale: 0.96 }}
+                        className="text-[11px] px-3 py-1.5 rounded-full border transition-colors"
                         style={{ borderColor: '#E7E5E4', color: '#78716C', background: 'white' }}
                       >
                         {chip}
-                      </button>
+                      </motion.button>
                     ))}
                   </div>
                 )}
