@@ -26,7 +26,8 @@
       "Bash(node:*)",
       "Bash(npx next:*)",
       "Bash(npm i:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(git config:*)"
     ]
   }
 }
