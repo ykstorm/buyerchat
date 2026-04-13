@@ -14,6 +14,11 @@ const VisitSchema = z.object({
   buyerPhone: z.string().length(10).regex(/^\d{10}$/).optional(),
   buyerEmail: z.string().optional(),
 })
+
+function escapeHtml(str: string): string {
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;')
+}
+
 export async function GET(req: NextRequest) {
   const session = await auth()
   if (!session?.user?.id) {
@@ -94,8 +99,8 @@ if (existing) {
     subject: `Site Visit Confirmed — ${project.projectName}`,
     html: `
       <h2>Your site visit is confirmed!</h2>
-      <p><strong>Project:</strong> ${project.projectName}</p>
-      <p><strong>Builder:</strong> ${project.builderName}</p>
+      <p><strong>Project:</strong> ${escapeHtml(project.projectName)}</p>
+      <p><strong>Builder:</strong> ${escapeHtml(project.builderName)}</p>
       <p><strong>Date:</strong> ${new Date(visitScheduledDate).toLocaleDateString('en-IN')}</p>
       <p><strong>Your visit token:</strong> ${visitToken}</p>
       <p>Please bring this token to your site visit.</p>
