@@ -1,15 +1,39 @@
-// Context cache disabled — Vercel serverless instances don't share memory.
-// Each request fetches fresh from DB. At 16 projects this is fast enough.
-// Re-enable with Redis (Upstash) when project count exceeds 100.
+// In-memory context cache with 5-min TTL.
+//
+// ⚠️ SHORT-TERM SOLUTION. Vercel serverless instances do not share memory —
+// each cold-started container has its own cache. Under moderate traffic (container
+// stays warm 10-15 min), this still gives a real hit rate since requests on the
+// same warm container reuse the cached payload.
+//
+// MIGRATE TO UPSTASH REDIS before production launch. See backlog.md ISSUE-18/19.
+// The same Redis client should also power the rate limiter (ISSUE-04).
 
-export function getCachedContext(): string | null {
-  return null
+const TTL_MS = 5 * 60 * 1000 // 5 minutes
+
+type CacheEntry = {
+  value: string
+  expiresAt: number
 }
 
-export function setCachedContext(_context: string): void {
-  // no-op
+// Module-level singleton — persists for the life of the container.
+let entry: CacheEntry | null = null
+
+export function getCachedContext(): string | null {
+  if (!entry) return null
+  if (Date.now() >= entry.expiresAt) {
+    entry = null
+    return null
+  }
+  return entry.value
+}
+
+export function setCachedContext(context: string): void {
+  entry = {
+    value: context,
+    expiresAt: Date.now() + TTL_MS,
+  }
 }
 
 export function invalidateContextCache(): void {
-  // no-op
+  entry = null
 }
