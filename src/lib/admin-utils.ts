@@ -12,8 +12,8 @@ export function daysBetween(date: Date, now: Date = new Date()): number {
 }
 
 export function generateDealNumber(): string {
-  const n = Math.floor(Math.random() * 9000) + 1000
-  return `AG-INV-${n}`
+  const { randomBytes } = require('crypto')
+  return `AG-INV-${randomBytes(3).toString('hex').toUpperCase()}`
 }
 
 export function getUrgency(lastContact: Date): { label: string; color: 'red' | 'amber' | 'green' } {

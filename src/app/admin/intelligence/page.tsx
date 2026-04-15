@@ -255,9 +255,9 @@ export default async function IntelligencePage({
           <span style={{ color: '#374151' }}>·</span>
           <span className="text-[12px]" style={{ color: '#9CA3AF' }}>Last scan: today 6:00am</span>
         </div>
-        <a href="/admin/projects" className="text-[11px] px-3 py-1.5 rounded-lg font-medium transition-colors" style={{ background: 'rgba(96,165,250,0.15)', color: '#60A5FA', border: '1px solid rgba(96,165,250,0.2)' }}>
+        <Link href="/admin/projects" className="text-[11px] px-3 py-1.5 rounded-lg font-medium transition-colors" style={{ background: 'rgba(96,165,250,0.15)', color: '#60A5FA', border: '1px solid rgba(96,165,250,0.2)' }}>
           View projects →
-        </a>
+        </Link>
       </div>
 
       {/* RERA critical banner */}

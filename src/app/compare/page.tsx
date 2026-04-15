@@ -587,7 +587,7 @@ export default function ComparePage() {
                     const score = p.builder?.totalTrustScore ?? 0
                     const colors = getGradeColor(grade)
                     return (
-                      <span className="flex items-center gap-2">
+                      <span key={p.id} className="flex items-center gap-2">
                         <span
                           className="rounded-full px-2 py-0.5 text-xs font-semibold"
                           style={{ background: colors.bg, color: colors.text, border: `1px solid ${colors.border}` }}
@@ -626,6 +626,7 @@ export default function ComparePage() {
                     const isReady = p.constructionStatus.toLowerCase().includes("ready")
                     return (
                       <span
+                        key={p.id}
                         className={`rounded-full px-2 py-0.5 text-[10px] font-sans ${
                           isReady
                             ? "bg-emerald-500/[0.12] border border-emerald-500/[0.20] text-emerald-400"
@@ -649,7 +650,7 @@ export default function ComparePage() {
                 <ComparisonRow
                   label="RERA"
                   values={projects.map((p) => (
-                    <span className="flex items-center gap-2">
+                    <span key={p.id} className="flex items-center gap-2">
                       <span className="w-1.5 h-1.5 rounded-full bg-[#3de8a0]" />
                       <span className="font-mono text-xs truncate max-w-[120px]" title={p.reraNumber}>
                         {p.reraNumber.slice(0, 20)}...

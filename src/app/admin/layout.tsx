@@ -36,8 +36,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           <button id="admin-mobile-menu" type="button" className="lg:hidden w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 transition-colors">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
           </button>
-          <span className="text-[15px] font-semibold text-[#52CDAA]">Aa</span>
-          <span className="text-[15px] font-semibold text-white">iGhar</span>
+          <span className="text-[15px] font-semibold text-white">Homesty.ai</span>
           <span className="text-[11px] text-[#A8C8E8] ml-1.5 hidden sm:inline">Admin</span>
         </div>
 

@@ -61,33 +61,42 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       return NextResponse.json({ error: 'Invalid input', details: parsed.error.flatten() }, { status: 400 })
     }
 
+    const d = parsed.data as Record<string, any>
     const project = await prisma.project.update({
       where: { id },
       data: {
-        projectName: sanitizeAdminInput(body.projectName),
-        builderName: sanitizeAdminInput(body.builderName),
-        microMarket: sanitizeAdminInput(body.microMarket),
-        constructionStatus: sanitizeAdminInput(body.constructionStatus),
-        minPrice: Number(body.minPrice),
-        maxPrice: Number(body.maxPrice),
-        pricePerSqft: Number(body.pricePerSqft),
-        pricePerSqftType: body.pricePerSqftType ?? 'SBU',
-        loadingFactor: Number(body.loadingFactor) || 1.37,
-        charges: body.charges ?? [],
-        allInPrice: body.allInPrice ? Number(body.allInPrice) : null,
-        availableUnits: Number(body.availableUnits),
-        possessionDate: new Date(body.possessionDate),
-        reraNumber: body.reraNumber,
-        unitTypes: body.unitTypes ?? [],
-        amenities: body.amenities ?? [],
-        locationScore: Number(body.locationScore ?? 50),
-        amenitiesScore: Number(body.amenitiesScore ?? 50),
-        infrastructureScore: Number(body.infrastructureScore ?? 50),
-        demandScore: Number(body.demandScore ?? 50),
-        sopPlanning: body.sopPlanning !== undefined ? Number(body.sopPlanning) : undefined,
-        sopGrowth: body.sopGrowth !== undefined ? Number(body.sopGrowth) : undefined,
-        sopTotal: body.sopTotal !== undefined ? Number(body.sopTotal) : undefined,
-        isActive: body.isActive ?? true,
+        ...(d.projectName !== undefined && { projectName: sanitizeAdminInput(d.projectName) }),
+        ...(d.builderName !== undefined && { builderName: sanitizeAdminInput(d.builderName) }),
+        ...(d.microMarket !== undefined && { microMarket: sanitizeAdminInput(d.microMarket) }),
+        ...(d.constructionStatus !== undefined && { constructionStatus: sanitizeAdminInput(d.constructionStatus) }),
+        ...(d.minPrice !== undefined && { minPrice: d.minPrice }),
+        ...(d.maxPrice !== undefined && { maxPrice: d.maxPrice }),
+        ...(d.pricePerSqft !== undefined && { pricePerSqft: d.pricePerSqft }),
+        ...(d.pricePerSqftType !== undefined && { pricePerSqftType: d.pricePerSqftType }),
+        ...(d.loadingFactor !== undefined && { loadingFactor: Number(d.loadingFactor) || 1.37 }),
+        ...(d.charges !== undefined && { charges: d.charges }),
+        ...(d.allInPrice !== undefined && { allInPrice: d.allInPrice ? Number(d.allInPrice) : null }),
+        ...(d.availableUnits !== undefined && { availableUnits: d.availableUnits }),
+        ...(d.possessionDate !== undefined && { possessionDate: new Date(d.possessionDate) }),
+        ...(d.reraNumber !== undefined && { reraNumber: d.reraNumber }),
+        ...(d.unitTypes !== undefined && { unitTypes: d.unitTypes }),
+        ...(d.amenities !== undefined && { amenities: d.amenities }),
+        ...(d.locationScore !== undefined && { locationScore: d.locationScore }),
+        ...(d.amenitiesScore !== undefined && { amenitiesScore: d.amenitiesScore }),
+        ...(d.infrastructureScore !== undefined && { infrastructureScore: Number(d.infrastructureScore) }),
+        ...(d.demandScore !== undefined && { demandScore: Number(d.demandScore) }),
+        ...(d.sopPlanning !== undefined && { sopPlanning: Number(d.sopPlanning) }),
+        ...(d.sopGrowth !== undefined && { sopGrowth: Number(d.sopGrowth) }),
+        ...(d.sopTotal !== undefined && { sopTotal: Number(d.sopTotal) }),
+        ...(d.isActive !== undefined && { isActive: d.isActive }),
+        ...(d.deliveryScore !== undefined && { deliveryScore: d.deliveryScore }),
+        ...(d.reraScore !== undefined && { reraScore: d.reraScore }),
+        ...(d.qualityScore !== undefined && { qualityScore: d.qualityScore }),
+        ...(d.financialScore !== undefined && { financialScore: d.financialScore }),
+        ...(d.responsivenessScore !== undefined && { responsivenessScore: d.responsivenessScore }),
+        ...(d.decisionTag !== undefined && { decisionTag: d.decisionTag }),
+        ...(d.honestConcern !== undefined && { honestConcern: d.honestConcern }),
+        ...(d.analystNote !== undefined && { analystNote: d.analystNote }),
       }
     })
     await invalidateContextCache()
@@ -107,7 +116,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
     }
     const { id } = await params
     const project = await prisma.project.findUnique({ where: { id }, select: { projectName: true } })
-    await prisma.project.delete({ where: { id } })
+    await prisma.project.update({ where: { id }, data: { isActive: false } })
     await logAdminAction('delete', 'project', { id, projectName: project?.projectName ?? '—' }, session!.user!.email!)
     return NextResponse.json({ success: true })
   } catch (err) {

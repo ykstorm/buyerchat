@@ -1,5 +1,6 @@
 "use client"
 import { useState } from "react"
+import Link from "next/link"
 
 interface VisitBookingProps {
   projectId: string
@@ -93,9 +94,9 @@ export function VisitBooking({ projectId, projectName }: VisitBookingProps) {
             <p className="text-[14px] font-semibold" style={{ color: 'var(--text-primary)' }}>Sign in to book</p>
             <p className="text-[12px] mt-1" style={{ color: 'var(--text-secondary)' }}>Your OTP token protects your commission. Sign in to claim it.</p>
           </div>
-          <a href="/api/auth/signin" className="w-full py-2.5 rounded-full text-[13px] font-medium text-white text-center transition-opacity hover:opacity-90" style={{ background: '#1B4F8A' }}>
+          <Link href="/api/auth/signin" className="w-full py-2.5 rounded-full text-[13px] font-medium text-white text-center transition-opacity hover:opacity-90" style={{ background: '#1B4F8A' }}>
             Sign in with Google
-          </a>
+          </Link>
           <button type="button" onClick={() => setStatus('idle')} className="text-[11px] transition-colors" style={{ color: 'var(--text-muted)' }}>
             ← Back
           </button>

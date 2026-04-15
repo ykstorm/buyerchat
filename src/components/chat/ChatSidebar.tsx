@@ -316,7 +316,7 @@ const sidebar = (
       {/* Header */}
       <div className="px-4 py-4" style={{ borderBottom: '1px solid var(--border)' }}>
         <div className="flex items-center justify-between mb-3">
-          <Link href="/" className="text-[15px] font-semibold tracking-tight hover:text-[#1B4F8A] transition-colors" style={{ color: 'var(--text-primary)' }}>BuyerChat</Link>
+          <Link href="/" className="text-[15px] font-semibold tracking-tight hover:text-[#1B4F8A] transition-colors" style={{ color: 'var(--text-primary)' }}>Homesty</Link>
           <div className="flex items-center gap-2">
             <ThemeToggle />
             <button type="button" onClick={onClose} className="lg:hidden text-[#A8A29E] hover:text-[#1C1917]">✕</button>

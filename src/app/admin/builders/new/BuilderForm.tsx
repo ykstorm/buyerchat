@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 
 interface BuilderFormData {
   brandName: string
@@ -238,10 +239,10 @@ export default function BuilderForm() {
         >
           {saving ? 'Saving…' : 'Save Builder'}
         </button>
-        <a href="/admin/builders"
+        <Link href="/admin/builders"
           className="px-5 py-3 border border-[#E0DFDD] rounded-xl text-[13px] text-[#52525B] hover:bg-white transition-colors">
           Cancel
-        </a>
+        </Link>
       </div>
     </form>
   )
