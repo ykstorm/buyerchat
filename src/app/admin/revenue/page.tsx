@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma'
 import { formatLakh, daysBetween, formatDate } from '@/lib/admin-utils'
 import { DarkMetricCard, DarkCard, DarkBadge } from '@/components/admin/DarkCard'
 import RegisterLeadButton from '@/components/admin/RegisterLeadButton'
+import MarkReceivedButton from '@/components/admin/MarkReceivedButton'
 
 
 export default async function RevenuePage() {
@@ -143,6 +144,7 @@ export default async function RevenuePage() {
                 <div className="text-right">
                   <p className="text-[14px] font-semibold text-white">₹{formatLakh(deal.commissionAmount)}</p>
                   <DarkBadge label={deal.paymentStatus === 'overdue' ? `Overdue ${daysBetween(deal.invoiceDate)}d` : deal.paymentStatus} color={deal.paymentStatus === 'paid' ? 'green' : deal.paymentStatus === 'overdue' ? 'red' : 'amber'} />
+                  {deal.paymentStatus === 'overdue' && <MarkReceivedButton dealId={deal.id} />}
                 </div>
               </div>
             </div>
