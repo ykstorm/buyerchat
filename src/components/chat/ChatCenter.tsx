@@ -157,6 +157,7 @@ type Props = {
   onSelectArtifact?: (index: number) => void
   onRetry?: () => void
   compareToast?: string | null
+  buyerStage?: string | null
 }
 
 const STARTERS = [
@@ -168,7 +169,7 @@ const STARTERS = [
   "I'm confused — help me decide",
 ]
 
-export default function ChatCenter({ messages, input, handleInputChange, handleSubmit, isLoading, append, loadingSession, artifact, showArtifact, onToggleArtifact, canGoBack, canGoForward, onArtifactBack, onArtifactForward, artifactCurrent, artifactTotal, artifactHistory, onSelectArtifact, compareToast }: Props) {
+export default function ChatCenter({ messages, input, handleInputChange, handleSubmit, isLoading, append, loadingSession, artifact, showArtifact, onToggleArtifact, canGoBack, canGoForward, onArtifactBack, onArtifactForward, artifactCurrent, artifactTotal, artifactHistory, onSelectArtifact, compareToast, buyerStage }: Props) {
   const bottomRef = useRef<HTMLDivElement>(null)
   const [mouse, setMouse] = useState({ x: 0, y: 0 })
   const mouseRafRef = useRef<number>(0)
@@ -363,6 +364,12 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
                       const hasVisit = lower.includes('visit') || lower.includes('site')
                       if (hasVisit) return ['Book OTP-verified visit', 'What to check at site?', 'Tell me about the builder']
                       if (hasComparison) return ['Which one should I choose?', 'Book a site visit', 'What are the risks?']
+                      if (buyerStage === 'post_visit') return ['How was the visit?', 'Should I book now?', 'Compare with another project', 'Any concerns?']
+                      if (buyerStage === 'pre_visit') return ['What to check at site?', 'Questions to ask builder?', 'How to verify RERA on site?', 'What are red flags?']
+                      if (buyerStage === 'visit_trigger') return ['Book OTP-verified visit', 'What documents needed?', 'Best time to visit?', 'Any concerns?']
+                      if (buyerStage === 'comparison') return ['Compare these two projects', 'Which has better trust score?', 'Which is better value?', 'Show cost breakdown']
+                      if (buyerStage === 'qualification') return ['Show me strong options', 'What fits my budget?', 'Which area is better?', 'Help me decide']
+                      if (buyerStage === 'project_disclosure') return ['Tell me more', 'What are the risks?', 'Compare with another', 'Show cost breakdown']
                       if (hasProject) return ['Book a site visit', 'Compare with another project', 'What are the risks?', 'Tell me about the builder']
                       return ['Show me strong options', 'What is my ideal budget?', 'Which area is better?', 'Help me decide']
                     })().map(chip => (
@@ -430,17 +437,20 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
               animate={{ y: 0, opacity: 1, scale: 1 }}
               exit={{ y: 60, opacity: 0, scale: 0.95 }}
               transition={{ type: 'spring', stiffness: 350, damping: 35 }}
-              drag
-              dragConstraints={{ top: 0, bottom: 0, left: 0, right: 0 }}
-              dragElastic={0.3}
-              onDragEnd={(_: any, info: any) => {
-                const { offset, velocity } = info
-                // Swipe down → dismiss
-                if (offset.y > 100 || velocity.y > 300) { onToggleArtifact?.(); return }
-                // Swipe left → next artifact
-                if ((offset.x < -60 || velocity.x < -300) && canGoForward) { onArtifactForward?.(); return }
-                // Swipe right → previous artifact
-                if ((offset.x > 60 || velocity.x > 300) && canGoBack) { onArtifactBack?.(); return }
+              onTouchStart={(e: React.TouchEvent) => {
+                const t = e.touches[0]
+                ;(e.currentTarget as any)._touchStartX = t.clientX
+                ;(e.currentTarget as any)._touchStartY = t.clientY
+              }}
+              onTouchEnd={(e: React.TouchEvent) => {
+                const el = e.currentTarget as any
+                const dx = e.changedTouches[0].clientX - el._touchStartX
+                const dy = e.changedTouches[0].clientY - el._touchStartY
+                if (Math.abs(dy) > Math.abs(dx) && dy > 80) { onToggleArtifact?.(); return }
+                if (Math.abs(dx) > Math.abs(dy)) {
+                  if (dx < -60 && canGoForward) { onArtifactForward?.(); return }
+                  if (dx > 60 && canGoBack) { onArtifactBack?.(); return }
+                }
               }}
               className="relative z-10 mt-12 mx-3 rounded-2xl overflow-hidden flex flex-col shadow-[0_20px_60px_rgba(0,0,0,0.2)]"
               style={{

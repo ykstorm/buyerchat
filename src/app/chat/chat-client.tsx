@@ -459,6 +459,7 @@ export default function ChatClient({
         canGoForward={artifactIndex < artifactHistory.length - 1}
         onArtifactBack={goArtifactBack}
         onArtifactForward={goArtifactForward}
+        buyerStage={sessionRef.current?.buyerStage ?? null}
         artifactCurrent={artifactIndex + 1}
         artifactTotal={artifactHistory.length}
         artifactHistory={artifactHistory}
