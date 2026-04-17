@@ -312,4 +312,3 @@ Assistant: I can arrange that for you. Which date works best — the booking wid
 Before you go, one thing worth checking: whether construction pace matches what is shown on the RERA portal. That is the one variable that matters most for a December 2030 possession.
 `
 }
- 

@@ -12,8 +12,15 @@ export function daysBetween(date: Date, now: Date = new Date()): number {
 }
 
 export function generateDealNumber(): string {
-  const { randomBytes } = require('crypto')
-  return `AG-INV-${randomBytes(3).toString('hex').toUpperCase()}`
+  const array = new Uint8Array(3)
+  if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+    crypto.getRandomValues(array)
+  } else {
+    array[0] = Math.floor(Math.random() * 256)
+    array[1] = Math.floor(Math.random() * 256)
+    array[2] = Math.floor(Math.random() * 256)
+  }
+  return `AG-INV-${Array.from(array).map(b => b.toString(16).padStart(2, '0')).join('').toUpperCase()}`
 }
 
 export function getUrgency(lastContact: Date): { label: string; color: 'red' | 'amber' | 'green' } {
