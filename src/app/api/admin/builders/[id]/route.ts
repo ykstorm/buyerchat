@@ -26,8 +26,9 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 
     if (body.builderName || body.brandName) {
       const existing = await prisma.builder.findUnique({ where: { id }, select: { builderName: true, brandName: true } })
-      const nameChanged = (body.builderName && body.builderName !== existing?.builderName) ||
-                          (body.brandName && body.brandName !== existing?.brandName)
+      if (!existing) return NextResponse.json({ error: 'Builder not found' }, { status: 404 })
+      const nameChanged = (body.builderName && body.builderName !== existing.builderName) ||
+                          (body.brandName && body.brandName !== existing.brandName)
       if (nameChanged) {
         const projectCount = await prisma.project.count({ where: { builderName: existing.builderName } })
         if (projectCount > 0) {
