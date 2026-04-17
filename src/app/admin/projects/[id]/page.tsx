@@ -323,6 +323,27 @@ export default function ProjectEditPage() {
                   placeholder="PR/GJ/AHMEDABAD/..."
                   className="flex-1 rounded-lg px-3 py-2 text-[12px] font-mono text-white outline-none" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }} />
                 <button type="button" disabled={reraFetching || !form.reraNumber}
+                  onClick={async () => {
+                    setReraFetching(true)
+                    try {
+                      const res = await fetch('/api/rera-fetch', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ reraNumber: form.reraNumber })
+                      })
+                      const json = await res.json()
+                      if (!res.ok) { alert(json.error || 'Fetch failed'); return }
+                      const d = json.data ?? json
+                      if (d.projectName) set('projectName', d.projectName)
+                      if (d.builderName) set('builderName', d.builderName)
+                      if (d.possessionDate) {
+                        try { set('possessionDate', new Date(d.possessionDate).toISOString().split('T')[0]) } catch {}
+                      }
+                      if (d.reraStatus) set('constructionStatus', d.reraStatus.toLowerCase().includes('complete') ? 'Ready to Move' : 'Under Construction')
+                      if (d.totalUnits) set('availableUnits', typeof d.totalUnits === 'number' ? d.totalUnits : parseInt(String(d.totalUnits).replace(/\D/g, '')) || 0)
+                    } catch (e: any) { alert('RERA fetch failed: ' + e.message) }
+                    finally { setReraFetching(false) }
+                  }}
                   className="bg-[#185FA5] text-white text-[11px] font-medium px-4 py-2 rounded-lg hover:bg-[#0C447C] disabled:opacity-50 transition-colors">
                   {reraFetching ? 'Fetching…' : 'Fetch from portal'}
                 </button>
@@ -330,7 +351,6 @@ export default function ProjectEditPage() {
               <div className="bg-white/10 border border-white/10 rounded-lg p-3 text-[11px] text-[#9CA3AF]">
                 <p className="font-medium text-white mb-1">Puppeteer RERA auto-scrape</p>
                 <p>Enter RERA number above and click Fetch. System will scrape gujrera.gujarat.gov.in and auto-fill: project name, legal entity, status, possession date, complaints, escrow bank.</p>
-                <p className="mt-1 text-[#185FA5]">Note: Auto-fetch is Day 31+ feature. Enter manually for now.</p>
               </div>
               <div className="grid grid-cols-2 gap-3 mt-4">
                 <div>
