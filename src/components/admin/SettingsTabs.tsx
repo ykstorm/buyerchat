@@ -16,8 +16,9 @@ export default function SettingsTabs({
 }) {
   const [active, setActive] = useState('Profile')
   const [saved, setSaved] = useState(false)
-
+  const [formValues, setFormValues] = useState<Record<string, string>>({})
   const save = () => {
+    Object.entries(formValues).forEach(([k, v]) => localStorage.setItem(`homesty_profile_${k}`, v))
     setSaved(true)
     setTimeout(() => setSaved(false), 2000)
   }
@@ -45,12 +46,13 @@ export default function SettingsTabs({
                 { label: 'Full Name', value: userName, type: 'text' },
                 { label: 'Email', value: email, type: 'email' },
                 { label: 'Role', value: 'Admin · Co-founder', type: 'text' },
-                { label: 'Company', value: 'AaiGhar / BuyerChat Technologies LLP', type: 'text' },
+                { label: 'Company', value: 'Homesty AI Technology LLP', type: 'text' },
                 { label: 'City', value: 'Ahmedabad, Gujarat', type: 'text' },
               ].map(field => (
                 <div key={field.label}>
                   <label className="text-[10px] font-semibold uppercase tracking-wider block mb-1" style={{ color: '#4B5563' }}>{field.label}</label>
-                  <input type={field.type} defaultValue={field.value}
+                  <input type={field.type} defaultValue={formValues[field.label] ?? field.value}
+                      onChange={e => setFormValues(prev => ({ ...prev, [field.label]: e.target.value }))}
                     className="w-full px-3 py-2 rounded-lg text-[16px] md:text-[13px] text-white outline-none transition-colors"
                     style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}
                     onFocus={e => e.target.style.borderColor = 'rgba(96,165,250,0.4)'}
