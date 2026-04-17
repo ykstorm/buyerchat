@@ -111,7 +111,7 @@ export default function ChatClient({
           compareQueueRef.current = null
           setCompareToast(null)
           const comparisonArtifact: Artifact = { type: 'comparison', data: projectA, dataB: project }
-          const newHistory = [...artifactHistoryRef.current.slice(0, artifactIndexRef.current + 1), comparisonArtifact]
+          const newHistory = [...artifactHistoryRef.current, comparisonArtifact]
           artifactHistoryRef.current = newHistory
           artifactIndexRef.current = newHistory.length - 1
           setArtifactHistory(newHistory)
@@ -130,7 +130,7 @@ export default function ChatClient({
         compareQueueRef.current = null
         setCompareToast(null)
         const comparisonArtifact: Artifact = { type: 'comparison', data: otherCard.data, dataB: project }
-        const newHistory = [...artifactHistoryRef.current.slice(0, artifactIndexRef.current + 1), comparisonArtifact]
+        const newHistory = [...artifactHistoryRef.current, comparisonArtifact]
         artifactHistoryRef.current = newHistory
         artifactIndexRef.current = newHistory.length - 1
         setArtifactHistory(newHistory)
