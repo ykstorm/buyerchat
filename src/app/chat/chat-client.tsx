@@ -71,7 +71,9 @@ export default function ChatClient({
       const project = projects.find(p => p.id === projectId)
       if (project) {
         // Check if project already exists in history — navigate to it instead of adding duplicate
-        const existingIndex = artifactHistoryRef.current.findIndex(a => a.data.id === projectId)
+        const existingIndex = artifactHistoryRef.current.findIndex(
+          a => a.data.id === projectId && a.type === 'project_card'
+        )
         if (existingIndex >= 0) {
           artifactIndexRef.current = existingIndex
           setArtifactIndex(existingIndex)
@@ -108,6 +110,21 @@ export default function ChatClient({
       if (firstId && firstId !== projectId) {
         const projectA = projects.find(p => p.id === firstId)
         if (projectA) {
+          // Check if comparison already exists for this pair
+          const existingComp = artifactHistoryRef.current.findIndex(
+            a => a.type === 'comparison' &&
+            ((a.data.id === firstId && a.dataB?.id === projectId) ||
+             (a.data.id === projectId && a.dataB?.id === firstId))
+          )
+          if (existingComp >= 0) {
+            compareQueueRef.current = null
+            setCompareToast(null)
+            artifactIndexRef.current = existingComp
+            setArtifactIndex(existingComp)
+            setCurrentArtifact(artifactHistoryRef.current[existingComp])
+            setShowArtifact(true)
+            return
+          }
           compareQueueRef.current = null
           setCompareToast(null)
           const comparisonArtifact: Artifact = { type: 'comparison', data: projectA, dataB: project }
@@ -127,6 +144,19 @@ export default function ChatClient({
         a => a.type === 'project_card' && a.data.id !== projectId
       )
       if (otherCard) {
+        // Check if comparison already exists for this pair
+        const existingComparison = artifactHistoryRef.current.findIndex(
+          a => a.type === 'comparison' &&
+          ((a.data.id === otherCard.data.id && a.dataB?.id === projectId) ||
+           (a.data.id === projectId && a.dataB?.id === otherCard.data.id))
+        )
+        if (existingComparison >= 0) {
+          artifactIndexRef.current = existingComparison
+          setArtifactIndex(existingComparison)
+          setCurrentArtifact(artifactHistoryRef.current[existingComparison])
+          setShowArtifact(true)
+          return
+        }
         compareQueueRef.current = null
         setCompareToast(null)
         const comparisonArtifact: Artifact = { type: 'comparison', data: otherCard.data, dataB: project }
