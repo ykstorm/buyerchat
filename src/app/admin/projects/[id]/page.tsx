@@ -91,10 +91,12 @@ function trustFlag(total: number): { label: string; color: string } {
 
 function allInPrice(f: ProjectForm): number {
   if (!f.pricePerSqft || !f.minPrice) return 0
-  const gst = f.minPrice * 0.05
+  const chargesTotal = (f.charges ?? []).reduce((sum: number, c: any) => sum + (Number(c.amount) || 0), 0)
+  const base = f.minPrice + chargesTotal
+  const gst = base * 0.05
   const stamp = f.minPrice * 0.065
   const reg = f.minPrice * 0.01
-  return Math.round((f.minPrice + gst + stamp + reg) / 100000) * 100000
+  return Math.round((base + gst + stamp + reg) / 100000) * 100000
 }
 
 function ScoreInput({ label, value, max, onChange, hint, type, options }: {
@@ -472,6 +474,23 @@ export default function ProjectEditPage() {
                       + Add row
                     </button>
                   </div>
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {[
+                        { name: 'Club Membership', rate: 150000, type: 'FIXED' },
+                        { name: 'Car Parking', rate: 350000, type: 'FIXED' },
+                        { name: 'Legal Charges', rate: 50000, type: 'FIXED' },
+                        { name: 'AUDA/GEB', rate: 150, type: 'SBU' },
+                        { name: 'Infrastructure', rate: 200, type: 'SBU' },
+                        { name: 'Maintenance Deposit', rate: 50, type: 'CARPET' },
+                      ].map(preset => (
+                        <button key={preset.name} type="button"
+                          onClick={() => set('charges', [...form.charges, { ...preset, amount: preset.type === 'FIXED' ? preset.rate : 0 }])}
+                          className="text-[10px] px-2 py-1 rounded-lg transition-colors"
+                          style={{ background: 'rgba(96,165,250,0.08)', color: '#60A5FA', border: '1px solid rgba(96,165,250,0.15)' }}>
+                          + {preset.name}
+                        </button>
+                      ))}
+                    </div>
                   {form.charges.length === 0 && (
                     <p className="text-[11px] text-center py-3" style={{ color: '#4B5563' }}>No charges added. Click + Add row.</p>
                   )}
