@@ -12,7 +12,6 @@ export async function POST(req: NextRequest) {
     const puppeteer = (await import('puppeteer-core')).default
     const browser = await puppeteer.launch({
       args: chromium.args,
-      defaultViewport: chromium.defaultViewport,
       executablePath: await chromium.executablePath(),
       headless: true,
     })
@@ -42,7 +41,7 @@ export async function POST(req: NextRequest) {
       const Anthropic = (await import('@anthropic-ai/sdk')).default
       const client = new Anthropic()
       const response = await client.messages.create({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-sonnet-4-6',
         max_tokens: 500,
         messages: [{
           role: 'user',

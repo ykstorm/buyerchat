@@ -405,15 +405,45 @@ export default function ProjectEditPage() {
             </div>
           )}
 
-          {/* Step 2: Brochure — placeholder */}
+          {/* Step 2: Brochure AI Extract */}
           {step === 2 && (
             <div className="rounded-xl p-4" style={{ background: '#111827', border: '1px solid rgba(255,255,255,0.07)' }}>
               <p className="text-[12px] font-medium text-white mb-1">Step 2 — Brochure AI Extract</p>
-              <p className="text-[11px] text-[#9CA3AF] mb-4">Upload PDF → Claude API reads and fills 40+ fields automatically</p>
-              <div className="border-2 border-dashed border-white/10 rounded-xl p-8 text-center">
-                <p className="text-[13px] text-[#9CA3AF] mb-1">Click to upload brochure PDF</p>
-                <p className="text-[11px] text-[#6B7280]">Claude API will extract configs, areas, specs, amenities automatically</p>
-                <p className="text-[11px] text-[#185FA5] mt-2">Note: Brochure AI extract is Day 31+ feature. Enter amenities manually in Step 1 for now.</p>
+              <p className="text-[11px] text-[#9CA3AF] mb-4">Upload PDF → Claude API reads and fills carpet areas, amenities, floors automatically</p>
+              {/* PDF Extract */}
+              <div className="rounded-2xl p-4 mb-4" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
+                <p className="text-[12px] font-semibold text-white mb-1">📄 Auto-fill from PDF</p>
+                <p className="text-[11px] mb-3" style={{ color: '#6B7280' }}>Upload RERA brochure — carpet areas, amenities, floors auto-filled</p>
+                <div className="flex gap-2 items-center">
+                  <input type="file" accept=".pdf" id="pdf-upload" className="hidden"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0]
+                      if (!file) return
+                      const fd = new FormData()
+                      fd.append('pdf', file)
+                      setReraFetching(true)
+                      try {
+                        const res = await fetch('/api/pdf-extract', { method: 'POST', body: fd })
+                        const { data } = await res.json()
+                        if (data) {
+                          if (data.carpet_3bhk) set('carpetSqftMin', data.carpet_3bhk)
+                          if (data.sbu_3bhk) set('sbaSqftMin', data.sbu_3bhk)
+                          if (data.loading_factor) set('loadingFactor', data.loading_factor)
+                          if (data.total_floors) set('availableUnits', data.total_floors * 4)
+                          if (data.amenities) set('amenities', data.amenities.split(',').map((a: string) => a.trim()))
+                          if (data.configurations) set('configurations', data.configurations)
+                          if (data.possession_date) set('possessionDate', new Date(data.possession_date).toISOString().split('T')[0])
+                        }
+                      } catch {}
+                      setReraFetching(false)
+                    }}
+                  />
+                  <label htmlFor="pdf-upload" className="cursor-pointer px-4 py-2 rounded-lg text-[12px] font-medium transition-colors"
+                    style={{ background: 'rgba(96,165,250,0.1)', color: '#60A5FA', border: '1px solid rgba(96,165,250,0.2)' }}>
+                    {reraFetching ? 'Extracting…' : 'Choose PDF →'}
+                  </label>
+                  <span className="text-[11px]" style={{ color: '#4B5563' }}>Carpet, SBU, amenities, floors auto-filled</span>
+                </div>
               </div>
             </div>
           )}

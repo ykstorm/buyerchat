@@ -4,8 +4,9 @@ import { prisma } from '@/lib/prisma'
 import { logAdminAction } from '@/lib/audit-log'
 
 function generateToken(): string {
-  const num = Math.floor(Math.random() * 9000) + 1000
-  return `AG-${num}`
+  const bytes = new Uint8Array(3)
+  crypto.getRandomValues(bytes)
+  return `AG-${Array.from(bytes).map(b => b.toString(16).padStart(2,'0')).join('').toUpperCase()}`
 }
 
 export async function POST(req: NextRequest) {
