@@ -27,7 +27,11 @@
       "Bash(npx next:*)",
       "Bash(npm i:*)",
       "Bash(npx tsc:*)",
-      "Bash(git config:*)"
+      "Bash(git config:*)",
+      "Bash(npx tsx:*)",
+      "Bash(awk 'NR>=1200 && NR<=1260')",
+      "Bash(perl -i -pe 's/\\\\x00//g' src/lib/system-prompt.ts)",
+      "Bash(npm audit *)"
     ]
   }
 }

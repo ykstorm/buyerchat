@@ -3,7 +3,7 @@ import { randomBytes } from 'crypto'
 const TOKEN_VALIDITY_DAYS = 90
 
 export function generateVisitToken(): string {
-  const hex = randomBytes(3).toString('hex').toUpperCase()
+  const hex = randomBytes(16).toString('hex').toUpperCase()
   return `AG-${hex}`
 }
 

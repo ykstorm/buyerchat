@@ -10,7 +10,7 @@ const CompareSchema = z.object({
 export async function POST(req: NextRequest) {
   const body = await req.json()
   const ip = req.headers.get('x-forwarded-for') ?? '127.0.0.1'
-if (!rateLimit(ip, 20, 60 * 1000)) {
+if (!await rateLimit(ip, 20, 60 * 1000)) {
   return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
 }
 try {

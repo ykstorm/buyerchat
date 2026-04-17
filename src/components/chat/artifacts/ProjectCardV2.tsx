@@ -80,7 +80,7 @@ export default function ProjectCardV2({ project }: { project: ProjectType }) {
         </div>
         {/* Shimmer effect */}
         <motion.div
-          className="absolute inset-0 opacity-20"
+          className="absolute inset-0 opacity-10"
           style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent)', backgroundSize: '200% 100%' }}
           animate={{ backgroundPosition: hovered ? ['0% 0%', '200% 0%'] : '0% 0%' }}
           transition={{ duration: 1.5, ease: 'linear', repeat: hovered ? Infinity : 0 }}

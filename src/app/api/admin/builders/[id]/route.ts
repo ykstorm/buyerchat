@@ -29,7 +29,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       const nameChanged = (body.builderName && body.builderName !== existing?.builderName) ||
                           (body.brandName && body.brandName !== existing?.brandName)
       if (nameChanged) {
-        const projectCount = await prisma.project.count({ where: { builder: { id } } })
+        const projectCount = await prisma.project.count({ where: { builderName: existing.builderName } })
         if (projectCount > 0) {
           return NextResponse.json(
             { error: 'Cannot rename builder with active projects. Update individual projects instead.' },
@@ -73,14 +73,15 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   }
   try {
     const { id } = await params
-    const projectCount = await prisma.project.count({ where: { builder: { id } } })
+    const builder = await prisma.builder.findUnique({ where: { id }, select: { builderName: true } })
+    if (!builder) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+    const projectCount = await prisma.project.count({ where: { builderName: builder.builderName } })
     if (projectCount > 0) {
       return NextResponse.json(
         { error: 'Cannot delete builder with active projects.' },
         { status: 409 }
       )
     }
-    const builder = await prisma.builder.findUnique({ where: { id }, select: { builderName: true } })
     await prisma.builder.delete({ where: { id } })
     await logAdminAction('delete', 'builder', { id, builderName: builder?.builderName ?? '—' }, session!.user!.email!)
     return NextResponse.json({ success: true })

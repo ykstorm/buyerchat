@@ -247,7 +247,7 @@ function ProjectDetailClient({ project }: { project: ProjectDetail }) {
 
   const scores = project.builder
     ? [
-        { label: 'Delivery Record', score: project.builder.deliveryScore, max: 20 },
+        { label: 'Delivery Record', score: project.builder.deliveryScore, max: 30 },
         { label: 'RERA Compliance', score: project.builder.reraScore, max: 20 },
         { label: 'Build Quality', score: project.builder.qualityScore, max: 20 },
         { label: 'Financial Strength', score: project.builder.financialScore, max: 15 },
