@@ -29,6 +29,7 @@ export default function ChatClient({
   const [showArtifact, setShowArtifact] = useState(true)
   const [artifactHistory, setArtifactHistory] = useState<Artifact[]>([])
   const [artifactIndex, setArtifactIndex] = useState(-1)
+  const [buyerStage, setBuyerStage] = useState<string | null>(null)
   const artifactHistoryRef = useRef<Artifact[]>([])
   const artifactIndexRef = useRef<number>(-1)
 
@@ -291,8 +292,15 @@ export default function ChatClient({
       setLastFailedMsg(userContent)
     } finally {
       setIsLoading(false)
+      // Refresh buyerStage after AI response
+      if (sessionId) {
+        fetch(`/api/chat-sessions/${sessionId}`)
+          .then(r => r.json())
+          .then(d => { if (d.buyerStage) setBuyerStage(d.buyerStage) })
+          .catch(() => {})
+      }
     }
-  }, [messages, isLoading, projects, artifactHistory, artifactIndex])
+  }, [messages, isLoading, projects, artifactHistory, artifactIndex, sessionId])
 
   const handleSubmit = useCallback((e: FormEvent) => {
     e.preventDefault()
@@ -394,6 +402,7 @@ export default function ChatClient({
         }))
         setMessages(loaded)
         setSessionId(urlSessionId)
+        if (data.session?.buyerStage) setBuyerStage(data.session.buyerStage)
         // Reconstruct full artifact history from all assistant messages
         const restoredHistory: Artifact[] = []
         const seenIds = new Set<string>()
@@ -459,7 +468,7 @@ export default function ChatClient({
         canGoForward={artifactIndex < artifactHistory.length - 1}
         onArtifactBack={goArtifactBack}
         onArtifactForward={goArtifactForward}
-        buyerStage={sessionRef.current?.buyerStage ?? null}
+        buyerStage={buyerStage}
         artifactCurrent={artifactIndex + 1}
         artifactTotal={artifactHistory.length}
         artifactHistory={artifactHistory}
@@ -493,4 +502,4 @@ export default function ChatClient({
   )
 }
 
- 
+                                   
