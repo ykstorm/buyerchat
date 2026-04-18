@@ -35,11 +35,12 @@ export default function DraftMessageButton({ sessionId }: { sessionId: string })
         <button
           type="button"
           onClick={(e) => generate(e)}
-          disabled={loading}
-          className="text-[11px] font-medium px-3 py-1.5 rounded-lg transition-colors"
-          style={{ background: loading ? 'rgba(96,165,250,0.05)' : 'rgba(96,165,250,0.1)', color: '#60A5FA', border: '1px solid rgba(96,165,250,0.2)' }}
+          disabled={true}
+          className="text-[11px] font-medium px-3 py-1.5 rounded-lg transition-colors cursor-not-allowed"
+          style={{ background: 'rgba(96,165,250,0.05)', color: '#60A5FA', border: '1px solid rgba(96,165,250,0.15)', opacity: 0.4 }}
+          title="AI draft temporarily disabled"
         >
-          {loading ? 'Drafting…' : '✦ Draft message'}
+          ✦ Draft message (coming soon)
         </button>
       ) : (
         <div className="mt-2">
