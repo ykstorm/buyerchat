@@ -4,6 +4,8 @@ import type { NextConfig } from 'next'
 const nextConfig: NextConfig = {
   // Emit .map files so Sentry can symbolicate production stack traces.
   productionBrowserSourceMaps: true,
+  // Do not bundle these — their transitive deps (socks → ip-address) break under webpack minification.
+  serverExternalPackages: ['puppeteer-core', '@sparticuz/chromium'],
   async headers() {
     return [
       {
