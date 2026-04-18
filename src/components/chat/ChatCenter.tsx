@@ -606,15 +606,15 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
         </div>
       )}
 
-      <div className="backdrop-blur-sm px-4 py-3 sticky bottom-0 z-20 flex-shrink-0" style={{ borderTop: '1px solid var(--border-subtle)', background: 'color-mix(in srgb, var(--bg-base) 90%, transparent)', paddingBottom: 'env(safe-area-inset-bottom, 12px)' }}>
+      <div className="backdrop-blur-sm px-4 py-3 sticky bottom-0 z-20 flex-shrink-0" style={{ borderTop: '1px solid var(--border-subtle)', background: 'color-mix(in srgb, var(--bg-base) 90%, transparent)', paddingBottom: 'max(16px, env(safe-area-inset-bottom))' }}>
         <form onSubmit={handleSubmit} className="flex gap-2 items-center">
           <input
             value={input}
             onChange={handleInputChange}
             placeholder="Ask about properties in South Bopal & Shela..."
             maxLength={800}
-            className="flex-1 min-w-0 rounded-2xl px-4 py-3 text-[14px] focus:outline-none focus:ring-2 focus:ring-[#1B4F8A]/15 focus:border-[#1B4F8A]/50 transition-all duration-200 shadow-luxury-sm"
-            style={{ background: 'var(--bg-input)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+            className="flex-1 min-w-0 rounded-2xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#1B4F8A]/15 focus:border-[#1B4F8A]/50 transition-all duration-200 shadow-luxury-sm"
+            style={{ background: 'var(--bg-input)', border: '1px solid var(--border)', color: 'var(--text-primary)', fontSize: '16px' }}
           />
           <motion.button
             type="submit"
