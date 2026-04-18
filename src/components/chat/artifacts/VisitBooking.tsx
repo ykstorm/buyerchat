@@ -53,7 +53,25 @@ export function VisitBooking({ projectId, projectName }: VisitBookingProps) {
         setStatus('signin')
         return
       }
-      if (!res.ok) throw new Error('failed')
+      if (!res.ok) {
+        // Surface the real error from the server so we can diagnose silent failures.
+        let serverMsg = `Request failed (${res.status})`
+        try {
+          const errData = await res.json()
+          if (typeof errData?.error === 'string') {
+            serverMsg = errData.error
+          } else if (errData?.error?.fieldErrors) {
+            // Zod flatten() format
+            const fields = Object.entries(errData.error.fieldErrors)
+              .map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(', ') : v}`)
+              .join(' | ')
+            serverMsg = fields || serverMsg
+          }
+        } catch { /* response not JSON */ }
+        setStatus('error')
+        setErrorMsg(serverMsg)
+        return
+      }
       const data = await res.json()
       if (!data.visitToken) {
         setStatus('error')
@@ -62,8 +80,9 @@ export function VisitBooking({ projectId, projectName }: VisitBookingProps) {
       }
       setToken(data.visitToken)
       setStatus('success')
-    } catch {
+    } catch (err) {
       setStatus('error')
+      setErrorMsg(err instanceof Error ? err.message : 'Network error. Please try again.')
     }
   }
 
