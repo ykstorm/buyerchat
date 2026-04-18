@@ -125,6 +125,8 @@ model PriceHistory {
   pricePerSqft Float
   recordedAt   DateTime @default(now())
   project      Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
 }
 
 model Locality {
@@ -260,6 +262,7 @@ model Deal {
 
   @@index([createdAt])
   @@index([projectId])
+  @@index([sessionId])
 }
 model MarketAlert {
   id          String   @id @default(cuid())

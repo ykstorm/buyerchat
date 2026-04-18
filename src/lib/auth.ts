@@ -2,6 +2,12 @@ import NextAuth from 'next-auth'
 import Google from 'next-auth/providers/google'
 import { prisma } from '@/lib/prisma'
 
+// Fail fast if AUTH_SECRET is missing or too short in production
+const secret = process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET
+if (process.env.NODE_ENV === 'production' && (!secret || secret.length < 32)) {
+  throw new Error('AUTH_SECRET must be set and at least 32 characters in production')
+}
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
   debug: process.env.NODE_ENV === 'development',
   providers: [

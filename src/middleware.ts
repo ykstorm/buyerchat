@@ -28,9 +28,13 @@ export async function middleware(request: NextRequest) {
     const method = request.method.toUpperCase()
     if (pathname.startsWith('/api/admin') && ['POST', 'PUT', 'DELETE', 'PATCH'].includes(method)) {
       const origin = request.headers.get('origin')
-      const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
-      const allowedOrigin = new URL(appUrl).origin
-      if (origin && origin !== allowedOrigin) {
+      const allowedOrigins = [
+        new URL(process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000').origin,
+        'https://homesty.ai',
+        'https://www.homesty.ai',
+        'https://buyerchat-ten.vercel.app',
+      ]
+      if (origin && !allowedOrigins.includes(origin)) {
         return NextResponse.json({ error: 'CSRF origin mismatch' }, { status: 403 })
       }
     }
