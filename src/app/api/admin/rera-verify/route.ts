@@ -10,7 +10,7 @@ async function launchBrowser() {
     args: chromium.args,
     defaultViewport: { width: 1280, height: 900 },
     executablePath: await chromium.executablePath(),
-    headless: chromium.headless,
+    headless: true,
   })
   return browser
 }

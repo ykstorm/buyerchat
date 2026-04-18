@@ -8,7 +8,8 @@ const SearchSchema = z.object({
 })
 
 export async function GET(req: NextRequest) {
-  if (!await rateLimit(req, { limit: 30, window: 60 })) {
+  const ip = req.headers.get('x-forwarded-for') ?? '127.0.0.1'
+  if (!await rateLimit(ip, 30, 60 * 1000)) {
     return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
   }
 
