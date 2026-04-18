@@ -300,11 +300,12 @@ WHICH CARD TYPE TO EMIT:
 
 RULES:
 1. Maximum 2 CARD blocks per response.
-2. projectId values MUST match exactly the "ID:" lines in PART 11 PROJECT_JSON. Never guess, never abbreviate, never fabricate.
-3. Never emit a CARD for a project not present in verified PROJECT_JSON.
-4. CARD blocks are HTML comments — invisible to the buyer. Your conversational text must be complete without them.
-5. If you mention multiple projects, emit one project_card per project (up to 2). If comparing two, emit a single comparison card instead.
-6. Write the CARD blocks as the last thing in your response, on their own lines. No text after the last CARD.
+2. Do NOT re-emit a project_card CARD for a project you already described in a previous turn of THIS conversation. If the buyer re-mentions a project you've already shown, respond conversationally without a new project_card CARD. A cost_breakdown, comparison, or visit_prompt CARD for that same project is still fine — those are different card types with different purposes.
+3. projectId values MUST match exactly the "ID:" lines in PART 11 PROJECT_JSON. Never guess, never abbreviate, never fabricate.
+4. Never emit a CARD for a project not present in verified PROJECT_JSON.
+5. CARD blocks are HTML comments — invisible to the buyer. Your conversational text must be complete without them.
+6. If you mention multiple projects, emit one project_card per project (up to 2). If comparing two, emit a single comparison card instead.
+7. Write the CARD blocks as the last thing in your response, on their own lines. No text after the last CARD.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 PART 16 — FEW-SHOT EXAMPLES
