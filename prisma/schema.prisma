@@ -155,6 +155,8 @@ model Amenity {
   longitude     Float
   qualityRating Float
   createdAt     DateTime @default(now())
+
+  @@unique([name, latitude, longitude])
 }
 
 model BuyerDemand {

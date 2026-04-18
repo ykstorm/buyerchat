@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { z } from 'zod'
+
+const PriceLogSchema = z.object({
+  projectId: z.string().min(1),
+  newPrice: z.number().positive().max(100000),
+  changeType: z.enum(['increase', 'decrease', 'launch', 'offer']),
+})
 
 export async function POST(req: NextRequest) {
   try {
@@ -9,16 +16,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const body = await req.json() as {
-      projectId: string
-      newPrice: number
-      changeType: 'increase' | 'decrease' | 'launch' | 'offer'
+    const body = await req.json()
+    const parsed = PriceLogSchema.safeParse(body)
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })
     }
-    const { projectId, newPrice, changeType } = body
-
-    if (!projectId || typeof newPrice !== 'number' || newPrice <= 0 || !changeType) {
-      return NextResponse.json({ error: 'Invalid body' }, { status: 400 })
-    }
+    const { projectId, newPrice, changeType } = parsed.data
 
     const project = await prisma.project.findUnique({
       where: { id: projectId },

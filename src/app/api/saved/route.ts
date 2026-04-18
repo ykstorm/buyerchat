@@ -72,8 +72,12 @@ export async function DELETE(req: NextRequest) {
     const session = await auth()
     if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     const body = await req.json()
+    const parsed = SaveSchema.safeParse(body)
+    if (!parsed.success) {
+      return NextResponse.json({ error: 'projectId is required' }, { status: 400 })
+    }
     await prisma.savedProject.deleteMany({
-      where: { userId: session.user.id, projectId: body.projectId }
+      where: { userId: session.user.id, projectId: parsed.data.projectId }
     })
     return NextResponse.json({ success: true })
   } catch (err) {

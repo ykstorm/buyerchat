@@ -12,6 +12,15 @@ import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth'
 import { Resend } from 'resend'
 import { randomUUID } from 'crypto'
+import { z } from 'zod'
+
+const ChatRequestSchema = z.object({
+  messages: z.array(z.object({
+    role: z.enum(['user', 'assistant', 'system']),
+    content: z.string().max(2000),
+  })).min(1).max(30),
+  sessionId: z.string().nullish(),
+})
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 if (!process.env.ADMIN_EMAIL) {
@@ -54,12 +63,12 @@ export async function POST(req: NextRequest) {
 
   const session = await auth()
   const body = await req.json()
-  const messages = body.messages
-  const incomingSessionId: string | null = body.sessionId ?? null
-
-  if (!messages || !Array.isArray(messages)) {
-    return NextResponse.json({ error: 'Invalid request' }, { status: 400 })
+  const parsed = ChatRequestSchema.safeParse(body)
+  if (!parsed.success) {
+    return NextResponse.json({ error: 'Invalid request', details: parsed.error.flatten() }, { status: 400 })
   }
+  const messages = parsed.data.messages
+  const incomingSessionId: string | null = parsed.data.sessionId ?? null
 
   // Cap message history — VULN-06 token overflow protection
   const cappedMessages = messages.slice(-15)

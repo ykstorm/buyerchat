@@ -179,7 +179,6 @@ export async function POST(req: NextRequest) {
 
       return NextResponse.json({
         error: 'Scraper could not extract structured data. Portal layout may have changed.',
-        rawSnippet: data.bodySnippet.substring(0, 500),
         suggestion: 'Enter data manually and report this to dev team',
       }, { status: 502 })
     }
