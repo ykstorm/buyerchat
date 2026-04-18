@@ -188,10 +188,23 @@ export default function ChatClient({
       let full = ''
       let rafScheduled = false
 
+      // Strip CARD blocks from visible text — including any unclosed block still streaming in.
+      // Without this, buyers briefly see raw <!--CARD:{...}--> JSON as the stream arrives.
+      const stripCardsForDisplay = (text: string): string => {
+        // Remove all complete card blocks
+        let cleaned = text.replace(/<!--CARD:.*?-->/gs, '')
+        // Truncate at any unclosed CARD block (mid-stream, not yet complete)
+        const unclosedStart = cleaned.lastIndexOf('<!--CARD:')
+        if (unclosedStart !== -1) {
+          cleaned = cleaned.substring(0, unclosedStart)
+        }
+        return cleaned.trimEnd()
+      }
+
       // Batch streaming updates via requestAnimationFrame for 60fps feel
       const flushUpdate = () => {
         rafScheduled = false
-        const snapshot = full
+        const snapshot = stripCardsForDisplay(full)
         setMessages(prev => prev.map(m =>
           m.id === assistantId ? { ...m, content: snapshot } : m
         ))
@@ -216,7 +229,8 @@ export default function ChatClient({
       for (const match of cardMatches) {
         try { parsedCards.push(JSON.parse(match[1])) } catch {}
       }
-      // Strip CARD blocks from displayed message
+      // Final pass — ensure fully-stripped version is committed to state.
+      // (Streaming flushUpdate already strips; this guarantees final consistency.)
       if (cardMatches.length > 0) {
         full = full.replace(cardRegex, '').trimEnd()
         setMessages(prev => prev.map(m => m.id === assistantId ? { ...m, content: full } : m))
