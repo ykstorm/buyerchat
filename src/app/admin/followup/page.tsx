@@ -4,6 +4,8 @@ import { DarkMetricCard, DarkCard, DarkBadge } from '@/components/admin/DarkCard
 import Link from 'next/link'
 import DraftMessageButton from '@/components/admin/DraftMessageButton'
 
+export const dynamic = 'force-dynamic'
+
 const STAGE_RULES: Record<string, { urgency: string; color: string; days: number; action: string }> = {
   intent_capture:     { urgency: 'Normal',  color: '#52525B', days: 3,  action: 'Qualify buyer — ask purpose and budget' },
   project_disclosure: { urgency: 'High',    color: '#BA7517', days: 3,  action: 'Re-engage with curiosity hook. Check leakage risk.' },

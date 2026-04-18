@@ -4,6 +4,7 @@ import { DarkMetricCard, DarkCard, DarkBadge } from '@/components/admin/DarkCard
 import RegisterLeadButton from '@/components/admin/RegisterLeadButton'
 import MarkReceivedButton from '@/components/admin/MarkReceivedButton'
 
+export const dynamic = 'force-dynamic'
 
 export default async function RevenuePage() {
   let visits: any[] = []

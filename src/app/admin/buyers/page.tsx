@@ -2,6 +2,8 @@ import { prisma } from '@/lib/prisma'
 import { daysBetween, formatLakh, getPersonaLabel, getStageLabel, getSessionQualityScore, getQualityColor } from '@/lib/admin-utils'
 import Link from 'next/link'
 
+export const dynamic = 'force-dynamic'
+
 const STAGES = [
   { key: 'intent_capture',     label: 'A · Intent',        color: '#52525B' },
   { key: 'project_disclosure', label: 'B · Exploring',     color: '#185FA5' },

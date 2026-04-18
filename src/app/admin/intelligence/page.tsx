@@ -5,6 +5,8 @@ import { DarkCard, DarkBadge } from '@/components/admin/DarkCard'
 import PriceLogButton from '@/components/admin/PriceLogButton'
 import Link from 'next/link'
 
+export const dynamic = 'force-dynamic'
+
 // ─── types ────────────────────────────────────────────────────────────────────
 
 type ProjectRow = {

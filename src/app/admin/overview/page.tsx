@@ -3,6 +3,8 @@ import { prisma } from '@/lib/prisma'
 import { formatLakh, daysBetween, getStageLabel, getUrgency } from '@/lib/admin-utils'
 import Link from 'next/link'
 
+export const dynamic = 'force-dynamic'
+
 type AlertItem = { icon: string; bg: string; color: string; title: string; sub: string }
 
 export default async function OverviewPage() {

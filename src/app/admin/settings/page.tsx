@@ -3,6 +3,8 @@ import { prisma } from '@/lib/prisma'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 
+export const dynamic = 'force-dynamic'
+
 export default async function SettingsPage() {
   const session = await auth()
   if (!session?.user || session.user.email?.toLowerCase() !== process.env.ADMIN_EMAIL?.toLowerCase()) redirect('/')

@@ -6,6 +6,8 @@ import { DarkBadge } from '@/components/admin/DarkCard'
 import MarkVisitComplete from '@/components/admin/MarkVisitComplete'
 import PreVisitBriefButton from '@/components/admin/PreVisitBriefButton'
 
+export const dynamic = 'force-dynamic'
+
 type VisitRow = Prisma.SiteVisitGetPayload<{
   include: { project: { select: { projectName: true, builderName: true } } }
 }>

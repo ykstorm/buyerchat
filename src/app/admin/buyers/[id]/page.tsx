@@ -4,6 +4,8 @@ import { formatLakh, getStageLabel, getPersonaLabel } from '@/lib/admin-utils'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 
+export const dynamic = 'force-dynamic'
+
 const stripMarkdown = (text: string) => text.replace(/\*\*(.*?)\*\*/g, '$1').replace(/\*(.*?)\*/g, '$1')
 
 export default async function BuyerDetailPage({ params }: { params: Promise<{ id: string }> }) {

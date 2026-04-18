@@ -3,6 +3,7 @@ import { formatLakh, getTrustScoreColor } from '@/lib/admin-utils'
 import { DarkBadge } from '@/components/admin/DarkCard'
 import Link from 'next/link'
 
+export const dynamic = 'force-dynamic'
 
 export default async function BuildersPage() {
   let builders: any[] = []

@@ -3,6 +3,8 @@ import { formatLakh, getTrustScoreColor } from '@/lib/admin-utils'
 import Link from 'next/link'
 import MatchedBuyersButton from '@/components/admin/MatchedBuyersButton'
 
+export const dynamic = 'force-dynamic'
+
 export default async function ProjectsPage({
   searchParams,
 }: {
