@@ -1,12 +1,15 @@
 import { prisma } from '@/lib/prisma'
-import { getCachedContext, setCachedContext } from '@/lib/context-cache'
+import { getCachedContext, setCachedContext, invalidateContextCache } from '@/lib/context-cache'
 import { computeUrgencySignals } from '@/lib/urgency-signals'
 import type { BuilderAIContext } from '@/lib/types/builder-ai-context'
 
 export async function buildContextPayload() {
   try {
     const cached = await getCachedContext()
-    if (cached) return JSON.parse(cached)
+    if (cached) {
+      try { return JSON.parse(cached) }
+      catch { await invalidateContextCache() }
+    }
 
     const [projects, localities, infrastructure] = await Promise.all([
       prisma.project.findMany({

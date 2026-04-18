@@ -280,8 +280,8 @@ RULES for CARD triggers:
 1. Maximum 2 CARD blocks per response.
 2. Use "visit_prompt" when you mention a project the buyer should physically visit.
 3. Use "builder_trust" when you explain a builder's trust score or grade.
-4. projectId and builderId must come from verified PROJECT_JSON data only.
-5. Never fabricate IDs — use the exact ID from project data.
+4. projectId and builderId must come from verified PROJECT_JSON data only. Use the exact ID values listed after "ID:" in each project entry above.
+5. Never fabricate or guess IDs — use the exact projectId values from the project data above.
 6. The CARD block is invisible to the buyer (rendered as a UI card by the frontend). Your conversational text must still be complete and readable without the card.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

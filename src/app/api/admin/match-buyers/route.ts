@@ -32,8 +32,8 @@ export async function POST(req: NextRequest) {
   const matched = buyers.filter(b => {
     if (!b.buyerBudget) return false
     const budgetFits = project.minPrice === 0 || b.buyerBudget >= project.minPrice * 0.8
-    const configFits = !b.buyerConfig || !project.configurations ||
-      project.configurations.toLowerCase().includes(b.buyerConfig.toLowerCase().replace('BHK', ''))
+    const configFits = !b.buyerConfig || !project.unitTypes || project.unitTypes.length === 0 ||
+      project.unitTypes.some(u => u.toLowerCase().includes(b.buyerConfig!.toLowerCase().replace('BHK', '').trim()))
     return budgetFits && configFits
   })
 

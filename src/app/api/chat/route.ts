@@ -99,7 +99,7 @@ if (hasInjection) {
   // Build context
   let context
   try { context = await buildContextPayload() }
-  catch { return NextResponse.json({ error: 'Service temporarily unavailable.' }, { status: 503 }) }
+  catch (err) { console.error('Context build error:', err); return NextResponse.json({ error: 'Service temporarily unavailable.' }, { status: 503 }) }
   const isComparison = /compare|vs|versus|which is better|which one/i.test(sanitizedMsg)
   let decisionCard = null
   if (isComparison && context.projects.length >= 2) {
@@ -156,7 +156,7 @@ if (hasInjection) {
         ].filter(Boolean)
         if (parts.length > 0) buyerMemory = `Returning buyer. Last session: ${parts.join(', ')}. Stage reached: ${s.buyerStage}.`
       }
-    } catch {}
+    } catch (err) { console.error('Buyer memory fetch error:', err) }
   }
 
   // Check if buyer has a completed visit needing feedback
@@ -171,7 +171,7 @@ if (hasInjection) {
       if (completedVisit) {
         postVisitContext = `IMPORTANT: This buyer has completed a site visit to ${completedVisit.project.projectName}. If this is their first message after the visit, warmly ask how the visit went, what they liked/disliked, and whether they are ready to move forward. Be conversational and supportive, not pushy.`
       }
-    } catch {}
+    } catch (err) { console.error('Post-visit context fetch error:', err) }
   }
 
   const finalMemory = postVisitContext ?? buyerMemory
@@ -261,7 +261,7 @@ if (hasInjection) {
               })
             }
           }
-        } catch {}
+        } catch (err) { console.error('Projects disclosed tracking error:', err) }
 
         // Auto-name session from first meaningful message
         if (!chatSession?.customName && messages.length <= 2) {

@@ -11,9 +11,9 @@ export default async function SettingsPage() {
   const initial = userName.charAt(0).toUpperCase()
 
   const [projectCount, buyerCount, builderCount] = await Promise.all([
-    prisma.project.count({ where: { isActive: true } }),
-    prisma.chatSession.count(),
-    prisma.builder.count(),
+    prisma.project.count({ where: { isActive: true } }).catch(() => 0),
+    prisma.chatSession.count().catch(() => 0),
+    prisma.builder.count().catch(() => 0),
   ])
 
   const now = new Date()

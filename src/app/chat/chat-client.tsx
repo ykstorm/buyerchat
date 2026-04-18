@@ -32,6 +32,7 @@ export default function ChatClient({
   const [buyerStage, setBuyerStage] = useState<string | null>(null)
   const artifactHistoryRef = useRef<Artifact[]>([])
   const artifactIndexRef = useRef<number>(-1)
+  const sessionLoadingRef = useRef(false)
 
   useEffect(() => { if (artifact) setShowArtifact(true) }, [artifact])
 
@@ -443,6 +444,8 @@ export default function ChatClient({
   useEffect(() => {
     if (!urlSessionId) return
     const load = async () => {
+      if (sessionLoadingRef.current) return
+      sessionLoadingRef.current = true
       setLoadingSession(true)
       setMessages([])
       try {
@@ -477,7 +480,7 @@ export default function ChatClient({
           setShowArtifact(false)
         }
       } catch {}
-      finally { setLoadingSession(false) }
+      finally { setLoadingSession(false); sessionLoadingRef.current = false }
     }
     load()
   }, [urlSessionId])

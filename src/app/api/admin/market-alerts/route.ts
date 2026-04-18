@@ -20,12 +20,17 @@ export async function POST(req: NextRequest) {
     const body = await req.json()
     const parsed = AlertSchema.safeParse(body)
     if (!parsed.success) return NextResponse.json({ error: 'Invalid input' }, { status: 400 })
+    // Resolve projectId → projectName for storage
+    const project = await prisma.project.findUnique({
+      where: { id: parsed.data.projectId },
+      select: { projectName: true },
+    })
     const alert = await prisma.marketAlert.create({
       data: {
         type: parsed.data.alertType,
         title: parsed.data.message.slice(0, 100),
         description: parsed.data.message,
-        projectName: parsed.data.projectId,
+        projectName: project?.projectName ?? parsed.data.projectId,
       }
     })
     await logAdminAction('create', 'market_alert', { id: alert.id, type: alert.type, projectName: alert.projectName }, session!.user!.email!)

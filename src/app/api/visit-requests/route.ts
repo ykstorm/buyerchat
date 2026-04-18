@@ -56,6 +56,11 @@ export async function POST(req: NextRequest) {
 
   const { projectId, visitScheduledDate } = parsed.data
 
+  // Validate visit date
+  if (!visitScheduledDate || isNaN(new Date(visitScheduledDate).getTime())) {
+    return NextResponse.json({ error: 'Invalid date' }, { status: 400 })
+  }
+
   // Verify project exists
   const project = await prisma.project.findUnique({
     where: { id: projectId },
@@ -70,29 +75,31 @@ export async function POST(req: NextRequest) {
   const scheduledDate = new Date(visitScheduledDate)
   const expiresAt = getTokenExpiryDate()
 
-const existing = await prisma.siteVisit.findFirst({
-  where: { userId: session.user.id, projectId, visitCompleted: false }
-})
-if (existing) {
-  return NextResponse.json(
-    { visitToken: existing.visitToken },
-    { status: 409 }
-  )
-}
-  // Save visit to DB
-  const siteVisit = await prisma.siteVisit.create({
-    data: {
-      visitToken,
-      userId: session.user.id,
-      projectId,
-      visitScheduledDate: scheduledDate,
-      expiresAt,
-      otpVerified: false,
-      ...(parsed.data.buyerName && { buyerName: parsed.data.buyerName }),
-      ...(parsed.data.buyerPhone && { buyerPhone: parsed.data.buyerPhone }),
-      buyerEmail: parsed.data.buyerEmail,
-    }
+  // Wrap in transaction to prevent race condition duplicates
+  const result = await prisma.$transaction(async (tx) => {
+    const existing = await tx.siteVisit.findFirst({
+      where: { userId: session.user.id, projectId, visitCompleted: false }
+    })
+    if (existing) return { duplicate: true as const, visit: existing }
+    const visit = await tx.siteVisit.create({
+      data: {
+        visitToken,
+        userId: session.user.id,
+        projectId,
+        visitScheduledDate: scheduledDate,
+        expiresAt,
+        otpVerified: false,
+        ...(parsed.data.buyerName && { buyerName: parsed.data.buyerName }),
+        ...(parsed.data.buyerPhone && { buyerPhone: parsed.data.buyerPhone }),
+        buyerEmail: parsed.data.buyerEmail,
+      }
+    })
+    return { duplicate: false as const, visit }
   })
+  if (result.duplicate) {
+    return NextResponse.json({ error: 'Visit already booked', visitToken: result.visit.visitToken }, { status: 409 })
+  }
+  const siteVisit = result.visit
 
   // Send confirmation email — non-blocking
   try { await resend.emails.send({

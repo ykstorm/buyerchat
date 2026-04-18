@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
         orderBy: { createdAt: 'desc' },
         take: 3,
       })
-    if (!buyerSession) return NextResponse.json({ error: 'Session not found' }, { status: 404 })
+    if (!buyerSession?.messages) return NextResponse.json({ error: 'No session data' }, { status: 404 })
 
     const daysSince = daysBetween(buyerSession.lastMessageAt)
     const safeLastMessage = sanitizeAdminInput(buyerSession.messages[0]?.content ?? 'No recent message')

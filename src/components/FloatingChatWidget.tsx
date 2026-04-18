@@ -293,6 +293,13 @@ export default function FloatingChatWidget() {
               <div ref={messagesEndRef} />
             </div>
 
+            {/* Error banner */}
+            {isError && (
+              <div className="px-4 py-2" style={{ background: 'rgba(248,113,113,0.08)', borderTop: '1px solid rgba(248,113,113,0.15)' }}>
+                <p style={{ color: '#F87171', fontSize: '12px' }}>Something went wrong. Try again.</p>
+              </div>
+            )}
+
             {/* Input Area */}
             <div className="border-t border-white/[0.08] px-3 py-3">
               <div className="flex items-end gap-2">

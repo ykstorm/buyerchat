@@ -52,17 +52,7 @@ export default function FollowUpCard({ session }: { session: any }) {
         </div>
       </div>
 
-      {!draft ? (
-        <button
-          type="button"
-          onClick={generateDraft}
-          disabled={true}
-          className="text-[12px] font-medium text-[#185FA5] hover:underline disabled:opacity-40 disabled:cursor-not-allowed"
-          title="AI draft temporarily disabled"
-        >
-          ✦ AI WhatsApp draft (coming soon)
-        </button>
-      ) : (
+      {!draft ? null : (
         <div className="mt-2">
           <p className="text-[11px] text-[#52525B] mb-1">AI draft — review before sending:</p>
           {editing ? (

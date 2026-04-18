@@ -106,21 +106,21 @@ export default async function IntelligencePage({
           possessionDate: true, constructionStatus: true, builderName: true, reraNumber: true,
         },
         orderBy: { pricePerSqft: 'desc' },
-      }),
+      }).catch(() => [] as ProjectRow[]),
       prisma.project.findMany({
         where: { constructionStatus: 'Under Construction' },
         orderBy: { possessionDate: 'asc' },
         take: 8,
         select: { id: true, projectName: true, possessionDate: true, microMarket: true, builderName: true },
-      }),
-      prisma.marketAlert.findMany({ orderBy: { createdAt: 'desc' }, take: 10 }),
+      }).catch(() => [] as ReraRow[]),
+      prisma.marketAlert.findMany({ orderBy: { createdAt: 'desc' }, take: 10 }).catch(() => [] as AlertRow[]),
       prisma.priceHistory.findMany({
         include: { project: { select: { id: true, projectName: true, pricePerSqft: true } } },
         orderBy: { recordedAt: 'desc' },
         take: 30,
-      }),
-      prisma.project.count({ where: { isActive: true } }),
-      prisma.marketAlert.count({ where: { createdAt: { gte: startOfMonth } } }),
+      }).catch(() => [] as HistoryRow[]),
+      prisma.project.count({ where: { isActive: true } }).catch(() => 0),
+      prisma.marketAlert.count({ where: { createdAt: { gte: startOfMonth } } }).catch(() => 0),
     ])
   } catch (err) {
     console.error('Intelligence fetch error:', err)

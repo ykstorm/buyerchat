@@ -62,6 +62,10 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     }
 
     const d = parsed.data as Record<string, any>
+    // Separate builder score fields from project fields
+    const scoreFields = ['deliveryScore', 'reraScore', 'qualityScore', 'financialScore', 'responsivenessScore'] as const
+    const hasScoreUpdate = scoreFields.some(f => d[f] !== undefined)
+
     const project = await prisma.project.update({
       where: { id },
       data: {
@@ -89,16 +93,42 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         ...(d.sopGrowth !== undefined && { sopGrowth: Number(d.sopGrowth) }),
         ...(d.sopTotal !== undefined && { sopTotal: Number(d.sopTotal) }),
         ...(d.isActive !== undefined && { isActive: d.isActive }),
-        ...(d.deliveryScore !== undefined && { deliveryScore: d.deliveryScore }),
-        ...(d.reraScore !== undefined && { reraScore: d.reraScore }),
-        ...(d.qualityScore !== undefined && { qualityScore: d.qualityScore }),
-        ...(d.financialScore !== undefined && { financialScore: d.financialScore }),
-        ...(d.responsivenessScore !== undefined && { responsivenessScore: d.responsivenessScore }),
         ...(d.decisionTag !== undefined && { decisionTag: d.decisionTag }),
         ...(d.honestConcern !== undefined && { honestConcern: d.honestConcern }),
         ...(d.analystNote !== undefined && { analystNote: d.analystNote }),
       }
     })
+
+    // If builder scores were updated, recalculate totalTrustScore and grade on Builder
+    if (hasScoreUpdate) {
+      const existing = await prisma.builder.findUnique({
+        where: { builderName: project.builderName },
+        select: { deliveryScore: true, reraScore: true, qualityScore: true, financialScore: true, responsivenessScore: true },
+      })
+      if (existing) {
+        const newTotal = Math.round(
+          (d.deliveryScore ?? existing.deliveryScore) +
+          (d.reraScore ?? existing.reraScore) +
+          (d.qualityScore ?? existing.qualityScore) +
+          (d.financialScore ?? existing.financialScore) +
+          (d.responsivenessScore ?? existing.responsivenessScore)
+        )
+        const newGrade = newTotal >= 80 ? 'A' : newTotal >= 65 ? 'B' : newTotal >= 50 ? 'C' : 'D'
+        await prisma.builder.update({
+          where: { builderName: project.builderName },
+          data: {
+            ...(d.deliveryScore !== undefined && { deliveryScore: d.deliveryScore }),
+            ...(d.reraScore !== undefined && { reraScore: d.reraScore }),
+            ...(d.qualityScore !== undefined && { qualityScore: d.qualityScore }),
+            ...(d.financialScore !== undefined && { financialScore: d.financialScore }),
+            ...(d.responsivenessScore !== undefined && { responsivenessScore: d.responsivenessScore }),
+            totalTrustScore: newTotal,
+            grade: newGrade,
+          },
+        })
+      }
+    }
+
     await invalidateContextCache()
     await logAdminAction('update', 'project', { id, projectName: project.projectName }, session!.user!.email!)
     return NextResponse.json(project)
