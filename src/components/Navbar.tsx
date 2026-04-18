@@ -25,7 +25,7 @@ export default function Navbar() {
   }, [isMobileMenuOpen])
 
   // Hide navbar on pages that have their own navigation
-  if (pathname?.startsWith('/chat') || pathname?.startsWith('/dashboard') || pathname?.startsWith('/admin')) {
+  if (pathname === '/' || pathname?.startsWith('/chat') || pathname?.startsWith('/dashboard') || pathname?.startsWith('/admin')) {
     return null
   }
 
