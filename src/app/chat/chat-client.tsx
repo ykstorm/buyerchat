@@ -192,7 +192,7 @@ export default function ChatClient({
       // Without this, buyers briefly see raw <!--CARD:{...}--> JSON as the stream arrives.
       const stripCardsForDisplay = (text: string): string => {
         // Remove all complete card blocks
-        let cleaned = text.replace(/<!--CARD:.*?-->/gs, '')
+        let cleaned = text.replace(/<!--CARD:[\s\S]*?-->/g, '')
         // Truncate at any unclosed CARD block (mid-stream, not yet complete)
         const unclosedStart = cleaned.lastIndexOf('<!--CARD:')
         if (unclosedStart !== -1) {
