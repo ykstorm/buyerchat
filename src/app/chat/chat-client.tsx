@@ -259,6 +259,16 @@ export default function ChatClient({
         }
 
         if (artifact) {
+          // Dedup: skip if an artifact of same type + same project(s) already in history
+          const current = artifact
+          const isDupe = artifactHistoryRef.current.some(a => {
+            if (a.type !== current.type) return false
+            if (a.data?.id !== current.data?.id) return false
+            if (current.dataB && a.dataB?.id !== current.dataB.id) return false
+            return true
+          })
+          if (isDupe) continue
+
           const newHist = [...artifactHistoryRef.current, artifact]
           artifactHistoryRef.current = newHist
           artifactIndexRef.current = newHist.length - 1
