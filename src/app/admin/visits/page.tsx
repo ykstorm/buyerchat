@@ -1,9 +1,14 @@
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import type { Prisma } from '@prisma/client'
 import { redirect } from 'next/navigation'
 import { DarkBadge } from '@/components/admin/DarkCard'
 import MarkVisitComplete from '@/components/admin/MarkVisitComplete'
 import PreVisitBriefButton from '@/components/admin/PreVisitBriefButton'
+
+type VisitRow = Prisma.SiteVisitGetPayload<{
+  include: { project: { select: { projectName: true, builderName: true } } }
+}>
 
 function getStatus(visit: { visitCompleted: boolean; visitScheduledDate: Date; expiresAt?: Date | null }) {
   if (visit.visitCompleted) return { label: 'Completed', color: 'green' as const }
@@ -16,10 +21,10 @@ export default async function VisitsPage() {
   const session = await auth()
   if (session?.user?.email?.toLowerCase() !== process.env.ADMIN_EMAIL?.toLowerCase()) redirect('/')
 
-  const visits = await prisma.siteVisit.findMany({
+  const visits: VisitRow[] = await prisma.siteVisit.findMany({
     orderBy: { visitScheduledDate: 'asc' },
     include: { project: { select: { projectName: true, builderName: true } } },
-  }).catch(() => [])
+  }).catch(() => [] as VisitRow[])
 
   const upcoming = visits.filter(v => !v.visitCompleted && new Date(v.visitScheduledDate) >= new Date())
   const completed = visits.filter(v => v.visitCompleted)

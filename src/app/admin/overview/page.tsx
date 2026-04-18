@@ -102,9 +102,9 @@ export default async function OverviewPage() {
     weekVisitCount = weekVisits
     qualifiedThisWeek = qualified
     activeStageCount = ['comparison', 'visit_trigger', 'pre_visit', 'post_visit'].reduce(
-      (sum, s) => sum + (stageGroups.find(g => g.buyerStage === s)?._count._all ?? 0), 0
+      (sum, s) => sum + (stageGroups.find((g: { buyerStage: string; _count: { _all: number } }) => g.buyerStage === s)?._count._all ?? 0), 0
     )
-    stageCounts = Object.fromEntries(stageGroups.map(s => [s.buyerStage, s._count._all]))
+    stageCounts = Object.fromEntries(stageGroups.map((s: { buyerStage: string; _count: { _all: number } }) => [s.buyerStage, s._count._all]))
     pipelineSessions = pipeline
     latestDeal = deal
     pipelineBudgetSum = (pipelineBudget._sum.buyerBudget ?? 0) * 0.015

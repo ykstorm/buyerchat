@@ -212,7 +212,7 @@ export default function ChatClient({
       // Parse <!--CARD:{...}--> triggers from AI response
       const cardRegex = /<!--CARD:(.*?)-->/g
       const cardMatches = [...full.matchAll(cardRegex)]
-      const parsedCards: Array<{ type: string; projectId?: string; projectName?: string; builderId?: string; builderName?: string; grade?: string; trustScore?: number; reason?: string }> = []
+      const parsedCards: Array<{ type: string; projectId?: string; projectIdA?: string; projectIdB?: string; projectName?: string; builderId?: string; builderName?: string; grade?: string; trustScore?: number; reason?: string }> = []
       for (const match of cardMatches) {
         try { parsedCards.push(JSON.parse(match[1])) } catch {}
       }
@@ -222,91 +222,40 @@ export default function ChatClient({
         setMessages(prev => prev.map(m => m.id === assistantId ? { ...m, content: full } : m))
       }
 
-      // Handle parsed CARD triggers as artifacts
+      // Handle parsed CARD triggers as artifacts (CARD is the ONLY path that creates artifacts)
       for (const card of parsedCards) {
-        if (card.type === 'visit_prompt' && card.projectId) {
+        let artifact: Artifact | null = null
+
+        if (card.type === 'project_card' && card.projectId) {
           const project = projects.find(p => p.id === card.projectId)
-          if (project) {
-            const visitArtifact: Artifact = { type: 'visit_prompt', data: project }
-            const newHist = [...artifactHistoryRef.current, visitArtifact]
-            artifactHistoryRef.current = newHist
-            artifactIndexRef.current = newHist.length - 1
-            setArtifactHistory(newHist)
-            setArtifactIndex(newHist.length - 1)
-            setCurrentArtifact(visitArtifact)
-            setShowArtifact(true)
-          }
-        }
-        if (card.type === 'builder_trust' && card.builderName) {
-          // Find first project with matching builder to use as data source
+          if (project) artifact = { type: 'project_card', data: project }
+        } else if (card.type === 'cost_breakdown' && card.projectId) {
+          const project = projects.find(p => p.id === card.projectId)
+          if (project) artifact = { type: 'cost_breakdown', data: project }
+        } else if (card.type === 'comparison' && card.projectIdA && card.projectIdB) {
+          const projectA = projects.find(p => p.id === card.projectIdA)
+          const projectB = projects.find(p => p.id === card.projectIdB)
+          if (projectA && projectB) artifact = { type: 'comparison', data: projectA, dataB: projectB }
+        } else if (card.type === 'visit_prompt' && card.projectId) {
+          const project = projects.find(p => p.id === card.projectId)
+          if (project) artifact = { type: 'visit_prompt', data: project }
+        } else if (card.type === 'builder_trust' && card.builderName) {
           const project = projects.find(p => p.builderName.toLowerCase().includes(card.builderName!.toLowerCase()))
-          if (project) {
-            const trustArtifact: Artifact = { type: 'builder_trust', data: { ...project, trustScore: card.trustScore ?? project.trustScore, trustGrade: card.grade ?? project.trustGrade } }
-            const newHist = [...artifactHistoryRef.current, trustArtifact]
-            artifactHistoryRef.current = newHist
-            artifactIndexRef.current = newHist.length - 1
-            setArtifactHistory(newHist)
-            setArtifactIndex(newHist.length - 1)
-            setCurrentArtifact(trustArtifact)
-            setShowArtifact(true)
-          }
-        }
-      }
-
-      // Detect project artifacts — find ALL mentioned projects
-      const lower = full.toLowerCase()
-      const foundProjects = projects.filter(p => lower.includes(p.projectName.toLowerCase()))
-      const isVisitBooking = /book.*visit|visit.*book|schedule.*visit/i.test(full)
-      const isCostBreakdown = /cost|breakdown|charges|kitna padega|total.*price|all.?in|stamp.*duty|gst/i.test(full)
-
-      // Detect builder trust query
-      const isBuilderQuery = /builder|trust|reliable|track record|delivered|complaints/i.test(full)
-      // Detect visit prompt query
-      const isVisitPrompt = /book.*visit|visit.*book|schedule.*site|site.*visit|dekhne.*jaana/i.test(full) && foundProjects.length === 1
-
-      if (foundProjects.length > 0) {
-        let newHistory = [...artifactHistoryRef.current.slice(0, artifactIndexRef.current + 1)]
-        // Collect ALL project IDs already in history (including dataB from comparisons)
-        const seenIds = new Set<string>()
-        for (const a of newHistory) {
-          seenIds.add(a.data.id)
-          if (a.dataB) seenIds.add(a.dataB.id)
-        }
-        let lastArtifact: Artifact | null = null
-
-        for (const p of foundProjects) {
-          if (seenIds.has(p.id)) continue
-          seenIds.add(p.id)
-          const artifactType: ArtifactType =
-            isVisitBooking && foundProjects.length === 1 ? 'visit_booking' :
-            isCostBreakdown && foundProjects.length === 1 ? 'cost_breakdown' :
-            'project_card'
-          const artifact: Artifact = { type: artifactType, data: p }
-          newHistory = [...newHistory, artifact]
-          lastArtifact = artifact
+          if (project) artifact = { type: 'builder_trust', data: { ...project, trustScore: card.trustScore ?? project.trustScore, trustGrade: card.grade ?? project.trustGrade } }
         }
 
-        // Wire builder trust and visit prompt detection into artifacts
-        if (isBuilderQuery && foundProjects.length > 0 && !newHistory.find(a => a.type === 'builder_trust' && a.data.id === foundProjects[0].id)) {
-          const trustArt: Artifact = { type: 'builder_trust', data: foundProjects[0] }
-          newHistory = [...newHistory, trustArt]
-          lastArtifact = trustArt
-        }
-        if (isVisitPrompt && foundProjects.length === 1 && !newHistory.find(a => a.type === 'visit_prompt' && a.data.id === foundProjects[0].id)) {
-          const visitArt: Artifact = { type: 'visit_prompt', data: foundProjects[0] }
-          newHistory = [...newHistory, visitArt]
-          lastArtifact = visitArt
-        }
-
-        if (lastArtifact) {
-          artifactHistoryRef.current = newHistory
-          artifactIndexRef.current = newHistory.length - 1
-          setArtifactHistory(newHistory)
-          setArtifactIndex(newHistory.length - 1)
-          setCurrentArtifact(lastArtifact)
+        if (artifact) {
+          const newHist = [...artifactHistoryRef.current, artifact]
+          artifactHistoryRef.current = newHist
+          artifactIndexRef.current = newHist.length - 1
+          setArtifactHistory(newHist)
+          setArtifactIndex(newHist.length - 1)
+          setCurrentArtifact(artifact)
           setShowArtifact(true)
         }
       }
+
+      // Keyword-based artifact detection removed — CARD triggers are now the sole source of truth.
     } catch {
       setMessages(prev => {
         const hasAssistant = prev.some(m => m.id === assistantId)

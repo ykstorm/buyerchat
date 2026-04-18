@@ -2,6 +2,8 @@ import { withSentryConfig } from '@sentry/nextjs';
 import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
+  // Emit .map files so Sentry can symbolicate production stack traces.
+  productionBrowserSourceMaps: true,
   async headers() {
     return [
       {
@@ -29,7 +31,6 @@ export default withSentryConfig(nextConfig, {
   // For all available options, see:
   // https://www.npmjs.com/package/@sentry/webpack-plugin#options
 
-  autoInstrumentMiddleware: false,
   widenClientFileUpload: false,
   org: "buyerchat",
 
@@ -48,6 +49,8 @@ export default withSentryConfig(nextConfig, {
   // tunnelRoute: "/monitoring",
 
   webpack: {
+    // Disable middleware auto-instrumentation (moved from top-level, deprecated API).
+    autoInstrumentMiddleware: false,
     // Enables automatic instrumentation of Vercel Cron Monitors. (Does not yet work with App Router route handlers.)
     // See the following for more information:
     // https://docs.sentry.io/product/crons/

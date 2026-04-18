@@ -40,18 +40,34 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       }
     }
 
+    // Fetch current scores so we can recompute the total from latest values
+    const current = await prisma.builder.findUnique({
+      where: { id },
+      select: { deliveryScore: true, reraScore: true, qualityScore: true, financialScore: true, responsivenessScore: true },
+    })
+    if (!current) return NextResponse.json({ error: 'Builder not found' }, { status: 404 })
+
+    const delivery    = body.deliveryScore       !== undefined ? Number(body.deliveryScore)       : (current.deliveryScore ?? 0)
+    const rera        = body.reraScore            !== undefined ? Number(body.reraScore)            : (current.reraScore ?? 0)
+    const quality     = body.qualityScore         !== undefined ? Number(body.qualityScore)         : (current.qualityScore ?? 0)
+    const financial   = body.financialScore       !== undefined ? Number(body.financialScore)       : (current.financialScore ?? 0)
+    const responsive  = body.responsivenessScore  !== undefined ? Number(body.responsivenessScore)  : (current.responsivenessScore ?? 0)
+
+    const totalTrustScore = delivery + rera + quality + financial + responsive
+    const grade = totalTrustScore >= 85 ? 'A' : totalTrustScore >= 70 ? 'B' : totalTrustScore >= 55 ? 'C' : 'D'
+
     const builder = await prisma.builder.update({
       where: { id },
       data: {
         ...(body.builderName && { builderName: body.builderName }),
         ...(body.brandName && { brandName: body.brandName }),
-        ...(body.deliveryScore !== undefined && { deliveryScore: Number(body.deliveryScore) }),
-        ...(body.reraScore !== undefined && { reraScore: Number(body.reraScore) }),
-        ...(body.qualityScore !== undefined && { qualityScore: Number(body.qualityScore) }),
-        ...(body.financialScore !== undefined && { financialScore: Number(body.financialScore) }),
-        ...(body.responsivenessScore !== undefined && { responsivenessScore: Number(body.responsivenessScore) }),
-        ...(body.totalTrustScore !== undefined && { totalTrustScore: Number(body.totalTrustScore) }),
-        ...(body.grade && { grade: body.grade }),
+        deliveryScore: delivery,
+        reraScore: rera,
+        qualityScore: quality,
+        financialScore: financial,
+        responsivenessScore: responsive,
+        totalTrustScore,
+        grade,
         ...(body.contactEmail && { contactEmail: body.contactEmail }),
         ...(body.contactPhone && { contactPhone: body.contactPhone }),
         ...(body.partnerStatus !== undefined && { partnerStatus: Boolean(body.partnerStatus) }),

@@ -29,7 +29,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             create: { email: user.email, name: user.name, image: user.image },
           })
         } catch (err) {
-          console.error('User upsert error:', err)
+          console.error('User upsert error — denying login:', err)
+          // Deny the sign-in. Returning true here would create a half-valid
+          // session (no dbId) that breaks every admin route downstream.
+          return false
         }
       }
       return true
