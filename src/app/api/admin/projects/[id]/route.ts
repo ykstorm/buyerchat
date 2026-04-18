@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma'
 import { sanitizeAdminInput } from '@/lib/sanitize'
 import { invalidateContextCache } from '@/lib/context-cache'
 import { logAdminAction } from '@/lib/audit-log'
+import { computeGrade } from '@/lib/grade'
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -113,7 +114,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
           (d.financialScore ?? existing.financialScore) +
           (d.responsivenessScore ?? existing.responsivenessScore)
         )
-        const newGrade = newTotal >= 80 ? 'A' : newTotal >= 65 ? 'B' : newTotal >= 50 ? 'C' : 'D'
+        const newGrade = computeGrade(newTotal)
         await prisma.builder.update({
           where: { builderName: project.builderName },
           data: {

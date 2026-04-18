@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth'
 import { invalidateContextCache } from '@/lib/context-cache'
 import { logAdminAction } from '@/lib/audit-log'
+import { computeGrade } from '@/lib/grade'
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth()
@@ -54,7 +55,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     const responsive  = body.responsivenessScore  !== undefined ? Number(body.responsivenessScore)  : (current.responsivenessScore ?? 0)
 
     const totalTrustScore = delivery + rera + quality + financial + responsive
-    const grade = totalTrustScore >= 85 ? 'A' : totalTrustScore >= 70 ? 'B' : totalTrustScore >= 55 ? 'C' : 'D'
+    const grade = computeGrade(totalTrustScore)
 
     const builder = await prisma.builder.update({
       where: { id },

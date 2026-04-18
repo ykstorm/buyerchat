@@ -4,6 +4,7 @@ import { auth } from '@/lib/auth'
 import { z } from 'zod'
 import { invalidateContextCache } from '@/lib/context-cache'
 import { logAdminAction } from '@/lib/audit-log'
+import { computeGrade } from '@/lib/grade'
 
 const BuilderSchema = z.object({
   builderName: z.string().min(1),
@@ -18,14 +19,6 @@ const BuilderSchema = z.object({
   partnerStatus: z.boolean().default(false),
   commissionRatePct: z.number().default(1.5),
 })
-
-function computeGrade(score: number): string {
-  if (score >= 85) return 'A'
-  if (score >= 70) return 'B'
-  if (score >= 55) return 'C'
-  if (score >= 40) return 'D'
-  return 'F'
-}
 
 export async function POST(req: NextRequest) {
   const session = await auth()
