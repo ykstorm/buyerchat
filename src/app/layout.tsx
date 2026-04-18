@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { Playfair_Display, DM_Sans, Cormorant_Garamond } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/react'
+import { SpeedInsights } from '@vercel/speed-insights/next'
 import './globals.css'
 import Navbar from '@/components/Navbar'
 import ChatWidgetWrapper from '@/components/ChatWidgetWrapper'
@@ -95,6 +96,7 @@ export default function RootLayout({
         {children}
         <ChatWidgetWrapper />
         <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   )

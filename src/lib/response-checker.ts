@@ -1,3 +1,7 @@
+// LIMITATION: checkResponse runs post-stream — by the time a violation is caught
+// the tokens have already been sent to the client. To block violating content
+// mid-stream, integrate into the Vercel AI SDK onToken/onChunk callback or
+// switch to a proxy-based content filter. Current approach is audit-only.
 export interface CheckResult {
   passed: boolean
   violations: string[]

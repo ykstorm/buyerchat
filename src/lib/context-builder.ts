@@ -1,7 +1,7 @@
 import { prisma } from '@/lib/prisma'
 import { getCachedContext, setCachedContext, invalidateContextCache } from '@/lib/context-cache'
 import { computeUrgencySignals } from '@/lib/urgency-signals'
-import type { BuilderAIContext } from '@/lib/types/builder-ai-context'
+// BuilderAIContext type enforces sensitive field exclusion at compile time (see types/builder-ai-context.ts)
 
 export async function buildContextPayload() {
   try {

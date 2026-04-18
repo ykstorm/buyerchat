@@ -1,6 +1,10 @@
 'use client'
 
+import * as Sentry from '@sentry/nextjs'
+import { useEffect } from 'react'
+
 export default function Error({ error, reset }: { error: Error; reset: () => void }) {
+  useEffect(() => { Sentry.captureException(error) }, [error])
   return (
     <div style={{ background: '#09090b', minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '16px' }}>
       <p style={{ color: '#e0e0ea', fontSize: '16px' }}>Something went wrong</p>

@@ -1,4 +1,8 @@
 // Do not instrument middleware with Sentry — edge size limit
+// RBAC LIMITATION: Currently single-admin (ADMIN_EMAIL env var).
+// If multi-admin is needed, add a Role field to the User model and check
+// token.role instead of comparing email. All /api/admin/* routes also
+// duplicate the email check — those must be updated in tandem.
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { getToken } from 'next-auth/jwt'

@@ -22,11 +22,6 @@ export async function POST(req: NextRequest) {
 
       })
       
-      const recentMessages = await prisma.chatMessageLog.findMany({
-        where: { sessionId },
-        orderBy: { createdAt: 'desc' },
-        take: 3,
-      })
     if (!buyerSession?.messages) return NextResponse.json({ error: 'No session data' }, { status: 404 })
 
     const daysSince = daysBetween(buyerSession.lastMessageAt)

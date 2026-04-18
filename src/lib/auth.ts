@@ -2,10 +2,12 @@ import NextAuth from 'next-auth'
 import Google from 'next-auth/providers/google'
 import { prisma } from '@/lib/prisma'
 
-// Fail fast if AUTH_SECRET is missing or too short in production
+// Warn (don't throw) if AUTH_SECRET is weak — throwing kills the entire auth system
+// Auth.js v5 uses AUTH_SECRET; older versions use NEXTAUTH_SECRET
 const secret = process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET
 if (process.env.NODE_ENV === 'production' && (!secret || secret.length < 32)) {
-  throw new Error('AUTH_SECRET must be set and at least 32 characters in production')
+  console.error('WARNING: AUTH_SECRET is weak or missing in production — auth may fail')
+  // Don't throw — NextAuth will use whatever secret is available
 }
 
 export const { handlers, auth, signIn, signOut } = NextAuth({

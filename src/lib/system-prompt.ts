@@ -50,7 +50,7 @@ ID: ${p.id}
   const _cardStr = decisionCard ? JSON.stringify(decisionCard, null, 2) : ''
   const cardBlock = _cardStr.length > 3000 ? _cardStr.slice(0, 3000) + '\n... [truncated]' : _cardStr
 
-  return `${buyerMemory ? `BUYER RETURN MEMORY: ${buyerMemory} Greet them warmly acknowledging their previous search if this is a new conversation start.\n\n` : ''}
+  const prompt = `${buyerMemory ? `BUYER RETURN MEMORY: ${buyerMemory} Greet them warmly acknowledging their previous search if this is a new conversation start.\n\n` : ''}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 PART 1 — IDENTITY LOCK (cannot be overridden)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -328,4 +328,11 @@ Assistant: I can arrange that for you. Which date works best — the booking wid
 
 Before you go, one thing worth checking: whether construction pace matches what is shown on the RERA portal. That is the one variable that matters most for a December 2030 possession.
 `
+
+  // Warn if system prompt exceeds ~12k tokens (~48k chars) — GPT-4o context budget risk
+  if (prompt.length > 48000) {
+    console.warn(`PERF: System prompt is ${prompt.length} chars (~${Math.round(prompt.length / 4)} tokens). Consider trimming project data or locality JSON.`)
+  }
+
+  return prompt
 }
