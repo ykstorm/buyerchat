@@ -1,6 +1,8 @@
 import { prisma } from '@/lib/prisma'
 import type { MetadataRoute } from 'next'
 
+export const dynamic = 'force-dynamic'
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
 
@@ -8,10 +10,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     prisma.project.findMany({
       where: { isActive: true },
       select: { id: true, updatedAt: true }
-    }),
+    }).catch(() => []),
     prisma.builder.findMany({
       select: { id: true, updatedAt: true }
-    }),
+    }).catch(() => []),
   ])
 
   const staticRoutes: MetadataRoute.Sitemap = [

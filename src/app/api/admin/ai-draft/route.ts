@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
 
     const { text } = await generateText({
       model: openai('gpt-4o'),
-      system: `You write WhatsApp follow-up messages for AaiGhar, a real estate advisory in Ahmedabad.
+      system: `You write WhatsApp follow-up messages for Homesty.ai, a buyer-side real estate advisory in Ahmedabad.
 Language: casual Hinglish (mix of Hindi and English). Warm, advisory tone. Never salesy. Never pushy.
 Maximum 3 sentences. Always end with an open question.
 Do not use emojis excessively. Sound like a trusted advisor, not a broker.`,
