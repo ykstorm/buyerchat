@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
-import { motion, useMotionValue, useSpring, useInView, useScroll, useTransform } from 'framer-motion'
+import { motion, useMotionValue, useInView } from 'framer-motion'
 import Link from 'next/link'
 
 // Noise texture overlay for depth
@@ -20,6 +20,7 @@ function Marquee() {
     <div className="relative overflow-hidden py-3 border-y" style={{ borderColor: 'var(--landing-border)', background: 'var(--landing-bg-subtle)' }}>
       <motion.div
         className="flex gap-12 whitespace-nowrap"
+        style={{ willChange: 'transform' }}
         animate={{ x: ['0%', '-50%'] }}
         transition={{ duration: 25, repeat: Infinity, ease: 'linear' }}
       >
@@ -33,19 +34,31 @@ function Marquee() {
   )
 }
 
-// Cursor follower
+// Cursor follower — RAF-throttled to avoid layout thrash
 function CursorGlow() {
   const [pos, setPos] = useState({ x: -200, y: -200 })
+  const rafRef = useRef(0)
   useEffect(() => {
-    const h = (e: MouseEvent) => setPos({ x: e.clientX, y: e.clientY })
-    window.addEventListener('mousemove', h)
-    return () => window.removeEventListener('mousemove', h)
+    const h = (e: MouseEvent) => {
+      if (rafRef.current) return
+      const cx = e.clientX, cy = e.clientY
+      rafRef.current = requestAnimationFrame(() => {
+        setPos({ x: cx, y: cy })
+        rafRef.current = 0
+      })
+    }
+    window.addEventListener('mousemove', h, { passive: true })
+    return () => {
+      window.removeEventListener('mousemove', h)
+      if (rafRef.current) cancelAnimationFrame(rafRef.current)
+    }
   }, [])
   return (
     <div className="pointer-events-none fixed z-0" style={{
       left: pos.x - 200, top: pos.y - 200, width: 400, height: 400,
       background: 'radial-gradient(circle, rgba(184,146,74,0.07) 0%, transparent 70%)',
-      borderRadius: '50%', transition: 'left 0.15s ease, top 0.15s ease'
+      borderRadius: '50%', willChange: 'transform', transform: 'translateZ(0)',
+      transition: 'left 0.15s ease, top 0.15s ease'
     }} />
   )
 }

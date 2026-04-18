@@ -459,6 +459,7 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
                 background: 'var(--bg-surface)',
                 maxHeight: 'calc(100dvh - 80px)',
                 paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+                willChange: 'transform, opacity',
               }}
             >
               {/* Header bar */}

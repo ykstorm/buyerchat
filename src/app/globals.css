@@ -216,8 +216,4 @@ body {
   border-color: rgba(96, 165, 250, 0.4) !important;
 }
 
-/* Smooth scrollbar */
-* {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(255,255,255,0.1) transparent;
-}
+/* Duplicate scrollbar block removed — defined above in Japanese minimalist scrollbar section */

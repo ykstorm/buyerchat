@@ -57,7 +57,7 @@ export default function ProjectCardV2({ project }: { project: ProjectType }) {
       initial={{ opacity: 0, y: 20, scale: 0.97 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{ type: 'spring', stiffness: 300, damping: 28 }}
-      style={{ rotateX, rotateY, transformStyle: 'preserve-3d', background: 'var(--bg-surface-alt)', border: '1px solid var(--border)', boxShadow: hovered ? '0 20px 60px rgba(27,79,138,0.12)' : '0 4px 20px rgba(0,0,0,0.06)' }}
+      style={{ rotateX, rotateY, transformStyle: 'preserve-3d', willChange: 'transform', background: 'var(--bg-surface-alt)', border: '1px solid var(--border)', boxShadow: hovered ? '0 20px 60px rgba(27,79,138,0.12)' : '0 4px 20px rgba(0,0,0,0.06)' }}
       onMouseMove={e => {
         const now = Date.now()
         if (now - lastMoveTs.current < 30) return
