@@ -8,6 +8,8 @@ import ProjectCard from './artifacts/ProjectCardV2'
 import ComparisonCard from './artifacts/ComparisonCard'
 import CostBreakdownCard from './artifacts/CostBreakdownCard'
 import { VisitBooking } from './artifacts/VisitBooking'
+import VisitPromptCard from './artifacts/VisitPromptCard'
+import BuilderTrustCard from './artifacts/BuilderTrustCard'
 import type { ProjectType, Artifact } from '@/lib/types/chat'
 
 /* ── Floating Particles Component ── */
@@ -339,7 +341,7 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
               transition={{ delay: 0.55 }}
               className="text-[11px] text-[#A8A29E]"
             >
-              BuyerChat earns only when you buy. No builder pays for promotion.
+              Homesty earns only when you buy. No builder pays for promotion.
             </motion.p>
           </div>
         </div>
@@ -480,7 +482,7 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-[11px] font-medium" style={{ color: 'var(--text-secondary)' }}>
-                    {artifact.type === 'visit_booking' ? 'Book Visit' : artifact.type === 'comparison' ? 'Compare' : artifact.type === 'cost_breakdown' ? 'Cost' : 'Project'}
+                    {artifact.type === 'visit_booking' ? 'Book Visit' : artifact.type === 'comparison' ? 'Compare' : artifact.type === 'cost_breakdown' ? 'Cost' : artifact.type === 'visit_prompt' ? 'Visit' : artifact.type === 'builder_trust' ? 'Builder' : 'Project'}
                   </span>
                   <button
                     type="button"
@@ -520,6 +522,21 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
                   ? <ComparisonCard projectA={artifact.data} projectB={artifact.dataB} />
                   : artifact.type === 'cost_breakdown'
                   ? <CostBreakdownCard project={artifact.data} />
+                  : artifact.type === 'visit_prompt'
+                  ? <VisitPromptCard project={artifact.data} />
+                  : artifact.type === 'builder_trust'
+                  ? <BuilderTrustCard builder={{
+                      brandName: artifact.data.builderName,
+                      builderName: artifact.data.builderName,
+                      grade: artifact.data.trustGrade ?? 'C',
+                      totalTrustScore: artifact.data.trustScore ?? 0,
+                      deliveryScore: 0,
+                      reraScore: 0,
+                      qualityScore: 0,
+                      financialScore: 0,
+                      responsivenessScore: 0,
+                      agreementSigned: false,
+                    }} />
                   : <ProjectCard project={artifact.data} />}
               </div>
             </motion.div>

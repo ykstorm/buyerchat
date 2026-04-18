@@ -1,7 +1,18 @@
+import type { Metadata } from 'next'
 import { Suspense } from 'react'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import ChatClient from './chat-client'
+
+export const metadata: Metadata = {
+  title: 'Chat with Homesty AI — Honest Property Advisor | Ahmedabad',
+  description: 'Ask Homesty AI about South Bopal & Shela properties. Get honest scores, flaw disclosures, ALL-IN pricing, and personalised recommendations.',
+  openGraph: {
+    title: 'Chat with Homesty AI',
+    description: 'Your honest property advisor for South Bopal & Shela, Ahmedabad.',
+    type: 'website',
+  },
+}
 
 export default async function ChatPage() {
   const session = await auth()

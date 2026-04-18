@@ -285,7 +285,7 @@ if (hasInjection) {
             await resend.emails.send({
               to: process.env.ADMIN_EMAIL,
               from: process.env.FROM_EMAIL,
-              subject: `CRITICAL: BuyerChat AI violation — ${violations[0]}`,
+              subject: `CRITICAL: Homesty AI violation — ${violations[0]}`,
               text: [
                 `Session: ${chatSession?.id ?? 'unknown'}`,
                 `Violations: ${violations.join(' | ')}`,

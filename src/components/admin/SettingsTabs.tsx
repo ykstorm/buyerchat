@@ -71,7 +71,7 @@ export default function SettingsTabs({
               {[
                 { label: 'Account type', value: 'Admin', color: '#60A5FA' },
                 { label: 'Co-admin', value: 'Lakshyaraj (Dev)', color: '#9CA3AF' },
-                { label: 'Platform', value: 'BuyerChat.in + Admin', color: '#9CA3AF' },
+                { label: 'Platform', value: 'Homesty.ai + Admin', color: '#9CA3AF' },
               ].map(item => (
                 <div key={item.label} className="flex items-center justify-between py-2" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                   <span style={{ color: '#6B7280' }}>{item.label}</span>

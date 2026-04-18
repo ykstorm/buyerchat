@@ -50,7 +50,7 @@ export default function Navbar() {
               <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[#3de8a0]" />
             </span>
             <span className="font-serif text-lg font-bold text-[#e0e0ea]">
-              BuyerChat
+              Homesty
             </span>
           </Link>
 

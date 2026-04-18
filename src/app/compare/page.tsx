@@ -711,7 +711,7 @@ export default function ComparePage() {
                   Want a deeper analysis?
                 </h3>
                 <p className="font-sans text-sm text-[#636380] mt-2 max-w-md mx-auto">
-                  Ask BuyerChat AI to compare these projects and give you a personalised recommendation.
+                  Ask Homesty AI to compare these projects and give you a personalised recommendation.
                 </p>
                 <button
                   onClick={() => {

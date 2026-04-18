@@ -59,7 +59,7 @@ try {
       grade: true,
     }
   })
-  invalidateContextCache()
+  await invalidateContextCache()
   await logAdminAction('create', 'builder', { id: builder.id, builderName: builder.builderName }, session!.user!.email!)
 
   return NextResponse.json(builder, { status: 201 })

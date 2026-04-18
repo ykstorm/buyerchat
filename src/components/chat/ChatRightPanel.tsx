@@ -6,6 +6,8 @@ import ProjectCard from './artifacts/ProjectCardV2'
 import ComparisonCard from './artifacts/ComparisonCard'
 import CostBreakdownCard from './artifacts/CostBreakdownCard'
 import { VisitBooking } from './artifacts/VisitBooking'
+import VisitPromptCard from './artifacts/VisitPromptCard'
+import BuilderTrustCard from './artifacts/BuilderTrustCard'
 import type { ProjectType, Artifact } from '@/lib/types/chat'
 
 export default function ChatRightPanel({
@@ -109,6 +111,27 @@ export default function ChatRightPanel({
                 <>
                   <p className="text-[11px] font-medium text-[#A8A29E] uppercase tracking-wider mb-3">Cost breakdown</p>
                   <CostBreakdownCard project={artifact.data} />
+                </>
+              ) : artifact.type === 'visit_prompt' ? (
+                <>
+                  <p className="text-[11px] font-medium text-[#A8A29E] uppercase tracking-wider mb-3">Visit this project</p>
+                  <VisitPromptCard project={artifact.data} />
+                </>
+              ) : artifact.type === 'builder_trust' ? (
+                <>
+                  <p className="text-[11px] font-medium text-[#A8A29E] uppercase tracking-wider mb-3">Builder trust</p>
+                  <BuilderTrustCard builder={{
+                    brandName: artifact.data.builderName,
+                    builderName: artifact.data.builderName,
+                    grade: artifact.data.trustGrade ?? 'C',
+                    totalTrustScore: artifact.data.trustScore ?? 0,
+                    deliveryScore: 0,
+                    reraScore: 0,
+                    qualityScore: 0,
+                    financialScore: 0,
+                    responsivenessScore: 0,
+                    agreementSigned: false,
+                  }} />
                 </>
               ) : (
                 <>

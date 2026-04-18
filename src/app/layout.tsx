@@ -58,6 +58,38 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={`${playfair.variable} ${dmSans.variable} ${cormorant.variable}`}>
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'RealEstateAgent',
+              name: 'Homesty.ai',
+              url: process.env.NEXT_PUBLIC_APP_URL ?? 'https://homesty.ai',
+              description: 'South Bopal and Shela\'s first honest property advisor. ALL-IN prices, mandatory flaw disclosure, OTP-protected visits.',
+              areaServed: {
+                '@type': 'City',
+                name: 'Ahmedabad',
+                containedInPlace: { '@type': 'State', name: 'Gujarat' },
+              },
+              address: {
+                '@type': 'PostalAddress',
+                addressLocality: 'Ahmedabad',
+                addressRegion: 'Gujarat',
+                addressCountry: 'IN',
+              },
+              priceRange: '₹₹',
+              openingHoursSpecification: {
+                '@type': 'OpeningHoursSpecification',
+                dayOfWeek: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+                opens: '09:00',
+                closes: '20:00',
+              },
+            }),
+          }}
+        />
+      </head>
       <body className="antialiased" style={{ background: 'var(--background)' }}>
         <Navbar />
         {children}

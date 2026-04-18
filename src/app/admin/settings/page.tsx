@@ -46,14 +46,14 @@ export default async function SettingsPage() {
             <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-[22px] font-bold text-white" style={{ background: '#1B4F8A' }}>{initial}</div>
             <div>
               <p className="text-[15px] font-bold text-white">{userName}</p>
-              <p className="text-[11px]" style={{ color: '#6B7280' }}>Admin · AaiGhar / BuyerChat Technologies LLP</p>
+              <p className="text-[11px]" style={{ color: '#6B7280' }}>Admin · AaiGhar / Homesty Technologies LLP</p>
             </div>
           </div>
           <div className="space-y-2 text-[12px]">
             {[
               { label: 'Email', value: session.user.email ?? '—' },
               { label: 'Account type', value: 'Admin' },
-              { label: 'Company', value: 'AaiGhar / BuyerChat Technologies LLP' },
+              { label: 'Company', value: 'AaiGhar / Homesty Technologies LLP' },
               { label: 'City', value: 'Ahmedabad, Gujarat' },
             ].map(item => (
               <div key={item.label} className="flex items-center justify-between py-2" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>

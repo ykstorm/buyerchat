@@ -239,6 +239,50 @@ export default function ChatClient({
       // Final flush to ensure last chunk is rendered
       flushUpdate()
 
+      // Parse <!--CARD:{...}--> triggers from AI response
+      const cardRegex = /<!--CARD:(.*?)-->/g
+      const cardMatches = [...full.matchAll(cardRegex)]
+      const parsedCards: Array<{ type: string; projectId?: string; projectName?: string; builderId?: string; builderName?: string; grade?: string; trustScore?: number; reason?: string }> = []
+      for (const match of cardMatches) {
+        try { parsedCards.push(JSON.parse(match[1])) } catch {}
+      }
+      // Strip CARD blocks from displayed message
+      if (cardMatches.length > 0) {
+        full = full.replace(cardRegex, '').trimEnd()
+        setMessages(prev => prev.map(m => m.id === assistantId ? { ...m, content: full } : m))
+      }
+
+      // Handle parsed CARD triggers as artifacts
+      for (const card of parsedCards) {
+        if (card.type === 'visit_prompt' && card.projectId) {
+          const project = projects.find(p => p.id === card.projectId)
+          if (project) {
+            const visitArtifact: Artifact = { type: 'visit_prompt', data: project }
+            const newHist = [...artifactHistoryRef.current, visitArtifact]
+            artifactHistoryRef.current = newHist
+            artifactIndexRef.current = newHist.length - 1
+            setArtifactHistory(newHist)
+            setArtifactIndex(newHist.length - 1)
+            setCurrentArtifact(visitArtifact)
+            setShowArtifact(true)
+          }
+        }
+        if (card.type === 'builder_trust' && card.builderName) {
+          // Find first project with matching builder to use as data source
+          const project = projects.find(p => p.builderName.toLowerCase().includes(card.builderName!.toLowerCase()))
+          if (project) {
+            const trustArtifact: Artifact = { type: 'builder_trust', data: { ...project, trustScore: card.trustScore ?? project.trustScore, trustGrade: card.grade ?? project.trustGrade } }
+            const newHist = [...artifactHistoryRef.current, trustArtifact]
+            artifactHistoryRef.current = newHist
+            artifactIndexRef.current = newHist.length - 1
+            setArtifactHistory(newHist)
+            setArtifactIndex(newHist.length - 1)
+            setCurrentArtifact(trustArtifact)
+            setShowArtifact(true)
+          }
+        }
+      }
+
       // Detect project artifacts — find ALL mentioned projects
       const lower = full.toLowerCase()
       const foundProjects = projects.filter(p => lower.includes(p.projectName.toLowerCase()))
@@ -386,6 +430,14 @@ export default function ChatClient({
     if (urlSessionId && !document.referrer.includes('/chat')) {
       router.replace('/chat')
     }
+    // Pre-fill input from intent query params (e.g. from project page visit button)
+    const intent = searchParams.get('intent')
+    const projectName = searchParams.get('project')
+    if (intent === 'visit' && projectName) {
+      setInput(`I want to book a site visit for ${projectName}`)
+    } else if (projectName) {
+      setInput(`Tell me about ${projectName}`)
+    }
   }, [])
 
   useEffect(() => {
@@ -502,4 +554,4 @@ export default function ChatClient({
   )
 }
 
- 
+                                   

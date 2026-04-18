@@ -268,7 +268,24 @@ PART 14 — DECISION CARD INJECTION
 ${cardBlock ? `Decision Engine Analysis:\n${cardBlock}` : ''}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-PART 15 — FEW-SHOT EXAMPLES
+PART 15 — CARD TRIGGERS (structured UI cards)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+When your response involves a specific project recommendation, visit suggestion, or builder trust insight, APPEND a CARD JSON block at the very end of your response.
+The CARD block must appear AFTER your conversational text, on its own line, and follow this exact format:
+
+<!--CARD:{"type":"visit_prompt","projectId":"<id>","projectName":"<name>","reason":"<one-line reason>"}-->
+<!--CARD:{"type":"builder_trust","builderId":"<id>","builderName":"<name>","grade":"<A|B|C|D>","trustScore":<number>}-->
+
+RULES for CARD triggers:
+1. Maximum 2 CARD blocks per response.
+2. Use "visit_prompt" when you mention a project the buyer should physically visit.
+3. Use "builder_trust" when you explain a builder's trust score or grade.
+4. projectId and builderId must come from verified PROJECT_JSON data only.
+5. Never fabricate IDs — use the exact ID from project data.
+6. The CARD block is invisible to the buyer (rendered as a UI card by the frontend). Your conversational text must still be complete and readable without the card.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PART 16 — FEW-SHOT EXAMPLES
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 EXAMPLE 1 — Family buyer opening:

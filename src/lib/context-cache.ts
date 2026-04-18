@@ -1,39 +1,63 @@
-// In-memory context cache with 5-min TTL.
+// Context cache — Upstash Redis with in-memory fallback for local dev.
 //
-// ⚠️ SHORT-TERM SOLUTION. Vercel serverless instances do not share memory —
-// each cold-started container has its own cache. Under moderate traffic (container
-// stays warm 10-15 min), this still gives a real hit rate since requests on the
-// same warm container reuse the cached payload.
-//
-// MIGRATE TO UPSTASH REDIS before production launch. See backlog.md ISSUE-18/19.
-// The same Redis client should also power the rate limiter (ISSUE-04).
+// Redis key: "ctx:main" with 5-minute TTL.
+// Falls back to module-level memory cache when UPSTASH env vars are absent.
 
-const TTL_MS = 5 * 60 * 1000 // 5 minutes
+import { Redis } from '@upstash/redis'
 
-type CacheEntry = {
-  value: string
-  expiresAt: number
+const TTL_SEC = 5 * 60 // 5 minutes
+const CACHE_KEY = 'ctx:main'
+
+let redis: Redis | null = null
+
+function getRedis(): Redis | null {
+  if (redis) return redis
+  if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
+    redis = Redis.fromEnv()
+  }
+  return redis
 }
 
-// Module-level singleton — persists for the life of the container.
-let entry: CacheEntry | null = null
+// ── In-memory fallback (local dev) ──────────────────────────────────
+type CacheEntry = { value: string; expiresAt: number }
+let memEntry: CacheEntry | null = null
 
-export function getCachedContext(): string | null {
-  if (!entry) return null
-  if (Date.now() >= entry.expiresAt) {
-    entry = null
+export async function getCachedContext(): Promise<string | null> {
+  const client = getRedis()
+
+  if (client) {
+    const val = await client.get<string>(CACHE_KEY)
+    return val ?? null
+  }
+
+  // Fallback
+  if (!memEntry) return null
+  if (Date.now() >= memEntry.expiresAt) {
+    memEntry = null
     return null
   }
-  return entry.value
+  return memEntry.value
 }
 
-export function setCachedContext(context: string): void {
-  entry = {
-    value: context,
-    expiresAt: Date.now() + TTL_MS,
+export async function setCachedContext(context: string): Promise<void> {
+  const client = getRedis()
+
+  if (client) {
+    await client.set(CACHE_KEY, context, { ex: TTL_SEC })
+    return
   }
+
+  // Fallback
+  memEntry = { value: context, expiresAt: Date.now() + TTL_SEC * 1000 }
 }
 
-export function invalidateContextCache(): void {
-  entry = null
+export async function invalidateContextCache(): Promise<void> {
+  const client = getRedis()
+
+  if (client) {
+    await client.del(CACHE_KEY)
+    return
+  }
+
+  memEntry = null
 }

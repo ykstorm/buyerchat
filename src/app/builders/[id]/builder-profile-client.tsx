@@ -505,7 +505,7 @@ export function BuilderProfileClient({ builder }: { builder: BuilderProfile }) {
             Have questions about {builder.builderName}?
           </h2>
           <p className="relative font-sans text-sm text-[#636380] mb-6 max-w-md mx-auto">
-            Chat with BuyerChat AI for personalised insights, project comparisons, and risk analysis.
+            Chat with Homesty AI for personalised insights, project comparisons, and risk analysis.
           </p>
           <Link
             href="/"

@@ -58,7 +58,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         ...(body.commissionRatePct !== undefined && { commissionRatePct: Number(body.commissionRatePct) }),
       },
     })
-    invalidateContextCache()
+    await invalidateContextCache()
     await logAdminAction('update', 'builder', { id, builderName: builder.builderName }, session!.user!.email!)
     return NextResponse.json(builder)
   } catch (err) {

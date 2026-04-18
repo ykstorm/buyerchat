@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Active Projects — South Bopal & Shela | BuyerChat',
+  title: 'Active Projects — South Bopal & Shela | Homesty',
   description: 'Browse RERA-verified residential projects in South Bopal and Shela, Ahmedabad. Updated prices, builder trust scores, possession dates.',
   openGraph: {
     title: 'Active Projects in South Bopal & Shela',

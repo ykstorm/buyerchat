@@ -11,7 +11,7 @@ export default function SignInPage() {
           className="text-[24px] font-semibold text-[#1C1917]"
           style={{ fontFamily: "'Playfair Display', serif" }}
         >
-          BuyerChat
+          Homesty
         </span>
         <span className="w-2 h-2 rounded-full bg-[#0F6E56] mt-0.5" />
       </div>
@@ -53,7 +53,7 @@ export default function SignInPage() {
 
       {/* Footer note */}
       <p className="mt-6 text-[11px] text-[#A8A29E] text-center max-w-xs" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-        BuyerChat earns only when you buy. No builder pays for promotion.
+        Homesty earns only when you buy. No builder pays for promotion.
       </p>
     </div>
   )

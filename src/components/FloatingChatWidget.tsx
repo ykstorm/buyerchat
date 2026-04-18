@@ -149,7 +149,7 @@ export default function FloatingChatWidget() {
               </svg>
 
               <div className="absolute -top-10 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-lg bg-[#1a1a24] px-3 py-1.5 text-xs text-[#e0e0ea] shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                Ask BuyerChat AI
+                Ask Homesty AI
                 <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-[#1a1a24] rotate-45" />
               </div>
             </motion.button>
@@ -175,7 +175,7 @@ export default function FloatingChatWidget() {
                   <span className="relative inline-flex h-2 w-2 rounded-full bg-[#3de8a0]" />
                 </span>
                 <div>
-                  <p className="text-sm font-semibold text-[#e0e0ea]">BuyerChat AI</p>
+                  <p className="text-sm font-semibold text-[#e0e0ea]">Homesty AI</p>
                   <p className="text-[11px] text-[#636380]">Answers from verified data only</p>
                 </div>
               </div>
