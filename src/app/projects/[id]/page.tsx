@@ -73,15 +73,16 @@ const transition = {
 
 function NotFoundState() {
   return (
-    <div className="min-h-screen bg-[#09090b] flex items-center justify-center px-6">
-      <div className="bg-white/[0.03] border border-white/[0.08] rounded-2xl p-10 text-center max-w-md">
-        <h1 className="font-serif text-2xl text-[#e0e0ea]">Project not found</h1>
-        <p className="font-sans text-sm text-[#636380] mt-2">
+    <div className="min-h-screen flex items-center justify-center px-6" style={{ background: 'var(--bg-base)' }}>
+      <div className="rounded-2xl p-10 text-center max-w-md" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+        <h1 className="text-2xl" style={{ fontFamily: 'var(--font-cormorant, "Cormorant Garamond", Georgia, serif)', color: 'var(--text-primary)' }}>Project not found</h1>
+        <p className="text-sm mt-2" style={{ color: 'var(--text-muted)' }}>
           This project may have been removed or the link is incorrect.
         </p>
         <Link
           href="/projects"
-          className="inline-block mt-6 font-sans text-sm text-[#3de8a0] hover:underline underline-offset-2"
+          className="inline-block mt-6 text-sm hover:underline underline-offset-2"
+          style={{ color: 'var(--accent)' }}
         >
           ← Back to projects
         </Link>
@@ -92,20 +93,20 @@ function NotFoundState() {
 
 function LoadingState() {
   return (
-    <div className="min-h-screen bg-[#09090b] pt-28 pb-24">
+    <div className="min-h-screen pt-28 pb-24" style={{ background: 'var(--bg-base)' }}>
       <div className="max-w-5xl mx-auto px-6">
-        <div className="h-6 w-24 bg-white/[0.04] rounded-xl animate-pulse mb-8" />
-        <div className="h-12 w-3/4 bg-white/[0.04] rounded-xl animate-pulse mt-4" />
-        <div className="h-4 w-1/3 bg-white/[0.04] rounded-xl animate-pulse mt-2" />
+        <div className="h-6 w-24 rounded-xl animate-pulse mb-8" style={{ background: 'var(--bg-subtle)' }} />
+        <div className="h-12 w-3/4 rounded-xl animate-pulse mt-4" style={{ background: 'var(--bg-subtle)' }} />
+        <div className="h-4 w-1/3 rounded-xl animate-pulse mt-2" style={{ background: 'var(--bg-subtle)' }} />
         <div className="mt-12 grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-5">
-            <div className="h-64 bg-white/[0.04] rounded-2xl animate-pulse" />
-            <div className="h-80 bg-white/[0.04] rounded-2xl animate-pulse" />
-            <div className="h-32 bg-white/[0.04] rounded-2xl animate-pulse" />
+            <div className="h-64 rounded-2xl animate-pulse" style={{ background: 'var(--bg-subtle)' }} />
+            <div className="h-80 rounded-2xl animate-pulse" style={{ background: 'var(--bg-subtle)' }} />
+            <div className="h-32 rounded-2xl animate-pulse" style={{ background: 'var(--bg-subtle)' }} />
           </div>
           <div className="space-y-4">
-            <div className="h-72 bg-white/[0.04] rounded-2xl animate-pulse" />
-            <div className="h-40 bg-white/[0.04] rounded-2xl animate-pulse" />
+            <div className="h-72 rounded-2xl animate-pulse" style={{ background: 'var(--bg-subtle)' }} />
+            <div className="h-40 rounded-2xl animate-pulse" style={{ background: 'var(--bg-subtle)' }} />
           </div>
         </div>
       </div>
@@ -130,13 +131,15 @@ function SpotlightCTACard({ project, onBookVisit }: { project: ProjectDetail; on
   return (
     <div className="relative rounded-2xl p-[1px] overflow-hidden">
       <motion.div
-        className="absolute inset-0 rounded-2xl border border-[#3de8a0]/[0.15] pointer-events-none"
+        className="absolute inset-0 rounded-2xl pointer-events-none"
+        style={{ border: '1px solid var(--accent-border)' }}
         animate={{ opacity: [0.15, 0.40, 0.15] }}
         transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
       />
       <div
         ref={ref}
-        className="relative z-10 bg-[#0c1a14] rounded-2xl p-6"
+        className="relative z-10 rounded-2xl p-6"
+        style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}
         onMouseMove={handleMouseMove}
         onMouseEnter={() => setOpacity(1)}
         onMouseLeave={() => setOpacity(0)}
@@ -145,37 +148,40 @@ function SpotlightCTACard({ project, onBookVisit }: { project: ProjectDetail; on
           className="absolute inset-0 rounded-2xl pointer-events-none transition-opacity duration-300"
           style={{
             opacity,
-            background: `radial-gradient(400px circle at ${pos.x}px ${pos.y}px, rgba(61,232,160,0.08), transparent 40%)`
+            background: `radial-gradient(400px circle at ${pos.x}px ${pos.y}px, var(--accent-bg), transparent 40%)`
           }}
         />
         <div className="relative z-10">
-          <p className="font-sans text-[10px] tracking-[0.14em] uppercase text-[#3de8a0] mb-3">
+          <p className="text-[10px] tracking-[0.14em] uppercase mb-3" style={{ color: 'var(--accent)' }}>
             BOOK A SITE VISIT
           </p>
-          <h3 className="font-serif text-2xl font-bold text-[#e0e0ea] leading-tight">
+          <h3 className="text-2xl font-bold leading-tight" style={{ fontFamily: 'var(--font-cormorant, "Cormorant Garamond", Georgia, serif)', color: 'var(--text-primary)' }}>
             See it in person
           </h3>
-          <p className="font-sans text-xs text-[#636380] mt-2">
+          <p className="text-xs mt-2" style={{ color: 'var(--text-muted)' }}>
             OTP-verified. No agent pressure. 30 seconds.
           </p>
           <motion.button
-            className="mt-5 w-full bg-[#3de8a0] text-[#09090b] rounded-full py-3.5 font-sans font-semibold text-sm hover:shadow-[0_0_28px_rgba(61,232,160,0.30)] transition-all duration-300"
+            className="mt-5 w-full rounded-full py-3.5 font-semibold text-sm transition-all duration-300"
+            style={{ background: 'var(--accent)', color: 'var(--bg-base)' }}
             whileHover={{ scale: 1.01 }}
             whileTap={{ scale: 0.98 }}
-            onClick={onBookVisit}          >
+            onClick={onBookVisit}
+          >
             Book Site Visit
           </motion.button>
           <p
-            className="mt-3 text-center font-sans text-xs text-[#3de8a0] hover:underline cursor-pointer underline-offset-2"
+            className="mt-3 text-center text-xs hover:underline cursor-pointer underline-offset-2"
+            style={{ color: 'var(--accent)' }}
             onClick={() => router.push(`/chat?intent=visit&project=${encodeURIComponent(project.projectName)}`)}
           >
             Ask AI about this project →
           </p>
-          <div className="border-t border-white/[0.06] mt-6 pt-5">
-            <p className="font-sans text-sm font-semibold text-[#e0e0ea]">
+          <div className="mt-6 pt-5" style={{ borderTop: '1px solid var(--border-subtle)' }}>
+            <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
               Starting from ₹{formatPrice(project.minPrice)}
             </p>
-            <p className="font-sans text-[11px] text-[#636380] mt-1">
+            <p className="text-[11px] mt-1" style={{ color: 'var(--text-muted)' }}>
               EMI ~₹{emi.toLocaleString('en-IN')}/mo at 8.5% · 20yr
             </p>
           </div>
@@ -207,14 +213,15 @@ function ScoreBar({
   return (
     <div>
       <div className="flex justify-between mb-1.5">
-        <span className="font-sans text-xs text-[#8888a8]">{label}</span>
-        <span className="font-mono text-xs text-[#8888a8]">
+        <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>{label}</span>
+        <span className="font-mono text-xs" style={{ color: 'var(--text-secondary)' }}>
           {score}/{max}
         </span>
       </div>
-      <div className="w-full h-1 rounded-full bg-white/[0.06]">
+      <div className="w-full h-1 rounded-full" style={{ background: 'var(--score-track)' }}>
         <motion.div
-          className={`h-full rounded-full ${isLow ? 'bg-red-500' : 'bg-[#3de8a0]'}`}
+          className={`h-full rounded-full ${isLow ? 'bg-red-500' : ''}`}
+          style={isLow ? undefined : { background: 'var(--accent)' }}
           initial={{ width: 0 }}
           animate={{ width: mounted ? `${pct}%` : 0 }}
           transition={{ duration: 1.2, delay: index * 0.15, ease: 'easeOut' }}
@@ -232,17 +239,17 @@ function ProjectDetailClient({ project }: { project: ProjectDetail }) {
     setMounted(true)
   }, [])
 
-  const gradeColors: Record<string, string> = {
-    A: 'bg-emerald-500/[0.15] text-emerald-400',
-    B: 'bg-blue-500/[0.15] text-blue-400',
-    C: 'bg-amber-500/[0.15] text-amber-400',
-    D: 'bg-red-500/[0.15] text-red-400',
-    F: 'bg-red-500/[0.15] text-red-400'
+  const gradeColors: Record<string, { bg: string; text: string }> = {
+    A: { bg: 'var(--bg-accent-green)', text: 'var(--text-accent-green)' },
+    B: { bg: 'var(--bg-accent-blue)', text: 'var(--text-accent-blue)' },
+    C: { bg: 'var(--bg-accent-amber)', text: 'var(--text-accent-amber)' },
+    D: { bg: 'rgba(239,68,68,0.12)', text: '#ef4444' },
+    F: { bg: 'rgba(239,68,68,0.12)', text: '#ef4444' }
   }
 
-  const statusColors: Record<string, string> = {
-    'Ready to Move': 'bg-emerald-500/[0.12] border-emerald-500/[0.20] text-emerald-400',
-    'Under Construction': 'bg-blue-500/[0.12] border-blue-500/[0.20] text-blue-400'
+  const statusColors: Record<string, { bg: string; border: string; text: string }> = {
+    'Ready to Move': { bg: 'var(--bg-accent-green)', border: 'var(--border-accent-green)', text: 'var(--text-accent-green)' },
+    'Under Construction': { bg: 'var(--bg-accent-blue)', border: 'var(--border-accent-blue)', text: 'var(--text-accent-blue)' }
   }
 
   const scores = project.builder
@@ -255,9 +262,12 @@ function ProjectDetailClient({ project }: { project: ProjectDetail }) {
       ]
     : []
 
+  const statusStyle = statusColors[project.constructionStatus]
+  const gradeStyle = gradeColors[project.builder?.grade ?? 'C']
+
   return (
     <>
-    <div className="min-h-screen bg-[#09090b] pt-28 pb-24">
+    <div className="min-h-screen pt-28 pb-24" style={{ background: 'var(--bg-base)' }}>
       <div className="max-w-5xl mx-auto px-6">
         <motion.div
           className="mb-8"
@@ -268,12 +278,13 @@ function ProjectDetailClient({ project }: { project: ProjectDetail }) {
         >
           <Link
             href="/projects"
-            className="font-sans text-xs text-[#636380] hover:text-[#8888a8] transition-colors"
+            className="text-xs hover:underline transition-colors"
+            style={{ color: 'var(--text-muted)' }}
           >
             Projects
           </Link>
-          <span className="text-[#454560] mx-2">→</span>
-          <span className="font-sans text-xs text-[#8888a8]">{project.projectName}</span>
+          <span className="mx-2" style={{ color: 'var(--text-label)' }}>→</span>
+          <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>{project.projectName}</span>
         </motion.div>
 
         <motion.div
@@ -283,46 +294,50 @@ function ProjectDetailClient({ project }: { project: ProjectDetail }) {
           transition={{ ...transition, delay: 0.08 }}
         >
           <div className="flex items-center gap-2 mb-3 flex-wrap">
-            <span className="bg-[#3de8a0]/[0.10] border border-[#3de8a0]/[0.20] rounded-full px-3 py-1 font-sans text-[10px] text-[#3de8a0]">
+            <span className="rounded-full px-3 py-1 text-[10px]" style={{ background: 'var(--accent-bg)', border: '1px solid var(--accent-border)', color: 'var(--accent)' }}>
               {project.microMarket}
             </span>
-            <span
-              className={`border rounded-full px-3 py-1 font-sans text-[10px] ${statusColors[project.constructionStatus] || ''}`}
-            >
-              {project.constructionStatus}
-            </span>
-            {project.builder && (
+            {statusStyle && (
               <span
-                className={`ml-auto rounded-full px-3 py-1 font-mono text-xs font-bold ${gradeColors[project.builder.grade] || ''}`}
+                className="rounded-full px-3 py-1 text-[10px]"
+                style={{ background: statusStyle.bg, border: `1px solid ${statusStyle.border}`, color: statusStyle.text }}
+              >
+                {project.constructionStatus}
+              </span>
+            )}
+            {project.builder && gradeStyle && (
+              <span
+                className="ml-auto rounded-full px-3 py-1 font-mono text-xs font-bold"
+                style={{ background: gradeStyle.bg, color: gradeStyle.text }}
               >
                 {project.builder.grade} Grade · {project.builder.totalTrustScore}/100
               </span>
             )}
           </div>
 
-          <h1 className="font-serif text-5xl md:text-6xl font-bold text-[#e0e0ea] leading-[1.05] tracking-tight mt-4">
+          <h1 className="text-5xl md:text-6xl font-bold leading-[1.05] tracking-tight mt-4" style={{ fontFamily: 'var(--font-cormorant, "Cormorant Garamond", Georgia, serif)', color: 'var(--text-primary)' }}>
             {project.projectName}
           </h1>
-          <p className="font-sans text-base text-[#8888a8] mt-2">{project.builderName}</p>
+          <p className="text-base mt-2" style={{ color: 'var(--text-secondary)' }}>{project.builderName}</p>
 
           <div className="mt-4 flex flex-wrap gap-2">
             {project.urgencySignals.fewUnitsLeft && project.availableUnits < 20 && (
-              <span className="bg-amber-500/[0.12] border border-amber-500/[0.25] text-amber-400 rounded-full px-3 py-1 text-[11px] font-sans">
+              <span className="rounded-full px-3 py-1 text-[11px]" style={{ background: 'var(--bg-accent-amber)', border: '1px solid var(--border-accent-amber)', color: 'var(--text-accent-amber)' }}>
                 Only {project.availableUnits} units remaining
               </span>
             )}
             {project.urgencySignals.priceIncreasedRecently && (
-              <span className="bg-red-500/[0.12] border border-red-500/[0.25] text-red-400 rounded-full px-3 py-1 text-[11px] font-sans">
+              <span className="bg-red-500/[0.12] border border-red-500/[0.25] text-red-400 rounded-full px-3 py-1 text-[11px]">
                 Price increased recently
               </span>
             )}
             {project.urgencySignals.possessionSoon && (
-              <span className="bg-[#3de8a0]/[0.10] border border-[#3de8a0]/[0.25] text-[#3de8a0] rounded-full px-3 py-1 text-[11px] font-sans">
+              <span className="rounded-full px-3 py-1 text-[11px]" style={{ background: 'var(--accent-bg)', border: '1px solid var(--accent-border)', color: 'var(--accent)' }}>
                 Possession within 12 months
               </span>
             )}
             {project.urgencySignals.highDemand && (
-              <span className="bg-blue-500/[0.12] border border-blue-500/[0.25] text-blue-400 rounded-full px-3 py-1 text-[11px] font-sans">
+              <span className="rounded-full px-3 py-1 text-[11px]" style={{ background: 'var(--bg-accent-blue)', border: '1px solid var(--border-accent-blue)', color: 'var(--text-accent-blue)' }}>
                 High buyer interest
               </span>
             )}
@@ -332,78 +347,61 @@ function ProjectDetailClient({ project }: { project: ProjectDetail }) {
         <div className="mt-12 grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-5">
             <motion.div
-              className="bg-white/[0.03] border border-white/[0.08] rounded-2xl p-7 hover:border-white/[0.12] transition-colors duration-300"
+              className="rounded-2xl p-7 transition-colors duration-300"
+              style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}
               initial="hidden"
               animate={mounted ? 'visible' : 'hidden'}
               variants={fadeUp}
               transition={{ ...transition, delay: 0.16 }}
             >
-              <p className="font-sans text-[10px] tracking-[0.14em] uppercase text-[#3de8a0] mb-4">
+              <p className="text-[10px] tracking-[0.14em] uppercase mb-4" style={{ color: 'var(--accent)' }}>
                 PRICING
               </p>
-              <p className="font-serif text-4xl font-bold text-[#e0e0ea]">
+              <p className="text-4xl font-bold" style={{ fontFamily: 'var(--font-cormorant, "Cormorant Garamond", Georgia, serif)', color: 'var(--text-primary)' }}>
                 ₹{formatPrice(project.minPrice)} – ₹{formatPrice(project.maxPrice)}
               </p>
-              <p className="font-mono text-sm text-[#8888a8] mt-1">
+              <p className="font-mono text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
                 {project.pricePerSqft && project.pricePerSqft > 0 ? `₹${project.pricePerSqft.toLocaleString('en-IN')}/sqft` : 'Price on request'}
               </p>
 
               <div className="mt-6 grid grid-cols-2 gap-3">
-                <div className="bg-white/[0.02] border border-white/[0.06] rounded-xl p-4">
-                  <p className="font-sans text-[9px] tracking-widest uppercase text-[#454560] mb-1.5">
-                    AVAILABLE
-                  </p>
-                  <p
-                    className={`font-sans text-sm font-medium ${project.availableUnits < 20 ? 'text-[#3de8a0]' : 'text-[#e0e0ea]'}`}
-                  >
-                    {project.availableUnits} units
-                  </p>
-                </div>
-                <div className="bg-white/[0.02] border border-white/[0.06] rounded-xl p-4">
-                  <p className="font-sans text-[9px] tracking-widest uppercase text-[#454560] mb-1.5">
-                    POSSESSION
-                  </p>
-                  <p className="font-sans text-sm font-medium text-[#e0e0ea]">
-                    {formatPossession(project.possessionDate)}
-                  </p>
-                </div>
-                <div className="bg-white/[0.02] border border-white/[0.06] rounded-xl p-4">
-                  <p className="font-sans text-[9px] tracking-widest uppercase text-[#454560] mb-1.5">
-                    UNIT TYPES
-                  </p>
-                  <p className="font-sans text-sm font-medium text-[#e0e0ea]">
-                    {project.unitTypes.join(', ')}
-                  </p>
-                </div>
-                <div className="bg-white/[0.02] border border-white/[0.06] rounded-xl p-4">
-                  <p className="font-sans text-[9px] tracking-widest uppercase text-[#454560] mb-1.5">
-                    STATUS
-                  </p>
-                  <p className="font-sans text-sm font-medium text-[#e0e0ea]">
-                    {project.constructionStatus}
-                  </p>
-                </div>
+                {[
+                  { label: 'AVAILABLE', value: `${project.availableUnits} units`, highlight: project.availableUnits < 20 },
+                  { label: 'POSSESSION', value: formatPossession(project.possessionDate), highlight: false },
+                  { label: 'UNIT TYPES', value: project.unitTypes.join(', '), highlight: false },
+                  { label: 'STATUS', value: project.constructionStatus, highlight: false },
+                ].map((item) => (
+                  <div key={item.label} className="rounded-xl p-4" style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border-subtle)' }}>
+                    <p className="text-[9px] tracking-widest uppercase mb-1.5" style={{ color: 'var(--text-label)' }}>
+                      {item.label}
+                    </p>
+                    <p className="text-sm font-medium" style={{ color: item.highlight ? 'var(--accent)' : 'var(--text-primary)' }}>
+                      {item.value}
+                    </p>
+                  </div>
+                ))}
               </div>
             </motion.div>
 
             {project.builder && (
               <motion.div
-                className="bg-white/[0.03] border border-white/[0.08] rounded-2xl p-7 hover:border-white/[0.12] transition-colors duration-300"
+                className="rounded-2xl p-7 transition-colors duration-300"
+                style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}
                 initial="hidden"
                 animate={mounted ? 'visible' : 'hidden'}
                 variants={fadeUp}
                 transition={{ ...transition, delay: 0.24 }}
               >
-                <p className="font-sans text-[10px] tracking-[0.14em] uppercase text-[#3de8a0] mb-4">
+                <p className="text-[10px] tracking-[0.14em] uppercase mb-4" style={{ color: 'var(--accent)' }}>
                   BUILDER INTELLIGENCE
                 </p>
                 <div className="flex items-center justify-between">
-                  <p className="font-sans text-lg font-semibold text-[#e0e0ea]">
+                  <p className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>
                     {project.builder.brandName}
                   </p>
-                  <p className="font-mono text-3xl font-bold text-[#3de8a0]">
+                  <p className="font-mono text-3xl font-bold" style={{ color: 'var(--accent)' }}>
                     {project.builder.totalTrustScore}
-                    <span className="text-sm text-[#636380]">/100</span>
+                    <span className="text-sm" style={{ color: 'var(--text-muted)' }}>/100</span>
                   </p>
                 </div>
 
@@ -416,20 +414,22 @@ function ProjectDetailClient({ project }: { project: ProjectDetail }) {
             )}
 
             <motion.div
-              className="bg-white/[0.03] border border-white/[0.08] rounded-2xl p-7 hover:border-white/[0.12] transition-colors duration-300"
+              className="rounded-2xl p-7 transition-colors duration-300"
+              style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}
               initial="hidden"
               animate={mounted ? 'visible' : 'hidden'}
               variants={fadeUp}
               transition={{ ...transition, delay: 0.32 }}
             >
-              <p className="font-sans text-[10px] tracking-[0.14em] uppercase text-[#3de8a0] mb-4">
+              <p className="text-[10px] tracking-[0.14em] uppercase mb-4" style={{ color: 'var(--accent)' }}>
                 AMENITIES
               </p>
               <div className="mt-4 flex flex-wrap gap-2">
                 {project.amenities.map((amenity) => (
                   <span
                     key={amenity}
-                    className="bg-white/[0.04] border border-white/[0.08] rounded-full px-3 py-1.5 font-sans text-xs text-[#8888a8] hover:border-white/[0.15] hover:text-[#e0e0ea] transition-all duration-150"
+                    className="rounded-full px-3 py-1.5 text-xs transition-all duration-150"
+                    style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-secondary)' }}
                   >
                     {amenity}
                   </span>
@@ -438,29 +438,32 @@ function ProjectDetailClient({ project }: { project: ProjectDetail }) {
             </motion.div>
 
             <motion.div
-              className="bg-white/[0.03] border border-white/[0.08] rounded-2xl p-7 hover:border-white/[0.12] transition-colors duration-300"
+              className="rounded-2xl p-7 transition-colors duration-300"
+              style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}
               initial="hidden"
               animate={mounted ? 'visible' : 'hidden'}
               variants={fadeUp}
               transition={{ ...transition, delay: 0.4 }}
             >
-              <p className="font-sans text-[10px] tracking-[0.14em] uppercase text-[#3de8a0] mb-4">
+              <p className="text-[10px] tracking-[0.14em] uppercase mb-4" style={{ color: 'var(--accent)' }}>
                 RERA REGISTRATION
               </p>
               <div className="flex items-center gap-2 mt-3">
                 <motion.div
-                  className="w-1.5 h-1.5 rounded-full bg-[#3de8a0]"
+                  className="w-1.5 h-1.5 rounded-full"
+                  style={{ background: 'var(--accent)' }}
                   animate={{ opacity: [1, 0.3, 1] }}
                   transition={{ duration: 2, repeat: Infinity }}
                 />
-                <p className="font-mono text-sm text-[#e0e0ea]">{project.reraNumber}</p>
+                <p className="font-mono text-sm" style={{ color: 'var(--text-primary)' }}>{project.reraNumber}</p>
               </div>
               <div className="mt-4 flex flex-col gap-2">
                 <a
                   href="https://garvi.gujarat.gov.in"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="font-sans text-xs text-[#3de8a0] hover:underline underline-offset-2"
+                  className="text-xs hover:underline underline-offset-2"
+                  style={{ color: 'var(--accent)' }}
                 >
                   Verify on GARVI portal →
                 </a>
@@ -468,12 +471,13 @@ function ProjectDetailClient({ project }: { project: ProjectDetail }) {
                   href="https://gujrera.gujarat.gov.in"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="font-sans text-xs text-[#3de8a0] hover:underline underline-offset-2"
+                  className="text-xs hover:underline underline-offset-2"
+                  style={{ color: 'var(--accent)' }}
                 >
                   Verify on GujRERA →
                 </a>
               </div>
-              <p className="font-sans text-xs text-[#454560] mt-4">
+              <p className="text-xs mt-4" style={{ color: 'var(--text-label)' }}>
                 Registration data is sourced from public RERA records.
               </p>
             </motion.div>
@@ -490,13 +494,14 @@ function ProjectDetailClient({ project }: { project: ProjectDetail }) {
             </motion.div>
 
             <motion.div
-              className="bg-white/[0.03] border border-white/[0.08] rounded-2xl p-5"
+              className="rounded-2xl p-5"
+              style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}
               initial="hidden"
               animate={mounted ? 'visible' : 'hidden'}
               variants={fadeUp}
               transition={{ ...transition, delay: 0.56 }}
             >
-              <p className="font-sans text-sm font-medium text-[#e0e0ea]">Why trust this data?</p>
+              <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Why trust this data?</p>
               <div className="mt-3 space-y-2.5">
                 {[
                   'RERA registration verified against official records',
@@ -504,18 +509,18 @@ function ProjectDetailClient({ project }: { project: ProjectDetail }) {
                   'No paid rankings or sponsored placements'
                 ].map((point) => (
                   <div key={point} className="flex gap-2.5 items-start">
-                    <div className="w-4 h-4 rounded-full bg-[#3de8a0]/[0.15] flex-shrink-0 mt-0.5 flex items-center justify-center">
+                    <div className="w-4 h-4 rounded-full flex-shrink-0 mt-0.5 flex items-center justify-center" style={{ background: 'var(--accent-bg)' }}>
                       <svg
                         className="w-2.5 h-2.5"
                         fill="none"
                         viewBox="0 0 24 24"
-                        stroke="#3de8a0"
+                        stroke="var(--accent)"
                         strokeWidth={3}
                       >
                         <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                       </svg>
                     </div>
-                    <p className="font-sans text-xs text-[#636380]">{point}</p>
+                    <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{point}</p>
                   </div>
                 ))}
               </div>

@@ -98,84 +98,53 @@ export default function ChatClient({
     return () => window.removeEventListener('show-project-card', handler)
   }, [projects])
 
-  // Compare feature: auto-pair with another project from history, or queue if only one
+  // Compare feature: always queue first, buyer explicitly picks both
   const compareQueueRef = useRef<string | null>(null)
   const [compareToast, setCompareToast] = useState<string | null>(null)
   useEffect(() => {
     const handler = (e: Event) => {
       const { projectId } = (e as CustomEvent).detail
-      const project = projects.find(p => p.id === projectId)
+      const project = projects.find(p => p.id === projectId) ??
+        artifactHistoryRef.current.find(a => a.data.id === projectId)?.data
       if (!project) return
 
-      // Check if there's already a queued first project
       const firstId = compareQueueRef.current
       if (firstId && firstId !== projectId) {
-        const projectA = projects.find(p => p.id === firstId)
+        // Second click — create comparison
+        const projectA = projects.find(p => p.id === firstId) ??
+          artifactHistoryRef.current.find(a => a.data.id === firstId)?.data
         if (projectA) {
-          // Check if comparison already exists for this pair
-          const existingComp = artifactHistoryRef.current.findIndex(
-            a => a.type === 'comparison' &&
+          compareQueueRef.current = null
+          setCompareToast(null)
+          // Check if comparison already exists
+          const exists = artifactHistoryRef.current.findIndex(a =>
+            a.type === 'comparison' &&
             ((a.data.id === firstId && a.dataB?.id === projectId) ||
              (a.data.id === projectId && a.dataB?.id === firstId))
           )
-          if (existingComp >= 0) {
-            compareQueueRef.current = null
-            setCompareToast(null)
-            artifactIndexRef.current = existingComp
-            setArtifactIndex(existingComp)
-            setCurrentArtifact(artifactHistoryRef.current[existingComp])
+          if (exists >= 0) {
+            artifactIndexRef.current = exists
+            setArtifactIndex(exists)
+            setCurrentArtifact(artifactHistoryRef.current[exists])
             setShowArtifact(true)
             return
           }
-          compareQueueRef.current = null
-          setCompareToast(null)
-          const comparisonArtifact: Artifact = { type: 'comparison', data: projectA, dataB: project }
-          const newHistory = [...artifactHistoryRef.current, comparisonArtifact]
+          const artifact: Artifact = { type: 'comparison', data: projectA, dataB: project }
+          const newHistory = [...artifactHistoryRef.current, artifact]
           artifactHistoryRef.current = newHistory
           artifactIndexRef.current = newHistory.length - 1
           setArtifactHistory(newHistory)
           setArtifactIndex(newHistory.length - 1)
-          setCurrentArtifact(comparisonArtifact)
+          setCurrentArtifact(artifact)
           setShowArtifact(true)
           return
         }
       }
 
-      // Try to auto-pair with another project_card from artifact history
-      const otherCard = artifactHistoryRef.current.find(
-        a => a.type === 'project_card' && a.data.id !== projectId
-      )
-      if (otherCard) {
-        // Check if comparison already exists for this pair
-        const existingComparison = artifactHistoryRef.current.findIndex(
-          a => a.type === 'comparison' &&
-          ((a.data.id === otherCard.data.id && a.dataB?.id === projectId) ||
-           (a.data.id === projectId && a.dataB?.id === otherCard.data.id))
-        )
-        if (existingComparison >= 0) {
-          artifactIndexRef.current = existingComparison
-          setArtifactIndex(existingComparison)
-          setCurrentArtifact(artifactHistoryRef.current[existingComparison])
-          setShowArtifact(true)
-          return
-        }
-        compareQueueRef.current = null
-        setCompareToast(null)
-        const comparisonArtifact: Artifact = { type: 'comparison', data: otherCard.data, dataB: project }
-        const newHistory = [...artifactHistoryRef.current, comparisonArtifact]
-        artifactHistoryRef.current = newHistory
-        artifactIndexRef.current = newHistory.length - 1
-        setArtifactHistory(newHistory)
-        setArtifactIndex(newHistory.length - 1)
-        setCurrentArtifact(comparisonArtifact)
-        setShowArtifact(true)
-        return
-      }
-
-      // No other project to pair with — queue it and show toast
+      // First click (or same project clicked again) — queue and show toast
       compareQueueRef.current = projectId
-      setCompareToast(project.projectName)
-      setTimeout(() => { setCompareToast(null); compareQueueRef.current = null }, 8000)
+      setCompareToast(`${project.projectName} queued — click Compare on another project`)
+      setTimeout(() => setCompareToast(null), 8000)
     }
     window.addEventListener('compare-project', handler)
     return () => window.removeEventListener('compare-project', handler)
@@ -315,6 +284,18 @@ export default function ChatClient({
           const artifact: Artifact = { type: artifactType, data: p }
           newHistory = [...newHistory, artifact]
           lastArtifact = artifact
+        }
+
+        // Wire builder trust and visit prompt detection into artifacts
+        if (isBuilderQuery && foundProjects.length > 0 && !newHistory.find(a => a.type === 'builder_trust' && a.data.id === foundProjects[0].id)) {
+          const trustArt: Artifact = { type: 'builder_trust', data: foundProjects[0] }
+          newHistory = [...newHistory, trustArt]
+          lastArtifact = trustArt
+        }
+        if (isVisitPrompt && foundProjects.length === 1 && !newHistory.find(a => a.type === 'visit_prompt' && a.data.id === foundProjects[0].id)) {
+          const visitArt: Artifact = { type: 'visit_prompt', data: foundProjects[0] }
+          newHistory = [...newHistory, visitArt]
+          lastArtifact = visitArt
         }
 
         if (lastArtifact) {

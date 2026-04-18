@@ -2,7 +2,7 @@
 // src/components/admin/FollowUpCard.tsx
 
 import { useState } from 'react'
-import { getUrgency, formatTimeAgo, formatLakh, getPersonaLabel, getStageLabel, daysBetween } from '@/lib/admin-utils'
+import { getUrgency, formatTimeAgo, formatLakh, getPersonaLabel, getStageLabel } from '@/lib/admin-utils'
 
 export default function FollowUpCard({ session }: { session: any }) {
   const [draft, setDraft] = useState<string | null>(null)

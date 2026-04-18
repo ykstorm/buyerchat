@@ -19,9 +19,8 @@ function getSlots() {
   })
 }
 
-export default function VisitPromptCard({ project, onBook }: {
+export default function VisitPromptCard({ project }: {
   project: ProjectType
-  onBook?: (projectId: string) => void
 }) {
   const [selected, setSelected] = useState<number | null>(null)
   const slots = getSlots()

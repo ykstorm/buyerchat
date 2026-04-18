@@ -19,7 +19,7 @@ export default function PreVisitBriefButton({
 
   const brief = `Namaste,
 
-${projectName} ke liye ek verified buyer visit scheduled hai.
+${projectName} (${builderName}) ke liye ek verified buyer visit scheduled hai.
 
 📅 Visit Date: ${date}
 👤 Buyer: ${buyerName ?? 'Verified Buyer'}

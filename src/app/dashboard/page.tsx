@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
 
@@ -33,6 +33,66 @@ const STATUS_CONFIG: Record<string, { bg: string; text: string; dot: string; lab
   pending: { bg: 'rgba(196,155,80,0.10)', text: '#8B6914', dot: '#C49B50', label: 'Pending' },
   confirmed: { bg: 'rgba(27,79,138,0.10)', text: '#1B4F8A', dot: '#1B4F8A', label: 'Confirmed' },
   completed: { bg: 'rgba(15,110,86,0.10)', text: '#0F6E56', dot: '#0F6E56', label: 'Completed' },
+}
+
+/* ── Count-up hook ── */
+function useCountUp(target: number, duration = 1200) {
+  const [value, setValue] = useState(0)
+  const ref = useRef<HTMLDivElement>(null)
+  const counted = useRef(false)
+
+  useEffect(() => {
+    if (counted.current) return
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry.isIntersecting || counted.current) return
+        counted.current = true
+        const start = performance.now()
+        const step = (now: number) => {
+          const elapsed = now - start
+          const progress = Math.min(elapsed / duration, 1)
+          // ease-out cubic
+          const eased = 1 - Math.pow(1 - progress, 3)
+          setValue(Math.round(eased * target))
+          if (progress < 1) requestAnimationFrame(step)
+        }
+        requestAnimationFrame(step)
+      },
+      { threshold: 0.5 }
+    )
+    if (ref.current) observer.observe(ref.current)
+    return () => observer.disconnect()
+  }, [target, duration])
+
+  return { value, ref }
+}
+
+function CountUpStat({ label, target, accent }: { label: string; target: number; accent: string }) {
+  const { value, ref } = useCountUp(target)
+  return (
+    <motion.div
+      ref={ref}
+      whileHover={{ y: -2 }}
+      transition={{ duration: 0.2 }}
+      className="relative rounded-2xl p-4 grain"
+      style={{
+        background: 'var(--bg-surface)',
+        border: '1px solid var(--border-subtle)',
+        boxShadow: '0 1px 2px rgba(0,0,0,0.03), 0 4px 12px rgba(0,0,0,0.04)',
+      }}
+    >
+      <div
+        className="absolute top-0 left-4 right-4 h-[1px]"
+        style={{ background: `linear-gradient(90deg, transparent, ${accent}30, transparent)` }}
+      />
+      <p className="text-[10px] uppercase tracking-[0.12em] mb-1.5" style={{ color: 'var(--text-muted)' }}>
+        {label}
+      </p>
+      <p className="text-[26px] font-bold leading-none" style={{ color: 'var(--text-primary)' }}>
+        {value}
+      </p>
+    </motion.div>
+  )
 }
 
 export default function DashboardPage() {
@@ -133,7 +193,7 @@ export default function DashboardPage() {
 
       <div className="relative z-10 max-w-xl mx-auto px-5 pt-8">
 
-        {/* Heading with gold accent */}
+        {/* Heading with gold accent — Cormorant Garamond */}
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
@@ -147,7 +207,7 @@ export default function DashboardPage() {
             </span>
           </div>
           <h1
-            style={{ fontFamily: '"Playfair Display", Georgia, serif', color: 'var(--text-primary)' }}
+            style={{ fontFamily: 'var(--font-cormorant, "Cormorant Garamond", Georgia, serif)', color: 'var(--text-primary)' }}
             className="text-[32px] font-bold leading-[1.15] mb-1.5"
           >
             Property Journey
@@ -157,41 +217,16 @@ export default function DashboardPage() {
           </p>
         </motion.div>
 
-        {/* Stats row */}
+        {/* Stats row — count-up */}
         <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.08, ease: [0.25, 0.46, 0.45, 0.94] }}
           className="grid grid-cols-3 gap-3 mb-9"
         >
-          {[
-            { label: 'Saved', value: savedProjects.length, accent: '#C49B50' },
-            { label: 'Visits', value: visitRequests.length, accent: '#1B4F8A' },
-            { label: 'Active', value: visitRequests.filter(v => v.status !== 'completed').length, accent: '#0F6E56' },
-          ].map((stat, i) => (
-            <motion.div
-              key={i}
-              whileHover={{ y: -2 }}
-              transition={{ duration: 0.2 }}
-              className="relative rounded-2xl p-4 grain"
-              style={{
-                background: 'var(--bg-surface)',
-                border: '1px solid var(--border-subtle)',
-                boxShadow: '0 1px 2px rgba(0,0,0,0.03), 0 4px 12px rgba(0,0,0,0.04)',
-              }}
-            >
-              <div
-                className="absolute top-0 left-4 right-4 h-[1px]"
-                style={{ background: `linear-gradient(90deg, transparent, ${stat.accent}30, transparent)` }}
-              />
-              <p className="text-[10px] uppercase tracking-[0.12em] mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                {stat.label}
-              </p>
-              <p className="text-[26px] font-bold leading-none" style={{ color: 'var(--text-primary)' }}>
-                {stat.value}
-              </p>
-            </motion.div>
-          ))}
+          <CountUpStat label="Saved" target={savedProjects.length} accent="#C49B50" />
+          <CountUpStat label="Visits" target={visitRequests.length} accent="#1B4F8A" />
+          <CountUpStat label="Active" target={visitRequests.filter(v => v.status !== 'completed').length} accent="#0F6E56" />
         </motion.div>
 
         {/* Saved Projects */}
@@ -242,7 +277,7 @@ export default function DashboardPage() {
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">
                       <h3
-                        style={{ fontFamily: '"Playfair Display", Georgia, serif', color: 'var(--text-primary)' }}
+                        style={{ fontFamily: 'var(--font-cormorant, "Cormorant Garamond", Georgia, serif)', color: 'var(--text-primary)' }}
                         className="text-[17px] leading-tight mb-0.5 truncate"
                       >
                         {sp.project.projectName}
@@ -322,6 +357,7 @@ export default function DashboardPage() {
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.2, ease: [0.25, 0.46, 0.45, 0.94] }}
+          className="mb-9"
         >
           <div className="flex items-center gap-2.5 mb-4">
             <div className="w-1 h-4 rounded-full" style={{ background: '#1B4F8A' }} />
@@ -358,7 +394,7 @@ export default function DashboardPage() {
                     <div className="flex items-start justify-between gap-3 mb-3">
                       <div className="min-w-0">
                         <h3
-                          style={{ fontFamily: '"Playfair Display", Georgia, serif', color: 'var(--text-primary)' }}
+                          style={{ fontFamily: 'var(--font-cormorant, "Cormorant Garamond", Georgia, serif)', color: 'var(--text-primary)' }}
                           className="text-[16px] leading-tight mb-0.5"
                         >
                           {visit.projectName}
@@ -434,6 +470,47 @@ export default function DashboardPage() {
             </div>
           )}
         </motion.section>
+
+        {/* Find another home CTA */}
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.28, ease: [0.25, 0.46, 0.45, 0.94] }}
+          className="rounded-2xl p-6 text-center grain mb-6"
+          style={{
+            background: 'var(--bg-surface)',
+            border: '1px solid var(--border-subtle)',
+            boxShadow: '0 1px 2px rgba(0,0,0,0.03), 0 4px 12px rgba(0,0,0,0.04)',
+          }}
+        >
+          <div
+            className="absolute top-0 left-6 right-6 h-[1px]"
+            style={{ background: 'linear-gradient(90deg, transparent, rgba(196,155,80,0.3), transparent)' }}
+          />
+          <h2
+            style={{ fontFamily: 'var(--font-cormorant, "Cormorant Garamond", Georgia, serif)', color: 'var(--text-primary)' }}
+            className="text-[22px] font-semibold leading-tight mb-2"
+          >
+            Find another home
+          </h2>
+          <p className="text-[12px] mb-5" style={{ color: 'var(--text-secondary)' }}>
+            Tell Homesty AI what you need — budget, location, unit type — and get honest recommendations.
+          </p>
+          <Link
+            href="/chat"
+            className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full text-[13px] font-semibold transition-all duration-200"
+            style={{
+              background: 'linear-gradient(135deg, #1B4F8A, #2563EB)',
+              color: '#FFFFFF',
+              boxShadow: '0 2px 8px rgba(27,79,138,0.25)',
+            }}
+          >
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <path d="M12 7C12 9.76 9.76 12 7 12C5.93 12 4.95 11.65 4.15 11.06L2 12L2.94 9.85C2.34 9.05 2 8.07 2 7C2 4.24 4.24 2 7 2C9.76 2 12 4.24 12 7Z" stroke="currentColor" strokeWidth="1.2" fill="none" strokeLinejoin="round"/>
+            </svg>
+            Start chatting
+          </Link>
+        </motion.div>
 
       </div>
 

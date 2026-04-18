@@ -38,6 +38,8 @@ export async function GET(req: NextRequest) {
       reraNumber: true,
       unitTypes: true,
       constructionStatus: true,
+      decisionTag: true,
+      honestConcern: true,
       builder: {
         select: {
           grade: true,

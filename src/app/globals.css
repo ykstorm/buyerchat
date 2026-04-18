@@ -35,6 +35,17 @@
   --text-tag-a: #0C447C;
   --bg-tag-b: #F0FDF4;
   --text-tag-b: #0F6E56;
+  /* Page-level accents (green) */
+  --accent: #0F6E56;
+  --accent-light: #3de8a0;
+  --accent-bg: rgba(15,110,86,0.10);
+  --accent-border: rgba(15,110,86,0.20);
+  /* Score bar / gauge colors */
+  --score-track: rgba(0,0,0,0.06);
+  /* Card hover border */
+  --border-hover: rgba(0,0,0,0.12);
+  /* Very muted label text */
+  --text-label: #78716C;
 }
 
 [data-theme="dark"] {
@@ -71,6 +82,17 @@
   --text-tag-a: #93C5FD;
   --bg-tag-b: rgba(15,110,86,0.2);
   --text-tag-b: #34D399;
+  /* Page-level accents (green) — dark */
+  --accent: #3de8a0;
+  --accent-light: #3de8a0;
+  --accent-bg: rgba(61,232,160,0.10);
+  --accent-border: rgba(61,232,160,0.20);
+  /* Score bar / gauge colors — dark */
+  --score-track: rgba(255,255,255,0.06);
+  /* Card hover border — dark */
+  --border-hover: rgba(255,255,255,0.12);
+  /* Very muted label text — dark */
+  --text-label: #454560;
 }
 
 /* Theme transitions — only on elements that actually change theme */
@@ -217,3 +239,22 @@ body {
 }
 
 /* Duplicate scrollbar block removed — defined above in Japanese minimalist scrollbar section */
+
+/* ── View Transitions API (progressive enhancement) ── */
+@view-transition {
+  navigation: auto;
+}
+::view-transition-old(root) {
+  animation: 200ms ease-out both fade-out;
+}
+::view-transition-new(root) {
+  animation: 300ms ease-in both fade-in;
+}
+@keyframes fade-out {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
