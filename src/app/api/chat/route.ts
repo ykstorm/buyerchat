@@ -216,11 +216,14 @@ if (hasInjection) {
         await prisma.chatMessageLog.create({
           data: { sessionId: savedSession.id, role: 'user', content: sanitizedMsg }
         })
+        // Strip CARD HTML comment blocks before persisting — these are machinery
+        // for the client artifact pipeline, not content the user should ever see.
+        const cleanedAssistantContent = text.replace(/<!--CARD:[\s\S]*?-->/g, '').trimEnd()
         await prisma.chatMessageLog.create({
           data: {
             sessionId: savedSession.id,
             role: 'assistant',
-            content: text,
+            content: cleanedAssistantContent,
             tokensUsed: usage.totalTokens,
           }
         })
