@@ -6,10 +6,16 @@ export default function ThemeToggle() {
   const [dark, setDark] = useState(false)
 
   useEffect(() => {
+    // Read from localStorage OR from the attribute the pre-hydration script set.
+    // This keeps ThemeToggle's internal state in sync with what's already on <html>.
     const saved = localStorage.getItem('theme')
-    if (saved === 'dark') {
+    const attr = document.documentElement.getAttribute('data-theme')
+    const isDark = saved === 'dark' || (!saved && attr === 'dark')
+    if (isDark) {
       setDark(true)
       document.documentElement.setAttribute('data-theme', 'dark')
+    } else {
+      document.documentElement.setAttribute('data-theme', 'light')
     }
   }, [])
 
