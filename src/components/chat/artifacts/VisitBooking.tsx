@@ -131,9 +131,9 @@ export function VisitBooking({ projectId, projectName }: VisitBookingProps) {
             <p className="text-[15px] font-semibold" style={{ color: 'var(--text-primary)' }}>Visit confirmed!</p>
             <p className="text-[12px] mt-0.5" style={{ color: 'var(--text-secondary)' }}>{projectName}</p>
           </div>
-          <div className="w-full rounded-2xl p-4" style={{ background: 'var(--bg-accent-green)', border: '1px solid var(--border-accent-green)' }}>
+          <div className="w-full rounded-2xl p-4 overflow-hidden max-w-full" style={{ background: 'var(--bg-accent-green)', border: '1px solid var(--border-accent-green)' }}>
             <p className="text-[10px] uppercase tracking-widest font-semibold mb-1" style={{ color: 'var(--text-accent-green)' }}>Your OTP Token</p>
-            <p className="text-[32px] font-bold tracking-widest font-mono" style={{ color: 'var(--text-accent-green)' }}>{token}</p>
+            <p className="text-[22px] sm:text-[26px] font-bold tracking-wider font-mono max-w-full" style={{ color: 'var(--text-accent-green)', wordBreak: 'break-all', overflowWrap: 'anywhere' }}>{token}</p>
             <p className="text-[11px] mt-1" style={{ color: 'var(--text-accent-green-light)' }}>Show this at the site. Your commission is protected.</p>
           </div>
           <div className="w-full text-left space-y-2">
