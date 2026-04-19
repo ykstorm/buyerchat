@@ -406,8 +406,11 @@ export default function ChatClient({
         const res = await fetch(`/api/chat-sessions/${urlSessionId}`)
         if (!res.ok) return
         const data = await res.json()
+        // Strip any legacy CARD blocks from historical messages (pre-Task-1 data
+        // or client-side streaming edge cases may have persisted junk).
+        const stripCards = (s: string) => s.replace(/<!--CARD:[\s\S]*?-->/g, '').trimEnd()
         const loaded: Message[] = (data.messages ?? []).map((m: any) => ({
-          id: uid(), role: m.role, content: m.content
+          id: uid(), role: m.role, content: m.role === 'assistant' ? stripCards(m.content) : m.content
         }))
         setMessages(loaded)
         setSessionId(urlSessionId)
