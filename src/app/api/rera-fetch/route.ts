@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
       const Anthropic = (await import('@anthropic-ai/sdk')).default
       const client = new Anthropic()
       const response = await client.messages.create({
-        model: 'claude-sonnet-4-6',
+        model: 'claude-sonnet-4-5',
         max_tokens: 500,
         messages: [{
           role: 'user',
@@ -61,6 +61,13 @@ ${data.rawText}`
     return NextResponse.json({ success: true, data, source: 'puppeteer' })
   } catch (err: any) {
     console.error('RERA fetch error:', err)
-    return NextResponse.json({ error: 'RERA fetch failed. Try again.' }, { status: 500 })
+    try {
+      const Sentry = await import('@sentry/nextjs')
+      Sentry.captureException(err)
+    } catch { /* Sentry not configured */ }
+    const detail = process.env.NODE_ENV === 'development' && err instanceof Error
+      ? err.message
+      : 'RERA fetch failed. Try again.'
+    return NextResponse.json({ error: detail }, { status: 500 })
   }
 }

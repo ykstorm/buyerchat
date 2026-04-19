@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
     const base64 = Buffer.from(bytes).toString('base64')
     const client = new Anthropic()
     const response = await client.messages.create({
-      model: 'claude-sonnet-4-6',
+      model: 'claude-sonnet-4-5',
       max_tokens: 1024,
       messages: [{
         role: 'user',
@@ -63,6 +63,14 @@ Areas in sqft only. If not found use null.`
     const extracted = JSON.parse(clean)
     return NextResponse.json({ success: true, data: extracted })
   } catch (err: any) {
-    return NextResponse.json({ error: err.message ?? 'Extract failed' }, { status: 500 })
+    console.error('PDF extract error:', err)
+    try {
+      const Sentry = await import('@sentry/nextjs')
+      Sentry.captureException(err)
+    } catch { /* Sentry not configured */ }
+    const detail = process.env.NODE_ENV === 'development' && err instanceof Error
+      ? err.message
+      : err?.message ?? 'Extract failed'
+    return NextResponse.json({ error: detail }, { status: 500 })
   }
 }

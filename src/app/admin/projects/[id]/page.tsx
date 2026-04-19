@@ -245,10 +245,27 @@ export default function ProjectEditPage() {
       const url = isNew ? '/api/admin/projects' : `/api/admin/projects/${id}`
       const method = isNew ? 'POST' : 'PUT'
       const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
-      if (!res.ok) throw new Error('Save failed')
+      if (!res.ok) {
+        let serverMsg = `Save failed (${res.status})`
+        try {
+          const errData = await res.json()
+          if (typeof errData?.error === 'string') {
+            serverMsg = errData.error
+          } else if (errData?.error?.fieldErrors) {
+            const fields = Object.entries(errData.error.fieldErrors)
+              .map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(', ') : v}`)
+              .join(' · ')
+            serverMsg = fields || serverMsg
+          } else if (errData?.error) {
+            serverMsg = JSON.stringify(errData.error)
+          }
+        } catch { /* response not JSON */ }
+        setError(serverMsg)
+        return
+      }
       router.push('/admin/projects')
-    } catch {
-      setError('Save failed. Check all required fields.')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Network error')
     } finally {
       setSaving(false)
     }
