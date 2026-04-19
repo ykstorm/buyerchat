@@ -222,6 +222,15 @@ export default function ChatClient({
       // Final flush to ensure last chunk is rendered
       flushUpdate()
 
+      // Safety net: if the entire response was empty (network blip, model timeout,
+      // etc), show a user-visible error instead of a silent empty bubble.
+      if (!full || full.trim().length === 0) {
+        setMessages(prev => prev.map(m =>
+          m.id === assistantId ? { ...m, content: 'Kuch problem hui — dubara try karein.' } : m
+        ))
+        return
+      }
+
       // Parse <!--CARD:{...}--> triggers from AI response
       const cardRegex = /<!--CARD:(.*?)-->/g
       const cardMatches = [...full.matchAll(cardRegex)]
@@ -230,9 +239,13 @@ export default function ChatClient({
         try { parsedCards.push(JSON.parse(match[1])) } catch {}
       }
       // Final pass — ensure fully-stripped version is committed to state.
-      // (Streaming flushUpdate already strips; this guarantees final consistency.)
+      // If AI emitted ONLY CARDs with no prose (rule violation), inject a minimal
+      // placeholder so the bubble doesn't render empty.
       if (cardMatches.length > 0) {
         full = full.replace(cardRegex, '').trimEnd()
+        if (!full || full.length < 2) {
+          full = 'Dekho right panel mein.'
+        }
         setMessages(prev => prev.map(m => m.id === assistantId ? { ...m, content: full } : m))
       }
 
