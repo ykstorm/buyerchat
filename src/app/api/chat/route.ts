@@ -54,7 +54,7 @@ function detectQualification(userMsg: string, aiResponse: string): boolean {
 export async function POST(req: NextRequest) {
   // Rate limit
   const ip = req.headers.get('x-forwarded-for') ?? '127.0.0.1'
-  if (!await rateLimit(ip, 10, 60 * 1000)) {
+  if (!await rateLimit(ip, 30, 60 * 1000)) {
     return NextResponse.json(
       { error: 'Too many requests. Please wait a minute.' },
       { status: 429 }

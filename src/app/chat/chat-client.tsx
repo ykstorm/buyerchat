@@ -174,7 +174,18 @@ export default function ChatClient({
       })
 
       if (!res.ok || !res.body) {
-        setMessages(prev => [...prev, { id: assistantId, role: 'assistant', content: 'Something went wrong. Please try again.' }])
+        let userMsg = 'Something went wrong. Please try again.'
+        if (res.status === 429) {
+          userMsg = 'You are sending messages too fast. Please wait a minute and try again.'
+        } else if (res.status === 503) {
+          userMsg = 'Service temporarily unavailable. Please try again in a moment.'
+        } else if (res.status === 400) {
+          try {
+            const errData = await res.json()
+            if (typeof errData?.error === 'string') userMsg = errData.error
+          } catch {}
+        }
+        setMessages(prev => [...prev, { id: assistantId, role: 'assistant', content: userMsg }])
         setLastFailedMsg(userContent)
         return
       }
