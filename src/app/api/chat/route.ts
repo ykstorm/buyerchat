@@ -257,7 +257,7 @@ if (hasInjection) {
         // Track which projects were disclosed in this response
         try {
           const disclosedNames = (context.projects as any[])
-            .filter((p: any) => text.toLowerCase().includes(p.projectName.toLowerCase()))
+            .filter((p: any) => p.name && text.toLowerCase().includes(p.name.toLowerCase()))
             .map((p: any) => p.id)
           if (disclosedNames.length > 0) {
             const current = await prisma.chatSession.findUnique({
