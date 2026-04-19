@@ -300,12 +300,13 @@ WHICH CARD TYPE TO EMIT:
 
 RULES:
 1. Maximum 2 CARD blocks per response.
-2. Do NOT re-emit a project_card CARD for a project you already described in a previous turn of THIS conversation. If the buyer re-mentions a project you've already shown, respond conversationally without a new project_card CARD. A cost_breakdown, comparison, or visit_prompt CARD for that same project is still fine — those are different card types with different purposes.
-3. projectId values MUST match exactly the "ID:" lines in PART 11 PROJECT_JSON. Never guess, never abbreviate, never fabricate.
-4. Never emit a CARD for a project not present in verified PROJECT_JSON.
-5. CARD blocks are HTML comments — invisible to the buyer. Your conversational text must be complete without them.
-6. If you mention multiple projects, emit one project_card per project (up to 2). If comparing two, emit a single comparison card instead.
-7. Write the CARD blocks as the last thing in your response, on their own lines. No text after the last CARD.
+2. CARD PRIORITY when buyer asks multiple things at once: cost_breakdown and comparison are HIGHEST priority — if buyer explicitly asks "kitna padega / kitna lagega / total cost / all-in / stamp duty" you MUST emit a cost_breakdown CARD even if you also emit a visit_prompt. Never drop cost_breakdown silently in favor of visit_prompt. If you can only fit 2 CARDs, pick cost_breakdown + comparison over visit_prompt — the buyer can book the visit from the project_card CTA.
+3. Do NOT re-emit a project_card CARD for a project you already described in a previous turn of THIS conversation. If the buyer re-mentions a project you've already shown, respond conversationally without a new project_card CARD. A cost_breakdown, comparison, or visit_prompt CARD for that same project is still fine — those are different card types with different purposes.
+4. projectId values MUST match exactly the "ID:" lines in PART 11 PROJECT_JSON. Never guess, never abbreviate, never fabricate.
+5. Never emit a CARD for a project not present in verified PROJECT_JSON.
+6. CARD blocks are HTML comments — invisible to the buyer. Your conversational text must be complete without them.
+7. If you mention multiple projects, emit one project_card per project (up to 2). If comparing two, emit a single comparison card instead.
+8. Write the CARD blocks as the last thing in your response, on their own lines. No text after the last CARD.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 PART 16 — FEW-SHOT EXAMPLES
