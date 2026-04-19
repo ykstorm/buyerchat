@@ -92,11 +92,18 @@ function trustFlag(total: number): { label: string; color: string } {
 function allInPrice(f: ProjectForm): number {
   if (!f.pricePerSqft || !f.minPrice) return 0
   const chargesTotal = (f.charges ?? []).reduce((sum: number, c: any) => sum + (Number(c.amount) || 0), 0)
-  const base = f.minPrice + chargesTotal
+  const base = Number(f.minPrice) + chargesTotal
   const gst = base * 0.05
-  const stamp = f.minPrice * 0.065
-  const reg = f.minPrice * 0.01
-  return Math.round((base + gst + stamp + reg) / 100000) * 100000
+  const stamp = Number(f.minPrice) * 0.065
+  const reg = Number(f.minPrice) * 0.01
+  return Math.round(base + gst + stamp + reg)
+}
+
+function formatIndianCurrency(n: number): string {
+  if (!n || n <= 0) return '—'
+  if (n >= 10000000) return `₹${(n / 10000000).toFixed(2)}Cr`
+  if (n >= 100000) return `₹${(n / 100000).toFixed(2)}L`
+  return `₹${n.toLocaleString('en-IN')}`
 }
 
 function ScoreInput({ label, value, max, onChange, hint, type, options }: {
@@ -627,7 +634,7 @@ export default function ProjectEditPage() {
                       ))}
                       <div className="flex justify-between pt-2 mt-1" style={{ borderTop: '1px solid rgba(52,211,153,0.2)' }}>
                         <span className="font-semibold" style={{ color: '#34D399' }}>ALL-IN Total</span>
-                        <span className="font-mono font-bold" style={{ color: '#34D399' }}>₹{allIn.toLocaleString('en-IN')}</span>
+                        <span className="font-mono font-bold" style={{ color: '#34D399' }}>{formatIndianCurrency(allIn)}</span>
                       </div>
                     </div>
                   </div>
@@ -830,7 +837,7 @@ export default function ProjectEditPage() {
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] text-[#9CA3AF]">All-in ₹</span>
                   <span className="font-mono text-[12px] font-semibold text-[#185FA5]">
-                    ~₹{Math.round(allIn / 100000)}L
+                    {formatIndianCurrency(allIn)}
                   </span>
                 </div>
               </div>
