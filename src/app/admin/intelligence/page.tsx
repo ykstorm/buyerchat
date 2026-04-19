@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma'
+import { auth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import AddMarketAlertButton from '@/components/admin/AddMarketAlertButton'
 import { DarkCard, DarkBadge } from '@/components/admin/DarkCard'
@@ -56,6 +57,10 @@ export default async function IntelligencePage({
 }: {
   searchParams: Promise<{ flag?: string }>
 }) {
+  const session = await auth()
+  if (!session?.user?.email) redirect('/auth/signin')
+  if (session.user.email.toLowerCase() !== process.env.ADMIN_EMAIL?.toLowerCase()) redirect('/chat')
+
   const { flag } = await searchParams
   const now = new Date()
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)

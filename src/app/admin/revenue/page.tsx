@@ -1,12 +1,17 @@
 import { prisma } from '@/lib/prisma'
 import { formatLakh, daysBetween, formatDate } from '@/lib/admin-utils'
 import { DarkMetricCard, DarkCard, DarkBadge } from '@/components/admin/DarkCard'
+import { auth } from '@/lib/auth'
+import { redirect } from 'next/navigation'
 import RegisterLeadButton from '@/components/admin/RegisterLeadButton'
 import MarkReceivedButton from '@/components/admin/MarkReceivedButton'
 
 export const dynamic = 'force-dynamic'
 
 export default async function RevenuePage() {
+  const session = await auth()
+  if (!session?.user?.email) redirect('/auth/signin')
+  if (session.user.email.toLowerCase() !== process.env.ADMIN_EMAIL?.toLowerCase()) redirect('/chat')
   let visits: any[] = []
   let deals: any[] = []
 

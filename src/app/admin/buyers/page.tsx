@@ -1,5 +1,7 @@
 import { prisma } from '@/lib/prisma'
 import { daysBetween, formatLakh, getPersonaLabel, getStageLabel, getSessionQualityScore, getQualityColor } from '@/lib/admin-utils'
+import { auth } from '@/lib/auth'
+import { redirect } from 'next/navigation'
 import Link from 'next/link'
 
 export const dynamic = 'force-dynamic'
@@ -85,6 +87,10 @@ export default async function BuyersPage({
 }: {
   searchParams: Promise<{ tab?: string; session?: string; limit?: string }>
 }) {
+  const session = await auth()
+  if (!session?.user?.email) redirect('/auth/signin')
+  if (session.user.email.toLowerCase() !== process.env.ADMIN_EMAIL?.toLowerCase()) redirect('/chat')
+
   const { tab, session: selectedSessionId, limit: limitParam } = await searchParams
   const activeTab = tab === 'chat-logs' ? 'chat-logs' : 'buyers'
   const buyerLimit = Math.min(Number(limitParam) || 50, 500)

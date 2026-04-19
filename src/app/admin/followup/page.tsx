@@ -1,6 +1,8 @@
 import { prisma } from '@/lib/prisma'
 import { daysBetween, formatLakh, getPersonaLabel, getStageLabel } from '@/lib/admin-utils'
 import { DarkMetricCard, DarkCard, DarkBadge } from '@/components/admin/DarkCard'
+import { auth } from '@/lib/auth'
+import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import DraftMessageButton from '@/components/admin/DraftMessageButton'
 
@@ -18,6 +20,10 @@ const STAGE_RULES: Record<string, { urgency: string; color: string; days: number
 }
 
 export default async function FollowUpPage() {
+  const authSession = await auth()
+  if (!authSession?.user?.email) redirect('/auth/signin')
+  if (authSession.user.email.toLowerCase() !== process.env.ADMIN_EMAIL?.toLowerCase()) redirect('/chat')
+
   let sessions: any[] = []
   try {
     sessions = await prisma.chatSession.findMany({

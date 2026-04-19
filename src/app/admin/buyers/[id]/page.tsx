@@ -1,7 +1,8 @@
 import { prisma } from '@/lib/prisma'
 import { DarkBadge } from '@/components/admin/DarkCard'
 import { formatLakh, getStageLabel, getPersonaLabel } from '@/lib/admin-utils'
-import { notFound } from 'next/navigation'
+import { auth } from '@/lib/auth'
+import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 
 export const dynamic = 'force-dynamic'
@@ -9,6 +10,10 @@ export const dynamic = 'force-dynamic'
 const stripMarkdown = (text: string) => text.replace(/\*\*(.*?)\*\*/g, '$1').replace(/\*(.*?)\*/g, '$1')
 
 export default async function BuyerDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const authSession = await auth()
+  if (!authSession?.user?.email) redirect('/auth/signin')
+  if (authSession.user.email.toLowerCase() !== process.env.ADMIN_EMAIL?.toLowerCase()) redirect('/chat')
+
   const { id } = await params
 
   let session: any = null

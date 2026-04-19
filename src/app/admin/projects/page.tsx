@@ -1,5 +1,7 @@
 import { prisma } from '@/lib/prisma'
 import { formatLakh, getTrustScoreColor } from '@/lib/admin-utils'
+import { auth } from '@/lib/auth'
+import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import MatchedBuyersButton from '@/components/admin/MatchedBuyersButton'
 
@@ -10,6 +12,10 @@ export default async function ProjectsPage({
 }: {
   searchParams: Promise<{ limit?: string }>
 }) {
+  const session = await auth()
+  if (!session?.user?.email) redirect('/auth/signin')
+  if (session.user.email.toLowerCase() !== process.env.ADMIN_EMAIL?.toLowerCase()) redirect('/chat')
+
   const { limit: limitParam } = await searchParams
   const projectLimit = Math.min(Number(limitParam) || 50, 500)
 

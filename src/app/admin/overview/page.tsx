@@ -1,6 +1,8 @@
 // src/app/admin/overview/page.tsx — v3 Founder Dashboard
 import { prisma } from '@/lib/prisma'
 import { formatLakh, daysBetween, getStageLabel, getUrgency } from '@/lib/admin-utils'
+import { auth } from '@/lib/auth'
+import { redirect } from 'next/navigation'
 import Link from 'next/link'
 
 export const dynamic = 'force-dynamic'
@@ -8,6 +10,9 @@ export const dynamic = 'force-dynamic'
 type AlertItem = { icon: string; bg: string; color: string; title: string; sub: string }
 
 export default async function OverviewPage() {
+  const session = await auth()
+  if (!session?.user?.email) redirect('/auth/signin')
+  if (session.user.email.toLowerCase() !== process.env.ADMIN_EMAIL?.toLowerCase()) redirect('/chat')
   const now = new Date()
   const hour = now.getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'

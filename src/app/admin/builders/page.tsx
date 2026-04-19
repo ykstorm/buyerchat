@@ -1,11 +1,16 @@
 import { prisma } from '@/lib/prisma'
 import { formatLakh, getTrustScoreColor } from '@/lib/admin-utils'
 import { DarkBadge } from '@/components/admin/DarkCard'
+import { auth } from '@/lib/auth'
+import { redirect } from 'next/navigation'
 import Link from 'next/link'
 
 export const dynamic = 'force-dynamic'
 
 export default async function BuildersPage() {
+  const session = await auth()
+  if (!session?.user?.email) redirect('/auth/signin')
+  if (session.user.email.toLowerCase() !== process.env.ADMIN_EMAIL?.toLowerCase()) redirect('/chat')
   let builders: any[] = []
   try {
     builders = await prisma.builder.findMany({
