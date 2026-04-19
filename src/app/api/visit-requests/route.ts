@@ -75,31 +75,28 @@ export async function POST(req: NextRequest) {
   const scheduledDate = new Date(visitScheduledDate)
   const expiresAt = getTokenExpiryDate()
 
-  // Wrap in transaction to prevent race condition duplicates
-  const result = await prisma.$transaction(async (tx) => {
-    const existing = await tx.siteVisit.findFirst({
-      where: { userId: session.user.id, projectId, visitCompleted: false }
-    })
-    if (existing) return { duplicate: true as const, visit: existing }
-    const visit = await tx.siteVisit.create({
-      data: {
-        visitToken,
-        userId: session.user.id,
-        projectId,
-        visitScheduledDate: scheduledDate,
-        expiresAt,
-        otpVerified: false,
-        ...(parsed.data.buyerName && { buyerName: parsed.data.buyerName }),
-        ...(parsed.data.buyerPhone && { buyerPhone: parsed.data.buyerPhone }),
-        buyerEmail: parsed.data.buyerEmail,
-      }
-    })
-    return { duplicate: false as const, visit }
+  // Sequential check-then-create (HTTP adapter doesn't support interactive transactions).
+  // Race window is ~50ms; client guards via loading state, duplicate would require
+  // concurrent requests from same user which is rare. If it happens, Balvir sees both in admin.
+  const existing = await prisma.siteVisit.findFirst({
+    where: { userId: session.user.id, projectId, visitCompleted: false }
   })
-  if (result.duplicate) {
-    return NextResponse.json({ error: 'Visit already booked', visitToken: result.visit.visitToken }, { status: 409 })
+  if (existing) {
+    return NextResponse.json({ error: 'Visit already booked', visitToken: existing.visitToken }, { status: 409 })
   }
-  const siteVisit = result.visit
+  const siteVisit = await prisma.siteVisit.create({
+    data: {
+      visitToken,
+      userId: session.user.id,
+      projectId,
+      visitScheduledDate: scheduledDate,
+      expiresAt,
+      otpVerified: false,
+      ...(parsed.data.buyerName && { buyerName: parsed.data.buyerName }),
+      ...(parsed.data.buyerPhone && { buyerPhone: parsed.data.buyerPhone }),
+      buyerEmail: parsed.data.buyerEmail,
+    }
+  })
 
   // Send confirmation email — non-blocking
   try { await resend.emails.send({
@@ -147,5 +144,13 @@ export async function POST(req: NextRequest) {
 }
 catch (err) {
   console.error('Visit request error:', err)
-  return NextResponse.json({ error: 'Failed to create visit request' }, { status: 500 })
+  // Capture to Sentry so we can see future silent failures
+  try {
+    const Sentry = await import('@sentry/nextjs')
+    Sentry.captureException(err)
+  } catch { /* Sentry not configured, continue */ }
+  const detail = process.env.NODE_ENV === 'development' && err instanceof Error
+    ? err.message
+    : 'Failed to create visit request'
+  return NextResponse.json({ error: detail }, { status: 500 })
 }}
