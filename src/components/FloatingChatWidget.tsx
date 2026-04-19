@@ -10,6 +10,15 @@ interface Message {
   timestamp: Date
 }
 
+const stripCardsForDisplay = (text: string): string => {
+  let cleaned = text.replace(/<!--CARD:[\s\S]*?-->/g, '')
+  const unclosedStart = cleaned.lastIndexOf('<!--CARD:')
+  if (unclosedStart !== -1) {
+    cleaned = cleaned.substring(0, unclosedStart)
+  }
+  return cleaned.trimEnd()
+}
+
 const suggestedQuestions = [
   "What 3BHK options are under ₹80L?",
   "Which builder has the best trust score?",
@@ -26,6 +35,7 @@ export default function FloatingChatWidget() {
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const rawContentRef = useRef('')
 
   useEffect(() => {
     const timer = setTimeout(() => setShowPing(false), 3000)
@@ -62,6 +72,7 @@ export default function FloatingChatWidget() {
 
     const assistantMessageId = crypto.randomUUID()
 
+    rawContentRef.current = ''
     setMessages(prev => [...prev, {
       id: assistantMessageId,
       role: 'assistant',
@@ -92,10 +103,11 @@ export default function FloatingChatWidget() {
         if (done) break
 
         const chunk = decoder.decode(value)
+        rawContentRef.current += chunk
 
         setMessages(prev => prev.map(m =>
           m.id === assistantMessageId
-            ? { ...m, content: m.content + chunk }
+            ? { ...m, content: stripCardsForDisplay(rawContentRef.current) }
             : m
         ))
       }
