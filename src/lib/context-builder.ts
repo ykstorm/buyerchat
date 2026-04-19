@@ -86,13 +86,15 @@ export async function buildContextPayload() {
         responsivenessScore: p.builder?.responsivenessScore,
         zone: p.microMarket,
         location: p.microMarket,
-        priceRange: `₹${(p.minPrice / 100000).toFixed(0)}L–₹${(p.maxPrice / 100000).toFixed(0)}L`,
+        priceRange: (p.minPrice && p.maxPrice)
+          ? `₹${(p.minPrice / 100000).toFixed(0)}L–₹${(p.maxPrice / 100000).toFixed(0)}L`
+          : 'Price on request',
         minPrice: p.minPrice,
         maxPrice: p.maxPrice,
         pricePerSqft: p.pricePerSqft,
         availableUnits: p.availableUnits,
         unitTypes: p.unitTypes,
-        possession: p.possessionDate.toISOString().split('T')[0],
+        possession: p.possessionDate ? p.possessionDate.toISOString().split('T')[0] : 'TBD',
         rera: p.reraNumber,
         status: p.constructionStatus,
         amenities: p.amenities,
