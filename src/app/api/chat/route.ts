@@ -191,6 +191,17 @@ if (hasInjection) {
 
   const finalMemory = postVisitContext ?? buyerMemory
 
+  // DIAGNOSTIC: Log what we're sending to OpenAI so we can see why responses are empty
+  console.log('[CHAT-DIAG] About to call streamText:', JSON.stringify({
+    messageCount: cappedMessages.length,
+    lastUserMessage: cappedMessages[cappedMessages.length - 1]?.content?.slice(0, 100),
+    systemPromptLength: buildSystemPrompt(context, decisionCard, finalMemory).length,
+    contextProjectCount: context.projects?.length,
+    hasDecisionCard: !!decisionCard,
+    hasMemory: !!finalMemory,
+    cleanedMessagesCount: cleanedMessages.length,
+  }))
+
   const result = streamText({
     model: openai('gpt-4o'),
     system: buildSystemPrompt(context, decisionCard, finalMemory),
@@ -198,6 +209,15 @@ if (hasInjection) {
     temperature: 0.3,
     maxOutputTokens: 500,
     onFinish: async ({ text, usage }) => {
+      // DIAGNOSTIC: Log what OpenAI returned
+      console.log('[CHAT-DIAG] streamText finished:', JSON.stringify({
+        textLength: text?.length ?? 0,
+        textFirst200: text?.slice(0, 200) ?? '(empty)',
+        finishReason: usage ? 'usage-present' : 'no-usage',
+        inputTokens: usage?.inputTokens,
+        outputTokens: usage?.outputTokens,
+        totalTokens: usage?.totalTokens,
+      }))
       try {
         const projectNames = context.projects.map((p: any) => p.name)
         const { passed, violations } = checkResponse(text, projectNames, intent)
