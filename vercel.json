@@ -3,6 +3,6 @@
   "buildCommand": "npx prisma generate && next build",
   "installCommand": "npm ci",
   "env": {
-    "NEXT_PUBLIC_APP_URL": "https://buyerchat.in"
+    "NEXT_PUBLIC_APP_URL": "https://www.homesty.ai"
   }
 }
