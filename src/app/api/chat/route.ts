@@ -69,9 +69,15 @@ export async function POST(req: NextRequest) {
   }
   const messages = parsed.data.messages
   const incomingSessionId: string | null = parsed.data.sessionId ?? null
-
+  // Filter out empty assistant turns — these come from prior client-side failures
+  // and corrupt OpenAI's conversation interpretation, causing cascading empty responses.
+  // Defense in depth: client should also filter, but this protects against malicious
+  // or buggy clients that send malformed history.
+  const cleanedMessages = messages.filter(m =>
+    m.role !== 'assistant' || (m.content && m.content.trim().length > 0)
+  )
   // Cap message history — VULN-06 token overflow protection
-  const cappedMessages = messages.slice(-15)
+  const cappedMessages = cleanedMessages.slice(-15)
 
   // Get latest user message
   const latestMsg = cappedMessages[cappedMessages.length - 1]?.content ?? ''

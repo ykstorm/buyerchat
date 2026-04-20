@@ -168,7 +168,13 @@ export default function ChatClient({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          messages: [...history, { role: 'user', content: userContent }],
+          messages: [
+            // Filter out any failed/empty assistant turns from prior errors —
+            // sending these to OpenAI corrupts the conversation and causes all
+            // subsequent turns to also return empty (compounding failure).
+            ...history.filter(m => m.role !== 'assistant' || (m.content && m.content.trim().length > 0)),
+            { role: 'user', content: userContent }
+          ],
           sessionId,
         }),
       })
@@ -433,9 +439,11 @@ export default function ChatClient({
         // Strip any legacy CARD blocks from historical messages (pre-Task-1 data
         // or client-side streaming edge cases may have persisted junk).
         const stripCards = (s: string) => s.replace(/<!--CARD:[\s\S]*?-->/g, '').trimEnd()
-        const loaded: Message[] = (data.messages ?? []).map((m: any) => ({
-          id: uid(), role: m.role, content: m.role === 'assistant' ? stripCards(m.content) : m.content
-        }))
+        const loaded: Message[] = (data.messages ?? [])
+          .filter((m: any) => m.role !== 'assistant' || (m.content && m.content.trim().length > 0))
+          .map((m: any) => ({
+            id: uid(), role: m.role, content: m.role === 'assistant' ? stripCards(m.content) : m.content
+          }))
         setMessages(loaded)
         setSessionId(urlSessionId)
         if (data.session?.buyerStage) setBuyerStage(data.session.buyerStage)
@@ -537,5 +545,3 @@ export default function ChatClient({
     </div>
   )
 }
-
- 
