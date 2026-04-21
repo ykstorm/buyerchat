@@ -30,8 +30,11 @@ export function buildRiskAlerts(
     alerts.push({ level: 'high', message: `${nameB} has a low builder trust score. Delivery certainty is not guaranteed.` })
   }
 
-  // Risk-averse buyer with low builder trust winner
+  // Risk-averse buyer: point them toward the project with the stronger builder trust winner
   if (context.riskAverse && diffs.categoryWinners.builderTrust === 'B') {
+    alerts.push({ level: 'medium', message: `Since you prioritise safety, note that ${nameB} has a stronger builder track record despite other advantages ${nameA} may offer.` })
+  }
+  if (context.riskAverse && diffs.categoryWinners.builderTrust === 'A') {
     alerts.push({ level: 'medium', message: `Since you prioritise safety, note that ${nameA} has a stronger builder track record despite other advantages ${nameB} may offer.` })
   }
 

@@ -39,6 +39,11 @@ export async function buildContextPayload() {
           priceNote: true,
           carpetSqftMin: true,
           sbaSqftMin: true,
+          locationScore: true,
+          amenitiesScore: true,
+          infrastructureScore: true,
+          demandScore: true,
+          builderGradeScore: true,
           builder: {
             select: {
               totalTrustScore: true,
@@ -107,6 +112,15 @@ export async function buildContextPayload() {
         priceNote: p.priceNote ?? null,
         carpetSqftMin: p.carpetSqftMin ?? null,
         sbaSqftMin: p.sbaSqftMin ?? null,
+        // CategoryScores shape consumed by decision-engine (score-engine.ts).
+        // builderTrust falls back to Builder.totalTrustScore, then Project.builderGradeScore, then 50.
+        scores: {
+          location: p.locationScore ?? 50,
+          amenities: p.amenitiesScore ?? 50,
+          builderTrust: p.builder?.totalTrustScore ?? p.builderGradeScore ?? 50,
+          infrastructure: p.infrastructureScore ?? 50,
+          demand: p.demandScore ?? 50,
+        },
         urgency,
         // contactPhone and contactEmail deliberately excluded
       }
