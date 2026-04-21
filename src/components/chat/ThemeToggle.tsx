@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { motion } from 'framer-motion'
+import { m } from 'framer-motion'
 
 export default function ThemeToggle() {
   const [dark, setDark] = useState(false)
@@ -27,7 +27,7 @@ export default function ThemeToggle() {
   }
 
   return (
-    <motion.button
+    <m.button
       type="button"
       onClick={toggle}
       whileTap={{ scale: 0.9 }}
@@ -35,7 +35,7 @@ export default function ThemeToggle() {
       style={{ background: dark ? 'rgba(255,255,255,0.08)' : 'var(--bg-subtle)', border: '1px solid var(--border)' }}
       title={dark ? 'Switch to light' : 'Switch to dark'}
     >
-      <motion.div
+      <m.div
         animate={{ rotate: dark ? 180 : 0 }}
         transition={{ duration: 0.4, ease: 'easeInOut' }}
         className="flex items-center justify-center"
@@ -49,7 +49,7 @@ export default function ThemeToggle() {
             <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>
           </svg>
         )}
-      </motion.div>
-    </motion.button>
+      </m.div>
+    </m.button>
   )
 }

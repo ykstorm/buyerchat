@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
-import { motion, useMotionValue, useTransform } from 'framer-motion'
+import { m, useMotionValue, useTransform } from 'framer-motion'
 import type { ProjectType } from '@/lib/types/chat'
 
 const formatL = (n: number | null | undefined) => n ? Math.round(n / 100000) : null
@@ -53,7 +53,7 @@ export default function ProjectCardV2({ project }: { project: ProjectType }) {
     : { bg: '#FCEBEB', text: '#791F1F', dot: '#F87171' }
 
   return (
-    <motion.div
+    <m.div
       initial={{ opacity: 0, y: 20, scale: 0.97 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{ type: 'spring', stiffness: 300, damping: 28 }}
@@ -79,7 +79,7 @@ export default function ProjectCardV2({ project }: { project: ProjectType }) {
           <svg width="80" height="80" viewBox="0 0 24 24" fill="white"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><polyline points="9 22 9 12 15 12 15 22" fill="white"/></svg>
         </div>
         {/* Shimmer effect */}
-        <motion.div
+        <m.div
           className="absolute inset-0 opacity-10"
           style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent)', backgroundSize: '200% 100%' }}
           animate={{ backgroundPosition: hovered ? ['0% 0%', '200% 0%'] : '0% 0%' }}
@@ -95,7 +95,7 @@ export default function ProjectCardV2({ project }: { project: ProjectType }) {
           </div>
         )}
         {/* Save button */}
-        <motion.button
+        <m.button
           type="button"
           onClick={toggleSave}
           whileTap={{ scale: 0.85 }}
@@ -105,7 +105,7 @@ export default function ProjectCardV2({ project }: { project: ProjectType }) {
           <svg width="14" height="14" viewBox="0 0 24 24" fill={saved ? 'white' : 'none'} stroke="white" strokeWidth="2">
             <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/>
           </svg>
-        </motion.button>
+        </m.button>
         {/* Location */}
         <div className="absolute bottom-3 left-3">
           <span className="text-[10px] font-medium text-white/70 uppercase tracking-wider">{project.microMarket}</span>
@@ -132,7 +132,7 @@ export default function ProjectCardV2({ project }: { project: ProjectType }) {
               <p className="text-[10px] text-[#A8A29E]">₹{Math.round(project.pricePerSqft * (project.loadingFactor ?? 1.37)).toLocaleString('en-IN')}/sqft Carpet</p>
             )}
             {project.allInPrice && project.allInPrice > 0 && (
-              <motion.div
+              <m.div
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
                 className="mt-2 rounded-xl px-3 py-2"
@@ -148,7 +148,7 @@ export default function ProjectCardV2({ project }: { project: ProjectType }) {
                     <p className="text-[12px] font-semibold" style={{ color: 'var(--text-accent-green)' }}>₹{emi(project.allInPrice).toLocaleString('en-IN')}/mo</p>
                   </div>
                 </div>
-              </motion.div>
+              </m.div>
             )}
           </div>
         ) : (
@@ -175,7 +175,7 @@ export default function ProjectCardV2({ project }: { project: ProjectType }) {
 
         {/* Honest Concern */}
         {project.honestConcern && (
-          <motion.div
+          <m.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.2 }}
@@ -184,7 +184,7 @@ export default function ProjectCardV2({ project }: { project: ProjectType }) {
           >
             <p className="text-[9px] font-semibold uppercase tracking-wider mb-0.5" style={{ color: 'var(--text-accent-amber-title)' }}>⚠ Honest Concern</p>
             <p className="text-[11px] leading-relaxed" style={{ color: 'var(--text-accent-amber)' }}>{project.honestConcern}</p>
-          </motion.div>
+          </m.div>
         )}
 
         {/* Analyst note */}
@@ -205,7 +205,7 @@ export default function ProjectCardV2({ project }: { project: ProjectType }) {
               </span>
             </div>
             <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--bg-subtle)' }}>
-              <motion.div
+              <m.div
                 initial={{ width: 0 }}
                 animate={{ width: `${project.trustScore}%` }}
                 transition={{ duration: 0.8, ease: 'easeOut', delay: 0.3 }}
@@ -218,7 +218,7 @@ export default function ProjectCardV2({ project }: { project: ProjectType }) {
 
         {/* Actions */}
         <div className="flex gap-2">
-          <motion.button
+          <m.button
             type="button"
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.97 }}
@@ -227,8 +227,8 @@ export default function ProjectCardV2({ project }: { project: ProjectType }) {
             style={{ background: 'linear-gradient(135deg, #1B4F8A, #2563EB)' }}
           >
             Book visit →
-          </motion.button>
-          <motion.button
+          </m.button>
+          <m.button
             type="button"
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.97 }}
@@ -237,9 +237,9 @@ export default function ProjectCardV2({ project }: { project: ProjectType }) {
             style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}
           >
             Compare
-          </motion.button>
+          </m.button>
         </div>
       </div>
-    </motion.div>
+    </m.div>
   )
 }

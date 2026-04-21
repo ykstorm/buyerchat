@@ -1,16 +1,44 @@
 'use client'
 import type React from 'react'
 
-import { motion, AnimatePresence } from 'framer-motion'
+import { m, AnimatePresence } from 'framer-motion'
+import dynamic from 'next/dynamic'
 import { FormEvent, useRef, useEffect, useState, memo, useMemo } from 'react'
 import ReactMarkdown from 'react-markdown'
-import ProjectCard from './artifacts/ProjectCardV2'
-import ComparisonCard from './artifacts/ComparisonCard'
-import CostBreakdownCard from './artifacts/CostBreakdownCard'
-import { VisitBooking } from './artifacts/VisitBooking'
-import VisitPromptCard from './artifacts/VisitPromptCard'
-import BuilderTrustCard from './artifacts/BuilderTrustCard'
 import type { ProjectType, Artifact } from '@/lib/types/chat'
+
+// Mobile/inline artifact renderers — same lazy strategy as ChatRightPanel.
+// Skeletons use dark-mode tokens + approximate rendered heights.
+const ArtifactSkeleton = ({ heightClass }: { heightClass: string }) => (
+  <div
+    className={`${heightClass} animate-pulse rounded-xl`}
+    style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}
+  />
+)
+const ProjectCard = dynamic(() => import('./artifacts/ProjectCardV2'), {
+  ssr: false,
+  loading: () => <ArtifactSkeleton heightClass="h-[520px]" />,
+})
+const ComparisonCard = dynamic(() => import('./artifacts/ComparisonCard'), {
+  ssr: false,
+  loading: () => <ArtifactSkeleton heightClass="h-[420px]" />,
+})
+const CostBreakdownCard = dynamic(() => import('./artifacts/CostBreakdownCard'), {
+  ssr: false,
+  loading: () => <ArtifactSkeleton heightClass="h-[460px]" />,
+})
+const VisitBooking = dynamic(
+  () => import('./artifacts/VisitBooking').then(mod => ({ default: mod.VisitBooking })),
+  { ssr: false, loading: () => <ArtifactSkeleton heightClass="h-[520px]" /> },
+)
+const VisitPromptCard = dynamic(() => import('./artifacts/VisitPromptCard'), {
+  ssr: false,
+  loading: () => <ArtifactSkeleton heightClass="h-[260px]" />,
+})
+const BuilderTrustCard = dynamic(() => import('./artifacts/BuilderTrustCard'), {
+  ssr: false,
+  loading: () => <ArtifactSkeleton heightClass="h-[360px]" />,
+})
 
 /* ── Floating Particles Component ── */
 function FloatingParticles() {
@@ -200,7 +228,7 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
     <div className="flex-1 flex flex-col h-dvh relative overflow-hidden" style={{ background: 'var(--bg-base)' }}>
       {loadingSession ? (
         <div className="flex-1 flex items-center justify-center">
-          <motion.div
+          <m.div
             animate={{ rotate: 360 }}
             transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
             className="w-5 h-5 border-2 border-[#E7E5E4] border-t-[#1C1917] rounded-full"
@@ -263,7 +291,7 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
           />
 
           {/* Warm spotlight follows cursor */}
-          <motion.div
+          <m.div
             className="pointer-events-none absolute inset-0 z-0"
             style={{
               background: `radial-gradient(500px circle at ${mouse.x + 200}px ${mouse.y + 300}px, rgba(196,155,80,0.05), transparent 40%)`,
@@ -273,7 +301,7 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
           <div className="relative z-10 text-center px-6 w-full max-w-lg">
 
             {/* Eyebrow with gold accent line */}
-            <motion.div
+            <m.div
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
@@ -284,10 +312,10 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
                 South Bopal & Shela · Ahmedabad
               </p>
               <div className="h-[1px] w-8" style={{ background: 'linear-gradient(90deg, #C49B50, transparent)' }} />
-            </motion.div>
+            </m.div>
 
             {/* Headline with parallax + text shimmer */}
-            <motion.h1
+            <m.h1
               initial={{ opacity: 0, y: 14 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.08 }}
@@ -295,10 +323,10 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
               className="relative z-10 text-[42px] leading-tight mb-3 font-bold text-shimmer"
             >
               Find your home.
-            </motion.h1>
+            </m.h1>
 
             {/* Subline */}
-            <motion.p
+            <m.p
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.5, delay: 0.16 }}
@@ -307,12 +335,12 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
             >
               Tell me your budget, timeline, and what matters to you.<br />
               I&apos;ll do the rest.
-            </motion.p>
+            </m.p>
 
             {/* Starter cards */}
             <div className="grid grid-cols-2 gap-3 w-full mb-8">
               {STARTERS.map((s, i) => (
-                <motion.button
+                <m.button
                   key={s}
                   type="button"
                   initial={{ opacity: 0, y: 10 }}
@@ -330,19 +358,19 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
                   onMouseLeave={e => (e.currentTarget.style.borderColor = 'color-mix(in srgb, var(--border) 60%, transparent)')}
                 >
                   <p className="text-[12.5px] font-medium leading-snug transition-colors" style={{ color: 'var(--text-secondary)' }}>{s}</p>
-                </motion.button>
+                </m.button>
               ))}
             </div>
 
             {/* Trust line */}
-            <motion.p
+            <m.p
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.55 }}
               className="text-[11px] text-[#A8A29E]"
             >
-              Homesty earns only when you buy. No builder pays for promotion.
-            </motion.p>
+              Homesty earns only when you buy. No builder pays for prom.
+            </m.p>
           </div>
         </div>
 
@@ -400,7 +428,7 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
               <div className="rounded-2xl rounded-bl-md px-4 py-3 shadow-[0_1px_4px_rgba(0,0,0,0.06)]" style={{ background: 'var(--bg-message-ai)', border: '1px solid var(--border)' }}>
                 <div className="flex gap-1.5 items-center">
                   {[0, 1, 2].map(i => (
-                    <motion.div
+                    <m.div
                       key={i}
                       className="w-1.5 h-1.5 rounded-full bg-[#C8C4BF]"
                       animate={{ y: [0, -3, 0], opacity: [0.4, 1, 0.4] }}
@@ -418,14 +446,14 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
       {/* Mobile artifact — full-screen overlay modal */}
       <AnimatePresence>
         {artifact && showArtifact && (
-          <motion.div
+          <m.div
             className="lg:hidden fixed inset-0 z-40 flex flex-col"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
           >
             {/* Backdrop */}
-            <motion.div
+            <m.div
               className="absolute inset-0 bg-black/30 backdrop-blur-sm"
               onClick={onToggleArtifact}
               initial={{ opacity: 0 }}
@@ -434,7 +462,7 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
             />
 
             {/* Modal card — swipe left/right to navigate, down to dismiss */}
-            <motion.div
+            <m.div
               initial={{ y: 60, opacity: 0, scale: 0.95 }}
               animate={{ y: 0, opacity: 1, scale: 1 }}
               exit={{ y: 60, opacity: 0, scale: 0.95 }}
@@ -540,8 +568,8 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
                     }} />
                   : <ProjectCard project={artifact.data} />}
               </div>
-            </motion.div>
-          </motion.div>
+            </m.div>
+          </m.div>
         )}
       </AnimatePresence>
 
@@ -550,7 +578,7 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
       {/* Compare toast notification */}
       <AnimatePresence>
         {compareToast && (
-          <motion.div
+          <m.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 10 }}
@@ -561,7 +589,7 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
             <p className="text-[12px] whitespace-nowrap font-medium" style={{ color: 'var(--text-primary)' }}>
               {compareToast}
             </p>
-          </motion.div>
+          </m.div>
         )}
       </AnimatePresence>
 
@@ -615,7 +643,7 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
             className="flex-1 min-w-0 rounded-2xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#1B4F8A]/15 focus:border-[#1B4F8A]/50 transition-all duration-200 shadow-luxury-sm"
             style={{ background: 'var(--bg-input)', border: '1px solid var(--border)', color: 'var(--text-primary)', fontSize: '16px' }}
           />
-          <motion.button
+          <m.button
             type="submit"
             disabled={isLoading || !input.trim()}
             whileTap={{ scale: 0.94 }}
@@ -624,7 +652,7 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
               <path d="M7 12V2M7 2L2.5 6.5M7 2L11.5 6.5" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
-          </motion.button>
+          </m.button>
         </form>
       </div>
     </div>

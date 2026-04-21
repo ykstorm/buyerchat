@@ -1,5 +1,5 @@
 'use client'
-import { motion } from 'framer-motion'
+import { m } from 'framer-motion'
 
 type BuilderData = {
   brandName: string
@@ -27,7 +27,7 @@ export default function BuilderTrustCard({ builder }: { builder: BuilderData }) 
   ]
 
   return (
-    <motion.div
+    <m.div
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ type: 'spring', stiffness: 300, damping: 28 }}
@@ -63,7 +63,7 @@ export default function BuilderTrustCard({ builder }: { builder: BuilderData }) 
 
         {/* Overall bar */}
         <div className="h-2 rounded-full overflow-hidden" style={{ background: 'var(--bg-subtle)' }}>
-          <motion.div
+          <m.div
             initial={{ width: 0 }}
             animate={{ width: `${builder.totalTrustScore}%` }}
             transition={{ duration: 1, ease: 'easeOut', delay: 0.2 }}
@@ -81,7 +81,7 @@ export default function BuilderTrustCard({ builder }: { builder: BuilderData }) 
             <div key={s.label} className="flex items-center gap-3">
               <span className="text-[10px] text-[#78716C] w-16 flex-shrink-0">{s.label}</span>
               <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background: '#F4F3F0' }}>
-                <motion.div
+                <m.div
                   initial={{ width: 0 }}
                   animate={{ width: `${(s.value / s.max) * 100}%` }}
                   transition={{ duration: 0.8, ease: 'easeOut', delay: 0.3 }}
@@ -111,6 +111,6 @@ export default function BuilderTrustCard({ builder }: { builder: BuilderData }) 
           ))}
         </div>
       </div>
-    </motion.div>
+    </m.div>
   )
 }

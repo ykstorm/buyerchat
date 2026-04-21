@@ -1,5 +1,5 @@
 'use client'
-import { motion } from 'framer-motion'
+import { m } from 'framer-motion'
 import type { ProjectType } from '@/lib/types/chat'
 
 function formatL(n: number | null | undefined) {
@@ -70,7 +70,7 @@ export default function ComparisonCard({ projectA, projectB }: { projectA: Proje
   ]
 
   return (
-    <motion.div
+    <m.div
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ type: 'spring', stiffness: 300, damping: 28 }}
@@ -125,7 +125,7 @@ export default function ComparisonCard({ projectA, projectB }: { projectA: Proje
       {/* Actions */}
       <div className="px-4 pb-4 grid grid-cols-2 gap-2">
         {[projectA, projectB].map((p, i) => (
-          <motion.button
+          <m.button
             key={i}
             type="button"
             whileHover={{ scale: 1.02 }}
@@ -135,9 +135,9 @@ export default function ComparisonCard({ projectA, projectB }: { projectA: Proje
             style={{ background: i === 0 ? '#1B4F8A' : '#0F6E56' }}
           >
             Visit {p.projectName.split(' ')[0]} →
-          </motion.button>
+          </m.button>
         ))}
       </div>
-    </motion.div>
+    </m.div>
   )
 }

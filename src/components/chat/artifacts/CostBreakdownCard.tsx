@@ -1,5 +1,5 @@
 'use client'
-import { motion } from 'framer-motion'
+import { m } from 'framer-motion'
 
 type ChargeItem = { name: string; amount: number }
 
@@ -60,7 +60,7 @@ export default function CostBreakdownCard({ project }: { project: ProjectForCost
   // If we have no data at all, show a minimal card
   if (lines.length === 0 && !project.allInPrice) {
     return (
-      <motion.div
+      <m.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ type: 'spring', stiffness: 300, damping: 28 }}
@@ -73,12 +73,12 @@ export default function CostBreakdownCard({ project }: { project: ProjectForCost
             Cost breakdown not available for {project.projectName}. Ask me for a price estimate.
           </p>
         </div>
-      </motion.div>
+      </m.div>
     )
   }
 
   return (
-    <motion.div
+    <m.div
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ type: 'spring', stiffness: 300, damping: 28 }}
@@ -169,7 +169,7 @@ export default function CostBreakdownCard({ project }: { project: ProjectForCost
 
       {/* Actions */}
       <div className="px-5 pb-4 flex gap-2">
-        <motion.button
+        <m.button
           type="button"
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.97 }}
@@ -178,8 +178,8 @@ export default function CostBreakdownCard({ project }: { project: ProjectForCost
           style={{ background: 'linear-gradient(135deg, #0F6E56, #34D399)' }}
         >
           Book visit →
-        </motion.button>
-        <motion.button
+        </m.button>
+        <m.button
           type="button"
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.97 }}
@@ -188,8 +188,8 @@ export default function CostBreakdownCard({ project }: { project: ProjectForCost
           style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}
         >
           Details
-        </motion.button>
+        </m.button>
       </div>
-    </motion.div>
+    </m.div>
   )
 }

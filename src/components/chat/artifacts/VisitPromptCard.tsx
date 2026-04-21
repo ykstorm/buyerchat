@@ -1,6 +1,6 @@
 'use client'
 import { useState } from 'react'
-import { motion } from 'framer-motion'
+import { m } from 'framer-motion'
 import type { ProjectType } from '@/lib/types/chat'
 
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
@@ -26,7 +26,7 @@ export default function VisitPromptCard({ project }: {
   const slots = getSlots()
 
   return (
-    <motion.div
+    <m.div
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ type: 'spring', stiffness: 300, damping: 28 }}
@@ -49,7 +49,7 @@ export default function VisitPromptCard({ project }: {
         <p className="text-[10px] font-semibold uppercase tracking-wider text-[#A8A29E] mb-2">Pick a slot</p>
         <div className="grid grid-cols-2 gap-2 mb-4">
           {slots.map((slot, i) => (
-            <motion.button
+            <m.button
               key={i}
               type="button"
               whileHover={{ scale: 1.02 }}
@@ -63,7 +63,7 @@ export default function VisitPromptCard({ project }: {
             >
               <p className="text-[11px] font-semibold" style={{ color: selected === i ? '#1B4F8A' : '#1C1917' }}>{slot.label}</p>
               <p className="text-[10px]" style={{ color: '#78716C' }}>{slot.time}</p>
-            </motion.button>
+            </m.button>
           ))}
         </div>
 
@@ -77,7 +77,7 @@ export default function VisitPromptCard({ project }: {
           </div>
         </div>
 
-        <motion.button
+        <m.button
           type="button"
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.97 }}
@@ -90,8 +90,8 @@ export default function VisitPromptCard({ project }: {
           style={{ background: 'linear-gradient(135deg, #1B4F8A, #2563EB)' }}
         >
           {selected === null ? 'Select a slot first' : `Confirm visit — ${slots[selected].label}`}
-        </motion.button>
+        </m.button>
       </div>
-    </motion.div>
+    </m.div>
   )
 }

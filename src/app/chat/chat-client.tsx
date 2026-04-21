@@ -2,10 +2,28 @@
 
 import { useState, useCallback, useEffect, useRef, FormEvent } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
-import ChatSidebar from '@/components/chat/ChatSidebar'
+import dynamic from 'next/dynamic'
+import { LazyMotion, domAnimation } from 'framer-motion'
 import ChatCenter, { type Message } from '@/components/chat/ChatCenter'
-import ChatRightPanel from '@/components/chat/ChatRightPanel'
 import type { ProjectType, ArtifactType, Artifact } from '@/lib/types/chat'
+
+// Sidebar + RightPanel are not needed for first paint on mobile (sidebar is
+// closed by default) or for the empty-artifact desktop view. Lazy-loading
+// them moves framer-motion swipe logic (ChatSidebar useMotionValue/animate)
+// and the 6 artifact renderers out of the initial bundle.
+const ChatSidebar = dynamic(() => import('@/components/chat/ChatSidebar'), {
+  ssr: false,
+  loading: () => null,
+})
+const ChatRightPanel = dynamic(() => import('@/components/chat/ChatRightPanel'), {
+  ssr: false,
+  loading: () => (
+    <div
+      className="w-[380px] flex-shrink-0 h-full hidden lg:block"
+      style={{ borderLeft: '1px solid var(--border)', background: 'var(--bg-base)' }}
+    />
+  ),
+})
 
 let idCounter = 0
 const uid = () => `msg-${++idCounter}-${Date.now()}`
@@ -475,6 +493,7 @@ export default function ChatClient({
   }, [urlSessionId])
 
   return (
+    <LazyMotion features={domAnimation} strict>
     <div className="flex h-dvh overflow-hidden" style={{ background: 'var(--bg-base)' }}>
       {/* Mobile hamburger */}
       <button
@@ -543,5 +562,6 @@ export default function ChatClient({
         }}
       />
     </div>
+    </LazyMotion>
   )
 }

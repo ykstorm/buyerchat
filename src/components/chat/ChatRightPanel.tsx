@@ -1,14 +1,46 @@
 'use client'
 
 import React from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import ProjectCard from './artifacts/ProjectCardV2'
-import ComparisonCard from './artifacts/ComparisonCard'
-import CostBreakdownCard from './artifacts/CostBreakdownCard'
-import { VisitBooking } from './artifacts/VisitBooking'
-import VisitPromptCard from './artifacts/VisitPromptCard'
-import BuilderTrustCard from './artifacts/BuilderTrustCard'
+import dynamic from 'next/dynamic'
+import { m, AnimatePresence } from 'framer-motion'
 import type { ProjectType, Artifact } from '@/lib/types/chat'
+
+// Lazy-load all artifact renderers — each pulls framer-motion + chart/date
+// utilities that we don't need until an artifact actually mounts. ssr:false
+// is safe because ChatRightPanel is client-only (hidden on mobile via `lg:`).
+// Placeholders preserve approximate rendered heights to avoid layout shift
+// and use dark-mode-aware tokens matching the rest of the chat surface.
+const ArtifactSkeleton = ({ heightClass }: { heightClass: string }) => (
+  <div
+    className={`${heightClass} animate-pulse rounded-xl`}
+    style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}
+  />
+)
+
+const ProjectCard = dynamic(() => import('./artifacts/ProjectCardV2'), {
+  ssr: false,
+  loading: () => <ArtifactSkeleton heightClass="h-[520px]" />,
+})
+const ComparisonCard = dynamic(() => import('./artifacts/ComparisonCard'), {
+  ssr: false,
+  loading: () => <ArtifactSkeleton heightClass="h-[420px]" />,
+})
+const CostBreakdownCard = dynamic(() => import('./artifacts/CostBreakdownCard'), {
+  ssr: false,
+  loading: () => <ArtifactSkeleton heightClass="h-[460px]" />,
+})
+const VisitBooking = dynamic(
+  () => import('./artifacts/VisitBooking').then(m => ({ default: m.VisitBooking })),
+  { ssr: false, loading: () => <ArtifactSkeleton heightClass="h-[520px]" /> },
+)
+const VisitPromptCard = dynamic(() => import('./artifacts/VisitPromptCard'), {
+  ssr: false,
+  loading: () => <ArtifactSkeleton heightClass="h-[260px]" />,
+})
+const BuilderTrustCard = dynamic(() => import('./artifacts/BuilderTrustCard'), {
+  ssr: false,
+  loading: () => <ArtifactSkeleton heightClass="h-[360px]" />,
+})
 
 export default function ChatRightPanel({
   artifact,
@@ -39,7 +71,7 @@ export default function ChatRightPanel({
       <div className="w-[380px] flex-shrink-0 h-full overflow-y-auto p-4 hidden lg:block" style={{ borderLeft: '1px solid var(--border)', background: 'var(--bg-base)' }}>
         <AnimatePresence mode="wait">
           {artifact ? (
-            <motion.div
+            <m.div
               key={artifact.data.id + artifact.type}
               initial={{ x: 40, opacity: 0, scale: 0.96 }}
               animate={{ x: 0, opacity: 1, scale: 1 }}
@@ -139,15 +171,15 @@ export default function ChatRightPanel({
                   <ProjectCard project={artifact.data} />
                 </>
               )}
-            </motion.div>
+            </m.div>
           ) : (
-            <motion.div
+            <m.div
               key="empty"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               className="h-full flex flex-col items-center justify-center relative"
             >
-              <motion.div
+              <m.div
                 className="absolute inset-0"
                 animate={{
                   background: [
@@ -164,7 +196,7 @@ export default function ChatRightPanel({
                   Project details<br />appear here as<br />you chat
                 </p>
               </div>
-            </motion.div>
+            </m.div>
           )}
         </AnimatePresence>
       </div>

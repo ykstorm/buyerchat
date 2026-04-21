@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react'
 import { signOut } from 'next-auth/react'
-import { motion, useMotionValue, useTransform, animate } from 'framer-motion'
+import { m, useMotionValue, useTransform, animate } from 'framer-motion'
 import Link from 'next/link'
 import ThemeToggle from './ThemeToggle'
 
@@ -70,17 +70,17 @@ function SwipeableSessionItem({ session, onLoad, onClose, menuOpen, setMenuOpen,
   return (
     <div className="relative overflow-hidden rounded-xl mb-0.5">
       {/* Delete background */}
-      <motion.div
+      <m.div
         style={{ opacity: deleteOpacity }}
         className="absolute inset-0 bg-[#FEE2E2] flex items-center justify-end pr-4 rounded-xl"
       >
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#A32D2D" strokeWidth="2">
           <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/>
         </svg>
-      </motion.div>
+      </m.div>
 
       {/* Session item */}
-      <motion.div
+      <m.div
         drag="x"
         dragConstraints={{ left: -100, right: 0 }}
         dragElastic={0.1}
@@ -258,7 +258,7 @@ function SwipeableSessionItem({ session, onLoad, onClose, menuOpen, setMenuOpen,
             </button>
           </div>
         )}
-      </motion.div>
+      </m.div>
     </div>
   )
 }
