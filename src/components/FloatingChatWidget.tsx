@@ -193,6 +193,7 @@ export default function FloatingChatWidget() {
               </div>
               <div className="flex items-center gap-1">
                 <button
+                  aria-label="Minimize chat"
                   onClick={() => setIsOpen(false)}
                   className="p-1.5 rounded-lg text-[#636380] hover:text-[#e0e0ea] hover:bg-white/5 transition-colors"
                 >
@@ -201,6 +202,7 @@ export default function FloatingChatWidget() {
                   </svg>
                 </button>
                 <button
+                  aria-label="Close chat"
                   onClick={() => setIsOpen(false)}
                   className="p-1.5 rounded-lg text-[#636380] hover:text-[#e0e0ea] hover:bg-white/5 transition-colors"
                 >

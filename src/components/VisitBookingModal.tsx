@@ -265,7 +265,7 @@ className="relative z-10 w-full max-w-lg rounded-2xl border border-white/10 bg-[
                 <h2 className="font-serif text-2xl text-[#e0e0ea]">{projectName}</h2>
                 <p className="text-sm text-[#636380] mt-0.5">by {builderName}</p>
               </div>
-              <button onClick={onClose} className="p-2 rounded-full hover:bg-white/5 transition-colors">
+              <button onClick={onClose} aria-label="Close booking modal" className="p-2 rounded-full hover:bg-white/5 transition-colors">
                 <X className="w-5 h-5 text-[#636380]" />
               </button>
             </div>

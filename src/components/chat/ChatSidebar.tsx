@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { signOut } from 'next-auth/react'
 import { motion, useMotionValue, useTransform, animate } from 'framer-motion'
 import Link from 'next/link'
@@ -12,15 +12,15 @@ type SessionItem = {
 }
 
 
-const STAGE_COLORS: Record<string, string> = {
-  intent_capture: 'bg-[#F4F4F5] text-[#52525B]',
-  project_disclosure: 'bg-[#F4F4F5] text-[#52525B]',
-  qualification: 'bg-[#E6F1FB] text-[#0C447C]',
-  comparison: 'bg-[#FAEEDA] text-[#633806]',
-  visit_trigger: 'bg-[#FAEEDA] text-[#633806]',
-  pre_visit: 'bg-[#FCEBEB] text-[#791F1F]',
-  post_visit: 'bg-[#FCEBEB] text-[#791F1F]',
-  decision: 'bg-[#E1F5EE] text-[#085041]',
+const STAGE_STYLE: Record<string, React.CSSProperties> = {
+  intent_capture:    { background: 'var(--stage-neutral-bg)',   color: 'var(--stage-neutral-text)' },
+  project_disclosure:{ background: 'var(--stage-neutral-bg)',   color: 'var(--stage-neutral-text)' },
+  qualification:     { background: 'var(--stage-qualified-bg)', color: 'var(--stage-qualified-text)' },
+  comparison:        { background: 'var(--stage-compare-bg)',   color: 'var(--stage-compare-text)' },
+  visit_trigger:     { background: 'var(--stage-compare-bg)',   color: 'var(--stage-compare-text)' },
+  pre_visit:         { background: 'var(--stage-visit-bg)',     color: 'var(--stage-visit-text)' },
+  post_visit:        { background: 'var(--stage-visit-bg)',     color: 'var(--stage-visit-text)' },
+  decision:          { background: 'var(--stage-decision-bg)',  color: 'var(--stage-decision-text)' },
 }
 
 const STAGE_LABELS: Record<string, string> = {
@@ -92,18 +92,29 @@ function SwipeableSessionItem({ session, onLoad, onClose, menuOpen, setMenuOpen,
         onClick={() => { if (renamingSession !== session.id && !confirmingDelete) { onLoad(session.id); onClose() } }}
       >
         {confirmingDelete ? (
-          <div onMouseDown={e => e.stopPropagation()} onClick={e => e.stopPropagation()} className="bg-[#FEF2F2] border border-[#FECACA] rounded-lg px-2 py-2">
-            <p className="text-[11px] text-[#A32D2D] font-medium mb-1.5">Delete this chat?</p>
+          <div
+            onMouseDown={e => e.stopPropagation()}
+            onClick={e => e.stopPropagation()}
+            className="rounded-lg px-2 py-2"
+            style={{ background: 'var(--bg-accent-amber)', border: '1px solid var(--border-accent-amber)' }}
+          >
+            <p className="text-[11px] font-medium mb-1.5" style={{ color: 'var(--text-accent-amber-title)' }}>Delete this chat?</p>
             <div className="flex items-center gap-1">
               <button
                 type="button"
                 onClick={e => { e.preventDefault(); e.stopPropagation(); doDelete() }}
-                className="flex-1 text-[11px] font-medium text-white bg-[#A32D2D] rounded-md py-0.5 hover:bg-[#7F1D1D] transition-colors"
+                className="flex-1 text-[11px] font-medium text-white rounded-md py-0.5 transition-colors"
+                style={{ background: '#A32D2D' }}
+                onMouseEnter={e => { e.currentTarget.style.background = '#7F1D1D' }}
+                onMouseLeave={e => { e.currentTarget.style.background = '#A32D2D' }}
               >Yes, delete</button>
               <button
                 type="button"
                 onClick={e => { e.preventDefault(); e.stopPropagation(); setConfirmingDelete(false); }}
-                className="flex-1 text-[11px] font-medium text-[#78716C] bg-[#F4F3F0] rounded-md py-0.5 hover:bg-[#E7E5E4] transition-colors"
+                className="flex-1 text-[11px] font-medium rounded-md py-0.5 transition-colors"
+                style={{ color: 'var(--text-secondary)', background: 'var(--bg-subtle)' }}
+                onMouseEnter={e => { e.currentTarget.style.background = 'var(--border)' }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'var(--bg-subtle)' }}
               >Cancel</button>
             </div>
           </div>
@@ -119,18 +130,29 @@ function SwipeableSessionItem({ session, onLoad, onClose, menuOpen, setMenuOpen,
                 if (e.key === 'Escape') setRenamingSession(null)
               }}
               onMouseDown={e => e.stopPropagation()}
-              className="text-[12px] text-[#1C1917] bg-white border border-[#1B4F8A] rounded-lg outline-none w-full px-2 py-1 mb-1.5"
+              className="text-[12px] rounded-lg outline-none w-full px-2 py-1 mb-1.5"
+              style={{
+                color: 'var(--text-primary)',
+                background: 'var(--bg-input)',
+                border: '1px solid var(--color-accent-blue)',
+              }}
             />
             <div className="flex items-center gap-1">
               <button
                 type="button"
                 onClick={e => { e.preventDefault(); e.stopPropagation(); saveRename(session.id, renameValue) }}
-                className="flex-1 text-[11px] font-medium text-white bg-[#1B4F8A] rounded-md py-0.5 hover:bg-[#163d6b] transition-colors"
+                className="flex-1 text-[11px] font-medium text-white rounded-md py-0.5 transition-colors"
+                style={{ background: 'var(--color-accent-blue)' }}
+                onMouseEnter={e => { e.currentTarget.style.background = 'var(--color-accent-blue-hover)' }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'var(--color-accent-blue)' }}
               >✓</button>
               <button
                 type="button"
                 onClick={e => { e.preventDefault(); e.stopPropagation(); setRenamingSession(null) }}
-                className="flex-1 text-[11px] font-medium text-[#78716C] bg-[#F4F3F0] rounded-md py-0.5 hover:bg-[#E7E5E4] transition-colors"
+                className="flex-1 text-[11px] font-medium rounded-md py-0.5 transition-colors"
+                style={{ color: 'var(--text-secondary)', background: 'var(--bg-subtle)' }}
+                onMouseEnter={e => { e.currentTarget.style.background = 'var(--border)' }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'var(--bg-subtle)' }}
               >✗</button>
             </div>
           </div>
@@ -138,7 +160,10 @@ function SwipeableSessionItem({ session, onLoad, onClose, menuOpen, setMenuOpen,
           <>
             <div className="flex items-center justify-between mb-1">
               {session.buyerStage && session.buyerStage !== 'intent_capture' ? (
-                <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${STAGE_COLORS[session.buyerStage] ?? 'bg-[#F4F4F5] text-[#52525B]'}`}>
+                <span
+                  className="text-[10px] px-1.5 py-0.5 rounded-full font-medium"
+                  style={STAGE_STYLE[session.buyerStage] ?? { background: 'var(--stage-neutral-bg)', color: 'var(--stage-neutral-text)' }}
+                >
                   {STAGE_LABELS[session.buyerStage] ?? session.buyerStage}
                 </span>
               ) : (
@@ -201,7 +226,8 @@ function SwipeableSessionItem({ session, onLoad, onClose, menuOpen, setMenuOpen,
         {menuOpen === session.id && (
           <div
             onClick={e => e.stopPropagation()}
-            className="absolute right-2 top-8 z-50 bg-white border border-[#E7E5E4] rounded-xl shadow-[0_8px_24px_rgba(0,0,0,0.08)] py-1 min-w-[140px]"
+            className="absolute right-2 top-8 z-50 rounded-xl shadow-[0_8px_24px_rgba(0,0,0,0.08)] py-1 min-w-[140px]"
+            style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}
           >
             <button
               type="button"
@@ -211,7 +237,10 @@ function SwipeableSessionItem({ session, onLoad, onClose, menuOpen, setMenuOpen,
                 setRenameValue(chatNames[session.id] || (session.firstMessage ? session.firstMessage.slice(0, 40) : session.id.slice(0, 8)))
                 setMenuOpen(null)
               }}
-              className="w-full px-3 py-2 text-left text-[12px] text-[#1C1917] hover:bg-[#F7F6F4] flex items-center gap-2"
+              className="w-full px-3 py-2 text-left text-[12px] flex items-center gap-2 transition-colors"
+              style={{ color: 'var(--text-primary)' }}
+              onMouseEnter={e => { e.currentTarget.style.background = 'var(--bg-subtle)' }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
             >
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
               Rename
@@ -219,7 +248,10 @@ function SwipeableSessionItem({ session, onLoad, onClose, menuOpen, setMenuOpen,
             <button
               type="button"
               onClick={e => { e.preventDefault(); e.stopPropagation(); setConfirmingDelete(true); setMenuOpen(null); setHoveredSession(null) }}
-              className="w-full px-3 py-2 text-left text-[12px] text-[#A32D2D] hover:bg-[#FDF2F2] flex items-center gap-2"
+              className="w-full px-3 py-2 text-left text-[12px] flex items-center gap-2 transition-colors"
+              style={{ color: '#A32D2D' }}
+              onMouseEnter={e => { e.currentTarget.style.background = 'var(--bg-accent-amber)' }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
             >
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
               Delete chat
@@ -319,7 +351,7 @@ const sidebar = (
           <Link href="/" className="text-[15px] font-semibold tracking-tight hover:text-[#1B4F8A] transition-colors" style={{ color: 'var(--text-primary)' }}>Homesty</Link>
           <div className="flex items-center gap-2">
             <ThemeToggle />
-            <button type="button" onClick={onClose} className="lg:hidden text-[#A8A29E] hover:text-[#1C1917]">✕</button>
+            <button type="button" onClick={onClose} aria-label="Close sidebar" className="lg:hidden text-[#A8A29E] hover:text-[#1C1917]">✕</button>
           </div>
         </div>
         <button type="button" onClick={onNewChat} className="w-full bg-[#1B4F8A] text-white text-[12px] font-medium py-2 rounded-lg hover:bg-[#163d6b] transition-all duration-200 shadow-luxury-sm hover:shadow-[0_2px_8px_rgba(27,79,138,0.15)]">
