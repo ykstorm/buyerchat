@@ -34,6 +34,7 @@ export interface DecisionCard {
   generatedAt: string
 }
 
+// v1.1 gap: negative return means possession is already overdue; risk-engine does not flag this case yet.
 function getMonthsUntilPossession(dateStr?: string): number | undefined {
   if (!dateStr) return undefined
   const diff = new Date(dateStr).getTime() - Date.now()

@@ -18,7 +18,7 @@ export interface BuyerContext {
 const FAMILY_SIGNALS = ['family', 'school', 'kids', 'children', 'wife', 'parents', 'self use', 'self-use', 'end use', 'end-use', 'live in']
 const INVESTOR_SIGNALS = ['invest', 'return', 'appreciation', 'rental income', 'resale', 'yield', 'roi', 'nri', 'portfolio']
 const LIFESTYLE_SIGNALS = ['amenities', 'clubhouse', 'pool', 'gym', 'lifestyle', 'experience', 'luxury', 'premium']
-const RISK_SIGNALS = ['safe', 'safety', 'reliable', 'trusted', 'reliable', 'delay', 'risk', 'worry', 'regret', 'rera compliant']
+const RISK_SIGNALS = ['safe', 'safety', 'reliable', 'trusted', 'delay', 'risk', 'worry', 'regret', 'rera compliant']
 const BUDGET_SIGNALS = ['budget', 'under', 'within', 'lakh', 'cr', 'affordable', 'cheaper', 'economical', 'compromise']
 const URGENCY_SIGNALS = ['urgent', 'soon', 'quickly', 'immediate', 'possession', 'ready to move', 'rtm']
 

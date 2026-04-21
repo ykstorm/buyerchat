@@ -35,7 +35,7 @@ export function analyzeCategories(
   scoresA: CategoryScores,
   scoresB: CategoryScores
 ): DifferenceAnalysis {
-  const categories = Object.keys(scoresA) as (keyof CategoryScores)[]
+  const categories = (Object.keys(scoresA) as (keyof CategoryScores)[]).sort()
 
   const diffs: CategoryDiff[] = categories.map(cat => {
     const diff = scoresA[cat] - scoresB[cat]

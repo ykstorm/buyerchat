@@ -47,8 +47,16 @@ export function buildTradeoff(
     }
   }
 
-  const aLabel = CATEGORY_LABELS[topA!.category] ?? topA!.category
-  const bLabel = CATEGORY_LABELS[topB!.category] ?? topB!.category
+  // Both topA and topB are defined here: the three early-returns above cover
+  // every case where either could be undefined.
+  if (!topA || !topB) {
+    return {
+      headline: 'Very close call',
+      statement: `${nameA} and ${nameB} are closely matched. The decision depends on which micro-market character suits you better.`
+    }
+  }
+  const aLabel = CATEGORY_LABELS[topA.category] ?? topA.category
+  const bLabel = CATEGORY_LABELS[topB.category] ?? topB.category
 
   return {
     headline: `${aLabel} vs ${bLabel}`,
