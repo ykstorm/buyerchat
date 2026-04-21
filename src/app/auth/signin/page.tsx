@@ -4,7 +4,7 @@ import { motion } from 'framer-motion'
 
 export default function SignInPage() {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-4" style={{ background: '#FAF9F6' }}>
+    <div className="min-h-screen flex flex-col items-center justify-center px-4" style={{ background: 'var(--bg-base)' }}>
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
@@ -14,18 +14,18 @@ export default function SignInPage() {
         {/* Logo */}
         <p
           className="text-[32px] font-medium tracking-[-0.02em]"
-          style={{ fontFamily: 'var(--font-cormorant), serif', color: '#1C1917' }}
+          style={{ fontFamily: 'var(--font-cormorant), serif', color: 'var(--text-primary)' }}
         >
           Homesty<span style={{ color: '#B8860B' }}>.</span>ai
         </p>
 
         {/* Divider */}
-        <div className="w-8 h-px mt-6 mb-6" style={{ background: '#D6D3CD' }} />
+        <div className="w-8 h-px mt-6 mb-6" style={{ background: 'var(--border)' }} />
 
         {/* Prompt */}
         <p
           className="text-[15px] mb-8"
-          style={{ fontFamily: 'var(--font-dm-sans), sans-serif', color: '#78716C' }}
+          style={{ fontFamily: 'var(--font-dm-sans), sans-serif', color: 'var(--text-secondary)' }}
         >
           Sign in to continue
         </p>
@@ -36,8 +36,8 @@ export default function SignInPage() {
           onClick={() => signIn('google', { callbackUrl: '/chat' })}
           className="flex items-center gap-3 rounded-full px-7 py-3 transition-all duration-200"
           style={{
-            background: '#FFFFFF',
-            border: '1px solid #E7E5E4',
+            background: 'var(--bg-surface)',
+            border: '1px solid var(--border)',
             boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
           }}
           onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.08)' }}
@@ -51,7 +51,7 @@ export default function SignInPage() {
           </svg>
           <span
             className="text-[14px] font-medium"
-            style={{ fontFamily: 'var(--font-dm-sans), sans-serif', color: '#1C1917' }}
+            style={{ fontFamily: 'var(--font-dm-sans), sans-serif', color: 'var(--text-primary)' }}
           >
             Continue with Google
           </span>

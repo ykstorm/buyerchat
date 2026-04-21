@@ -46,6 +46,20 @@
   --border-hover: rgba(0,0,0,0.12);
   /* Very muted label text */
   --text-label: #78716C;
+  /* Blue accent (buttons, links) */
+  --color-accent-blue: #1B4F8A;
+  --color-accent-blue-hover: #163d6b;
+  /* Stage badge backgrounds */
+  --stage-neutral-bg: #F4F4F5;
+  --stage-neutral-text: #52525B;
+  --stage-qualified-bg: #E6F1FB;
+  --stage-qualified-text: #0C447C;
+  --stage-compare-bg: #FAEEDA;
+  --stage-compare-text: #633806;
+  --stage-visit-bg: #FCEBEB;
+  --stage-visit-text: #791F1F;
+  --stage-decision-bg: #E1F5EE;
+  --stage-decision-text: #085041;
 }
 
 [data-theme="dark"] {
@@ -93,6 +107,20 @@
   --border-hover: rgba(255,255,255,0.12);
   /* Very muted label text — dark */
   --text-label: #454560;
+  /* Blue accent (buttons, links) — dark */
+  --color-accent-blue: #2563EB;
+  --color-accent-blue-hover: #1D4ED8;
+  /* Stage badge backgrounds — dark */
+  --stage-neutral-bg: rgba(39,39,42,0.8);
+  --stage-neutral-text: #A1A1AA;
+  --stage-qualified-bg: rgba(27,79,138,0.2);
+  --stage-qualified-text: #93C5FD;
+  --stage-compare-bg: rgba(146,64,14,0.2);
+  --stage-compare-text: #FDE68A;
+  --stage-visit-bg: rgba(127,29,29,0.2);
+  --stage-visit-text: #FCA5A5;
+  --stage-decision-bg: rgba(6,78,59,0.2);
+  --stage-decision-text: #6EE7B7;
 }
 
 /* Theme transitions — only on elements that actually change theme */

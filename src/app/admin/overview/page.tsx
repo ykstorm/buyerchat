@@ -310,7 +310,7 @@ export default async function OverviewPage() {
         <div className="rounded-2xl p-4" style={{ background: '#111827', border: '1px solid rgba(255,255,255,0.07)' }}>
           <div className="flex items-center justify-between mb-4">
             <p className="text-[13px] font-semibold text-white">Today's Actions</p>
-            <span className="text-[10px]" style={{ color: '#4B5563' }}>{new Date().toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' })}</span>
+            <span className="text-[10px]" style={{ color: 'var(--text-muted)' }} suppressHydrationWarning>{new Date().toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' })}</span>
           </div>
           <div className="space-y-2">
             {[
