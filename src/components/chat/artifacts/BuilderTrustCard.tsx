@@ -31,13 +31,13 @@ export default function BuilderTrustCard({ builder }: { builder: BuilderData }) 
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ type: 'spring', stiffness: 300, damping: 28 }}
-      className="bg-white rounded-2xl overflow-hidden"
-      style={{ border: '1px solid #E7E5E4' }}
+      className="rounded-2xl overflow-hidden"
+      style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}
     >
       <div className="h-0.5 bg-gradient-to-r from-[#1B4F8A] via-[#2563EB] to-[#1B4F8A]" />
 
       {/* Header */}
-      <div className="px-5 pt-5 pb-4 border-b border-[#F4F3F0]">
+      <div className="px-5 pt-5 pb-4" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
         <div className="flex items-center gap-3 mb-3">
           <div className="w-12 h-12 rounded-xl flex items-center justify-center text-[16px] font-bold text-white"
             style={{ background: '#1B4F8A' }}>
@@ -45,7 +45,7 @@ export default function BuilderTrustCard({ builder }: { builder: BuilderData }) 
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h2 style={{ fontFamily: 'var(--font-playfair)' }} className="text-[16px] font-semibold text-[#1C1917]">
+              <h2 style={{ fontFamily: 'var(--font-playfair)', color: 'var(--text-primary)' }} className="text-[16px] font-semibold">
                 {builder.brandName}
               </h2>
               <span className="text-[11px] font-bold px-2 py-0.5 rounded-full"
@@ -53,16 +53,16 @@ export default function BuilderTrustCard({ builder }: { builder: BuilderData }) 
                 Grade {builder.grade}
               </span>
             </div>
-            <p className="text-[11px] text-[#78716C]">{builder.builderName}</p>
+            <p className="text-[11px]" style={{ color: 'var(--text-secondary)' }}>{builder.builderName}</p>
           </div>
           <div className="ml-auto text-right">
             <p className="text-[24px] font-bold" style={{ color: gradeColor(builder.grade) }}>{builder.totalTrustScore}</p>
-            <p className="text-[9px] text-[#A8A29E] uppercase tracking-wider">/ 100</p>
+            <p className="text-[9px] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>/ 100</p>
           </div>
         </div>
 
         {/* Overall bar */}
-        <div className="h-2 rounded-full overflow-hidden" style={{ background: '#F4F3F0' }}>
+        <div className="h-2 rounded-full overflow-hidden" style={{ background: 'var(--bg-subtle)' }}>
           <motion.div
             initial={{ width: 0 }}
             animate={{ width: `${builder.totalTrustScore}%` }}

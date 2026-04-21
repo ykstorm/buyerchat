@@ -558,9 +558,8 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
             style={{ background: 'var(--bg-surface)', border: '1px solid rgba(196,155,80,0.3)' }}
           >
             <div className="w-1.5 h-1.5 rounded-full bg-[#C49B50] animate-pulse" />
-            <p className="text-[12px] whitespace-nowrap" style={{ color: 'var(--text-primary)' }}>
-              <span className="font-medium">{compareToast}</span>
-              <span style={{ color: 'var(--text-secondary)' }}> queued — open another project to compare</span>
+            <p className="text-[12px] whitespace-nowrap font-medium" style={{ color: 'var(--text-primary)' }}>
+              {compareToast}
             </p>
           </motion.div>
         )}

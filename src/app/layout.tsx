@@ -66,7 +66,7 @@ export default function RootLayout({
       <head>
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var t=localStorage.getItem('theme');if(t==='dark'){document.documentElement.setAttribute('data-theme','dark')}}catch(e){}})();`
+            __html: `(function(){try{var t=localStorage.getItem('homesty-theme');if(t==='dark'){document.documentElement.setAttribute('data-theme','dark')}}catch(e){}})();`
           }}
         />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
