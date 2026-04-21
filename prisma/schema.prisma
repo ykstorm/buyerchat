@@ -46,7 +46,7 @@ model Project {
   sbaSqftMin          Int?
   createdAt           DateTime       @default(now())
   updatedAt           DateTime       @updatedAt
-  builder             Builder        @relation(fields: [builderName], references: [builderName])
+  builder             Builder        @relation(fields: [builderName], references: [builderName], onDelete: Restrict)
   priceHistory        PriceHistory[]
   siteVisits          SiteVisit[]
   deals               Deal[]
@@ -203,7 +203,7 @@ model ChatSession {
   responsePassedChecks Boolean  @default(true)
   violations           String[]
   createdAt            DateTime @default(now())
-  user                 User?    @relation(fields: [userId], references: [id])
+  user                 User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
   buyerStage        String   @default("intent_capture")
 buyerPersona      String?
 buyerBudget       Int?
