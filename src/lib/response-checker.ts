@@ -6,6 +6,8 @@
 // harden additional checks, integrate them into the same onChunk hook or a
 // proxy-based content filter.
 
+import type { ClassifiedQuery } from './intent-classifier'
+
 // Exported for real-time streaming checks in /api/chat
 export const CONTACT_LEAK_PATTERN = /\d{10}|\+91\s?\d{10}|\d{3}[-\s]\d{3}[-\s]\d{4}|@[a-zA-Z0-9]+\.[a-zA-Z]{2,}/
 // Exported for real-time streaming checks in /api/chat
@@ -25,7 +27,7 @@ const KNOWN_AREAS = [
 export function checkResponse(
   aiResponse: string,
   knownProjectNames: string[],
-  intent: string
+  classified: ClassifiedQuery
 ): CheckResult {
   const violations: string[] = []
   const lower = aiResponse.toLowerCase()
@@ -84,6 +86,22 @@ export function checkResponse(
   ]
   if (guaranteeWords.some(w => lower.includes(w))) {
     violations.push('INVESTMENT_GUARANTEE: unqualified financial promise in response')
+  }
+
+  // CHECK 4b — Persona-aware guarantee tightening. Investor buyers are the
+  // ones who act on yield/appreciation language, so softer phrases that slip
+  // past CHECK 4 for general buyers ("sure to grow", "solid returns", etc.)
+  // still need to be flagged when we know the buyer is in investor mode.
+  // PART 18 system-prompt overlay also tells the model to avoid these; this
+  // check detects drift when it happens anyway.
+  if (classified.persona === 'investor') {
+    const softGuarantees = [
+      'sure to grow', 'sure to appreciate', 'solid returns',
+      'will appreciate', 'guaranteed yield', 'safe bet'
+    ]
+    if (softGuarantees.some(w => lower.includes(w))) {
+      violations.push('INVESTMENT_GUARANTEE: soft-sell yield language to investor persona')
+    }
   }
 
   // CHECK 5 — Out-of-area response

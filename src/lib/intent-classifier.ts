@@ -1,3 +1,15 @@
+// Intent + persona classification for /api/chat.
+//
+// Historically this module returned only a `QueryIntent`. The system prompt
+// branches on buyer persona (family / investor / value / premium) and
+// post-stream checks want to reason about persona-specific rules (e.g. don't
+// flag out-of-area safety talk as stale context when the buyer is a family
+// buyer asking about schools). Sprint I11 widened the return shape so both
+// signals are computed in one pass.
+//
+// The classifier is intentionally cheap — regex tests in priority order, no
+// model call. Treat it as a routing hint, not a truth oracle.
+
 export type QueryIntent =
   | 'budget_query'
   | 'location_query'
@@ -8,23 +20,48 @@ export type QueryIntent =
   | 'investment_query'
   | 'general_query'
 
-export function classifyIntent(query: string): QueryIntent {
+export type Persona = 'family' | 'investor' | 'value' | 'premium' | 'unknown'
+
+export interface ClassifiedQuery {
+  intent: QueryIntent
+  persona: Persona
+}
+
+export function classifyIntent(query: string): ClassifiedQuery {
   const q = query.toLowerCase()
 
+  // --- Intent ----------------------------------------------------------
+  let intent: QueryIntent = 'general_query'
   if (/budget|price|cost|afford|crore|lakh|₹|rs\.|cheap|expensive/.test(q))
-    return 'budget_query'
-  if (/shela|south bopal|location|area|nearby|distance|school|hospital/.test(q))
-    return 'location_query'
-  if (/builder|developer|trust|reliable|reputation|track record/.test(q))
-    return 'builder_query'
-  if (/compare|vs|versus|difference|better|which one/.test(q))
-    return 'comparison_query'
-  if (/visit|site|appointment|book|schedule|see|view/.test(q))
-    return 'visit_query'
-  if (/rera|stamp duty|registration|legal|document|agreement/.test(q))
-    return 'legal_query'
-  if (/invest|return|appreciation|rental|roi|growth/.test(q))
-    return 'investment_query'
+    intent = 'budget_query'
+  else if (/shela|south bopal|location|area|nearby|distance|school|hospital/.test(q))
+    intent = 'location_query'
+  else if (/builder|developer|trust|reliable|reputation|track record/.test(q))
+    intent = 'builder_query'
+  else if (/compare|vs|versus|difference|better|which one/.test(q))
+    intent = 'comparison_query'
+  else if (/visit|site|appointment|book|schedule|see|view/.test(q))
+    intent = 'visit_query'
+  else if (/rera|stamp duty|registration|legal|document|agreement/.test(q))
+    intent = 'legal_query'
+  else if (/invest|return|appreciation|rental|roi|growth/.test(q))
+    intent = 'investment_query'
 
-  return 'general_query'
+  // --- Persona ---------------------------------------------------------
+  // Priority: investor > premium > value > family > unknown.
+  // Rationale: explicit investor / premium signals are rarer and higher
+  // value to detect — we'd rather tag an investor-asking-about-schools as
+  // investor than lose the signal by matching family first.
+  const personaMatchers: Array<[Persona, RegExp]> = [
+    ['investor', /\b(roi|rental|yield|appreciation|resale|flip|returns?)\b/],
+    ['premium', /\b(luxury|luxurious|high[- ]end|premium|4\s*bhk|4bhk|duplex|penthouse|top floor)\b/],
+    ['value', /\b(budget|cheap|affordable|best deal|value for money|sasta)\b|under\s*\d|below\s*\d/],
+    ['family', /\b(school|schools|hospital|hospitals|children|kids|family|safety|society|club|amenit(?:y|ies))\b/],
+  ]
+  let persona: Persona = 'unknown'
+  for (const [candidate, re] of personaMatchers) {
+    if (re.test(q)) { persona = candidate; break }
+  }
+
+  return { intent, persona }
 }

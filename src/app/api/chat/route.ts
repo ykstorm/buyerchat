@@ -114,8 +114,11 @@ if (hasInjection) {
   // Sanitize user message
   const sanitizedMsg = sanitizeAdminInput(latestMsg)
 
-  // Classify intent
-  const intent = classifyIntent(sanitizedMsg)
+  // Classify intent + persona in one pass. Persona feeds PART 18 of the
+  // system prompt and an investor-specific rule in response-checker.
+  const classified = classifyIntent(sanitizedMsg)
+  const intent = classified.intent
+  const persona = classified.persona
 
   // Build context
   let context
@@ -214,7 +217,7 @@ if (hasInjection) {
 
   const result = streamText({
     model: openai('gpt-4o'),
-    system: buildSystemPrompt(context, decisionCard, finalMemory, retrieved),
+    system: buildSystemPrompt(context, decisionCard, finalMemory, retrieved, persona),
     messages: cappedMessages,
     temperature: 0.3,
     maxOutputTokens: 500,
@@ -277,7 +280,7 @@ if (hasInjection) {
         }
 
         const projectNames = context.projects.map((p: any) => p.name)
-        const { passed, violations } = checkResponse(text, projectNames, intent)
+        const { passed, violations } = checkResponse(text, projectNames, classified)
     
         // Update chat session with full response data
         const savedSession = await prisma.chatSession.update({

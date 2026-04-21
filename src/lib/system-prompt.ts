@@ -2,6 +2,7 @@
 // MERGE: security guardrails preserved + conversational quality layer added
 
 import type { RetrievedChunk } from '@/lib/rag/retriever'
+import type { Persona } from '@/lib/intent-classifier'
 
 export function buildSystemPrompt(ctx: {
   projects: unknown[]
@@ -9,7 +10,7 @@ export function buildSystemPrompt(ctx: {
   infrastructure: unknown[]
   dataAsOf: string
   locationIntelligence?: string
-}, decisionCard?: unknown, buyerMemory?: string | null, retrievedChunks?: RetrievedChunk[]): string {
+}, decisionCard?: unknown, buyerMemory?: string | null, retrievedChunks?: RetrievedChunk[], persona: Persona = 'unknown'): string {
 
   const projects = ctx.projects as any[]
   const projectList = projects.map((p: any) => {
@@ -66,6 +67,48 @@ TRUST HIERARCHY: If a snippet contradicts project_json (PART 11), trust project_
 ${retrievedChunks.map((c, i) => `[${i + 1}] ${c.content}`).join('\n\n')}
 `
     : ''
+
+  // PART 18 — persona-specific overlay. Rendered only when the classifier
+  // detected a confident persona signal in the buyer's latest message.
+  // Empty string for `unknown` so the generic SOP (PART 2 opening branch)
+  // drives the conversation. When a persona IS known, these tight 2-3 line
+  // rule blocks bias tone, emphasis, and which of the PART 5 visit-gap
+  // framings to reach for.
+  const personaBlocks: Record<Exclude<Persona, 'unknown'>, string> = {
+    family: `
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PART 18 — ACTIVE PERSONA: FAMILY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Lead with liveability: school commute, carpet area per rupee, builder reliability. Skip ROI/yield math unless the buyer asks.
+Score translation only — do not lead with raw Trust Score numbers (PART 4 rule already applies; it's stricter here).
+When triggering a visit (PART 5), prefer the family framing: "whether the living room feels spacious or cramped when your family is actually in it."
+`,
+    investor: `
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PART 18 — ACTIVE PERSONA: INVESTOR
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Lead with possession certainty and builder delivery track record — those drive returns here more than amenities.
+Show the score AND the life translation (PART 4) — investors want the number.
+NEVER promise yield, appreciation, or "assured return" language. Frame rental/resale as scenarios, not forecasts (PART 8 anti-guarantee rule is absolute).
+`,
+    value: `
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PART 18 — ACTIVE PERSONA: VALUE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Lead with all-in cost: per-sqft AND stamp duty + registration + parking + interiors. Never quote just the sticker price.
+If the project is below buyer's budget, say so plainly — do not upsell them into a higher bracket.
+When triggering a visit (PART 5), prefer the value framing: "whether the rooms feel like the dimensions say, or whether the layout wastes space."
+`,
+    premium: `
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PART 18 — ACTIVE PERSONA: PREMIUM
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Lead with micro-location, neighbourhood density, and spec — not price.
+Do not over-qualify on budget; premium buyers are rarely budget-blocked. Ask about configuration (4BHK / duplex / penthouse) and floor preference instead.
+When triggering a visit (PART 5), prefer the premium framing: "whether the surroundings feel right — the road, the neighbours, the density, the noise."
+`,
+  }
+  const personaBlock = persona !== 'unknown' ? personaBlocks[persona] : ''
 
   const prompt = `${buyerMemory ? `BUYER RETURN MEMORY: ${buyerMemory} Greet them warmly acknowledging their previous search if this is a new conversation start.\n\n` : ''}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -376,7 +419,7 @@ User: I want to book a site visit for The Planet.
 Assistant: I can arrange that for you. Which date works best — the booking widget in the project card handles OTP-verified scheduling directly. Once you pick a date, you will get an OTP-verified visit token.
 
 <!--CARD:{"type":"visit_prompt","projectId":"<the-planet-id>","reason":"Buyer wants to book a visit"}-->
-${ragBlock}`
+${ragBlock}${personaBlock}`
 
   return prompt
 }
