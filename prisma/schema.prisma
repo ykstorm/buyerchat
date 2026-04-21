@@ -293,3 +293,17 @@ model AuditLog {
   @@index([userEmail])
   @@index([createdAt])
 }
+
+model Embedding {
+  id         String   @id @default(cuid())
+  sourceType String
+  sourceId   String
+  content    String   @db.Text
+  embedding  Unsupported("vector(1536)")
+  tokens     Int
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([sourceType, sourceId])
+  @@index([sourceType, sourceId])
+}
