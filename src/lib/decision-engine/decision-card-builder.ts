@@ -88,10 +88,18 @@ function buildNextSteps(
   riskAlerts: ReturnType<typeof buildRiskAlerts>,
   context: ReturnType<typeof detectBuyerContext>,
   projectA: ProjectInput,
-  projectB: ProjectInput
+  projectB: ProjectInput,
+  scoreATotal: number,
+  scoreBTotal: number
 ): string[] {
   const steps: string[] = []
-  const winnerProject = recommendation.conditions[0]?.project === 'A' ? projectA : projectB
+  // Prefer the first condition's pick (preserves priority overrides), but if
+  // conditions is empty — e.g. no strong diffs and no priority override fired —
+  // fall back to the score-derived winner instead of silently picking B.
+  const firstCondition = recommendation.conditions[0]?.project
+  const winnerProject = firstCondition
+    ? (firstCondition === 'A' ? projectA : projectB)
+    : (scoreATotal >= scoreBTotal ? projectA : projectB)
 
   steps.push(`Visit ${winnerProject.name} first — book a site visit to verify construction progress and actual flat layout.`)
 
@@ -151,8 +159,8 @@ export function buildDecisionCard(
     getMonthsUntilPossession(projectB.possessionDate)
   )
 
-  // Layer B: Build next steps
-  const nextSteps = buildNextSteps(recommendation, riskAlerts, buyerContext, projectA, projectB)
+  // Layer B: Build next steps — pass scores so winner derivation survives empty conditions
+  const nextSteps = buildNextSteps(recommendation, riskAlerts, buyerContext, projectA, projectB, scoreA.total, scoreB.total)
 
   return {
     buyerContext,

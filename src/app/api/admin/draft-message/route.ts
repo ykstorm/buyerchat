@@ -60,6 +60,9 @@ Last messages: ${chatSession.messages.map(m => m.role + ': ' + m.content.slice(0
     return NextResponse.json({ draft })
   } catch (err: any) {
     console.error('Draft message error:', err)
-    return NextResponse.json({ error: err.message ?? 'Failed to generate draft' }, { status: 500 })
+    const detail = process.env.NODE_ENV === 'development'
+      ? (err?.message ?? 'Failed to generate draft')
+      : 'Failed to generate draft'
+    return NextResponse.json({ error: detail }, { status: 500 })
   }
 }
