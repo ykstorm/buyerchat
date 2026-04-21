@@ -203,10 +203,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(result)
 
   } catch (err: any) {
-    console.error('[rera-verify] Scraper error:', err.message)
+    console.error('[rera-verify] Scraper error:', err)
     return NextResponse.json({
       error: 'Scraper failed — portal may be down or blocking automated access',
-      detail: err.message,
+      ...(process.env.NODE_ENV === 'development' && { detail: err.message }),
       suggestion: 'Try again later or enter data manually',
     }, { status: 502 })
   } finally {

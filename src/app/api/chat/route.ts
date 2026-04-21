@@ -197,6 +197,7 @@ if (hasInjection) {
     messages: cappedMessages,
     temperature: 0.3,
     maxOutputTokens: 500,
+    abortSignal: AbortSignal.timeout(15_000),
     onFinish: async ({ text, usage }) => {
       try {
         const projectNames = context.projects.map((p: any) => p.name)

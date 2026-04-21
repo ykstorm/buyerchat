@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { Prisma } from '@prisma/client'
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth()
@@ -15,6 +16,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     })
     return NextResponse.json({ success: true })
   } catch (err) {
+    console.error('[deals/received] error:', err)
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2025') {
+      return NextResponse.json({ error: 'Deal not found' }, { status: 404 })
+    }
     return NextResponse.json({ error: 'Failed' }, { status: 500 })
   }
 }

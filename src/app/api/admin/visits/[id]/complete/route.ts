@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { Prisma } from '@prisma/client'
 import { logAdminAction } from '@/lib/audit-log'
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -22,6 +23,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     await logAdminAction('complete', 'visit', { id, visitToken: visit.visitToken, userId: visit.userId }, session!.user!.email!)
     return NextResponse.json({ success: true })
   } catch (err) {
+    console.error('[visits/complete] error:', err)
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2025') {
+      return NextResponse.json({ error: 'Visit not found' }, { status: 404 })
+    }
     return NextResponse.json({ error: 'Failed' }, { status: 500 })
   }
 }

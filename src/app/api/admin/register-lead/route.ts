@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { z } from 'zod'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { logAdminAction } from '@/lib/audit-log'
+
+const RegisterLeadSchema = z.object({ visitId: z.string().min(1).max(30) })
 
 function generateToken(): string {
   const bytes = new Uint8Array(3)
@@ -15,8 +18,12 @@ export async function POST(req: NextRequest) {
     if (session?.user?.email?.toLowerCase() !== process.env.ADMIN_EMAIL?.toLowerCase()) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
-    const { visitId } = await req.json()
-    if (!visitId) return NextResponse.json({ error: 'visitId required' }, { status: 400 })
+    const body = await req.json()
+    const parsed = RegisterLeadSchema.safeParse(body)
+    if (!parsed.success) {
+      return NextResponse.json({ error: 'Invalid input', details: parsed.error.flatten() }, { status: 400 })
+    }
+    const { visitId } = parsed.data
 
     const token = generateToken()
     const visit = await prisma.siteVisit.update({

@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { z } from 'zod'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+
+const MatchBuyersSchema = z.object({ projectId: z.string().min(1).max(30) })
 
 export async function POST(req: NextRequest) {
   const session = await auth()
@@ -8,7 +11,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
-  const { projectId } = await req.json()
+  const body = await req.json()
+  const parsed = MatchBuyersSchema.safeParse(body)
+  if (!parsed.success) {
+    return NextResponse.json({ error: 'Invalid input', details: parsed.error.flatten() }, { status: 400 })
+  }
+  const { projectId } = parsed.data
 
   const project = await prisma.project.findUnique({ where: { id: projectId } })
   if (!project) return NextResponse.json({ error: 'Not found' }, { status: 404 })
