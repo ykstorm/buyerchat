@@ -19,8 +19,8 @@ const INJECTION_PATTERNS = [
     for (const pattern of INJECTION_PATTERNS) {
       clean = clean.replace(pattern, '[removed]')
     }
-    // Limit to 500 chars for project descriptions
-    return clean.slice(0, 500).trim()
+    // Limit to 800 chars to match the canonical cap enforced in /api/chat
+    return clean.slice(0, 800).trim()
   }
   
   export function sanitizeProjectData(data: Record<string, unknown>): Record<string, unknown> {
