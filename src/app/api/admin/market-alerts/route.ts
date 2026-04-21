@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { logAdminAction } from '@/lib/audit-log'
+import { sanitizeAdminInput } from '@/lib/sanitize'
 import { z } from 'zod'
 
 const AlertSchema = z.object({
@@ -25,11 +26,14 @@ export async function POST(req: NextRequest) {
       where: { id: parsed.data.projectId },
       select: { projectName: true },
     })
+    // Sanitize before storage — this field reaches LLM context via the
+    // market-alerts feed surfaced in the system prompt.
+    const cleanMessage = sanitizeAdminInput(parsed.data.message)
     const alert = await prisma.marketAlert.create({
       data: {
         type: parsed.data.alertType,
-        title: parsed.data.message.slice(0, 100),
-        description: parsed.data.message,
+        title: cleanMessage.slice(0, 100),
+        description: cleanMessage,
         projectName: project?.projectName ?? parsed.data.projectId,
       }
     })

@@ -4,6 +4,7 @@ import { auth } from '@/lib/auth'
 import { invalidateContextCache } from '@/lib/context-cache'
 import { logAdminAction } from '@/lib/audit-log'
 import { computeGrade } from '@/lib/grade'
+import { sanitizeAdminInput } from '@/lib/sanitize'
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth()
@@ -60,8 +61,9 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     const builder = await prisma.builder.update({
       where: { id },
       data: {
-        ...(body.builderName && { builderName: body.builderName }),
-        ...(body.brandName && { brandName: body.brandName }),
+        // Sanitize — both fields surface in system-prompt project-disclosure blocks.
+        ...(body.builderName && { builderName: sanitizeAdminInput(String(body.builderName)) }),
+        ...(body.brandName && { brandName: sanitizeAdminInput(String(body.brandName)) }),
         deliveryScore: delivery,
         reraScore: rera,
         qualityScore: quality,

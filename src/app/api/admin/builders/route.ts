@@ -5,6 +5,7 @@ import { z } from 'zod'
 import { invalidateContextCache } from '@/lib/context-cache'
 import { logAdminAction } from '@/lib/audit-log'
 import { computeGrade } from '@/lib/grade'
+import { sanitizeAdminInput } from '@/lib/sanitize'
 
 const BuilderSchema = z.object({
   builderName: z.string().min(1),
@@ -39,6 +40,9 @@ try {
   const builder = await prisma.builder.create({
     data: {
         ...d,
+        // Strip injection patterns — these names flow into system-prompt context.
+        builderName: sanitizeAdminInput(d.builderName),
+        brandName: sanitizeAdminInput(d.brandName),
         totalTrustScore,
         grade,
         contactEmail: d.contactEmail ?? null,

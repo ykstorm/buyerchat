@@ -95,8 +95,10 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         ...(d.sopTotal !== undefined && { sopTotal: Number(d.sopTotal) }),
         ...(d.isActive !== undefined && { isActive: d.isActive }),
         ...(d.decisionTag !== undefined && { decisionTag: d.decisionTag }),
-        ...(d.honestConcern !== undefined && { honestConcern: d.honestConcern }),
-        ...(d.analystNote !== undefined && { analystNote: d.analystNote }),
+        // Both reach LLM context via the project disclosure protocol in
+        // system-prompt.ts — sanitize identically to projectName/microMarket.
+        ...(d.honestConcern !== undefined && { honestConcern: d.honestConcern === null ? null : sanitizeAdminInput(d.honestConcern) }),
+        ...(d.analystNote !== undefined && { analystNote: d.analystNote === null ? null : sanitizeAdminInput(d.analystNote) }),
       }
     })
 

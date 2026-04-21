@@ -24,7 +24,13 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL('/auth/signin', request.url))
     }
 
-    if (token.email !== process.env.ADMIN_EMAIL) {
+    // Case-insensitive comparison — must match the check used in all
+    // /api/admin/* route handlers. Email is case-insensitive per RFC 5321
+    // local-part conventions; mismatched casing here would let a visitor
+    // past middleware and get 401 at the route (or vice versa).
+    const tokenEmail = typeof token.email === 'string' ? token.email.toLowerCase() : ''
+    const adminEmail = process.env.ADMIN_EMAIL?.toLowerCase() ?? ''
+    if (!tokenEmail || !adminEmail || tokenEmail !== adminEmail) {
       return NextResponse.redirect(new URL('/', request.url))
     }
 
