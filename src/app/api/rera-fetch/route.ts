@@ -7,10 +7,11 @@ export async function POST(req: NextRequest) {
   }
   const { reraNumber } = await req.json()
   if (!reraNumber) return NextResponse.json({ error: 'RERA number required' }, { status: 400 })
+  let browser: Awaited<ReturnType<typeof import('puppeteer-core').default.launch>> | null = null
   try {
     const chromium = (await import('@sparticuz/chromium')).default
     const puppeteer = (await import('puppeteer-core')).default
-    const browser = await puppeteer.launch({
+    browser = await puppeteer.launch({
       args: chromium.args,
       executablePath: await chromium.executablePath(),
       headless: true,
@@ -34,7 +35,6 @@ export async function POST(req: NextRequest) {
         rawText: document.body.innerText.slice(0, 3000)
       }
     })
-    await browser.close()
     // If selectors didn't work, try Claude API to parse rawText
     if (!data.projectName && data.rawText) {
       const Anthropic = (await import('@anthropic-ai/sdk')).default
@@ -69,5 +69,13 @@ ${data.rawText}`
       ? err.message
       : 'RERA fetch failed. Try again.'
     return NextResponse.json({ error: detail }, { status: 500 })
+  } finally {
+    if (browser) {
+      try {
+        await browser.close()
+      } catch (closeErr) {
+        console.error('RERA browser close error:', closeErr)
+      }
+    }
   }
 }
