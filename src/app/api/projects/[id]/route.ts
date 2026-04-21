@@ -1,11 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { rateLimit } from '@/lib/rate-limit'
 import { computeUrgencySignals } from '@/lib/urgency-signals'
 
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  // Rate limit
+  const ip = req.headers.get('x-forwarded-for') ?? '127.0.0.1'
+  if (!await rateLimit(ip, 60, 60 * 1000)) {
+    return NextResponse.json(
+      { error: 'Too many requests. Please wait a minute.' },
+      { status: 429 }
+    )
+  }
+
   const { id } = await params
 try {
   const project = await prisma.project.findUnique({
