@@ -44,12 +44,13 @@ No test suite is configured.
 ### AI Chat System
 
 The chat flows through `POST /api/chat` which:
-1. Sanitizes input (`src/lib/sanitize.ts`) and checks for prompt injection (`src/lib/few-shot-examples.ts`)
+1. Sanitizes input (`src/lib/sanitize.ts`) and runs an `INJECTION_KEYWORDS` blocklist inline in the route
 2. Classifies intent into 8 types via `src/lib/intent-classifier.ts`
 3. Builds context (projects + localities + infrastructure) via `src/lib/context-builder.ts`, cached in-memory by `src/lib/context-cache.ts`
-4. Runs `src/lib/decision-engine/` pipeline: score → recommend → tradeoff → risk → decision cards
-5. Streams response via Vercel AI SDK with GPT-4o using the system prompt in `src/lib/system-prompt.ts`
-6. Validates response against hallucination/leakage rules via `src/lib/response-checker.ts`
+4. Retrieves relevant knowledge chunks via `src/lib/rag/retriever.ts` (Neon pgvector, text-embedding-3-small, 600ms timeout, returns [] on fail)
+5. Runs `src/lib/decision-engine/` pipeline: score → recommend → tradeoff → risk → decision cards
+6. Streams response via Vercel AI SDK with GPT-4o using the system prompt in `src/lib/system-prompt.ts` (retrieved chunks spliced between PART 12 and PART 13)
+7. Validates response against hallucination/leakage rules via `src/lib/response-checker.ts` (post-stream, audit-only — see backlog)
 
 The system prompt (`system-prompt.ts`) is the core product logic — AaiGhar SOP v2.0 with a 6-layer project disclosure protocol and psychology-driven conversation branching.
 
@@ -95,9 +96,26 @@ Key design decisions:
 - **Follow-up queue**: filters sessions with `lastMessageAt < 2 days ago` via `twoDaysAgo` date; uses `getUrgency()` from `admin-utils.ts`.
 - All queries in one `Promise.all` — 14 parallel DB calls, wrapped in try/catch with zeroed fallbacks.
 
-## Known Open Issues (backlog.md)
+## RAG (v1)
 
-- **ISSUE-04 / ISSUE-18/19 (HIGH)**: Rate limiter and context cache use in-memory stores — must migrate to Upstash Redis before production Vercel deployment (cold starts reset state).
-- **ISSUE-09 (HIGH)**: User DB upsert not yet implemented in NextAuth `signIn` callback.
-- **ISSUE-57 (HIGH)**: Builder rename not blocked when projects are attached.
-- **SCORE-FIX (MEDIUM)**: `deliveryScore` max is 30 (not 20) — scoring math in `score-engine.ts` is off.
+Neon Postgres + pgvector + OpenAI `text-embedding-3-small` (1536 dim).
+Design doc: `.claude/fleet/rag-v1-design.md`.
+
+- **Write path**: `src/lib/rag/embed-writer.ts` — `embedProject` / `embedBuilder` / `embedLocality`. Hooks fire-and-forget from admin POST/PUT routes for Project and Builder.
+- **Read path**: `src/lib/rag/retriever.ts` — `retrieveChunks(query, k=6)`. Returns `[]` on any failure (600ms timeout, cosine similarity ≥ 0.30).
+- **Backfill**: `npm run embed:backfill` (idempotent). `--dry` prints token/cost estimate without calling OpenAI.
+- **Migration**: `prisma/migrations/20260421000000_add_rag_embeddings/` exists but **must be applied deliberately** — run `npx prisma migrate dev` after resolving any drift. Until applied, the retriever no-ops silently.
+
+## Known Open Issues
+
+- **HIGH**: Rate limiter and context cache use in-memory stores — must migrate to Upstash Redis before production Vercel deployment. Partial mitigation: `src/lib/rate-limit.ts` now has bounded eviction (MAX 10k entries, race-safe).
+- **HIGH**: `response-checker.ts` runs post-stream — violations are logged but the buyer already received the response. `CONTACT_LEAK` and `BUSINESS_LEAK` checks need to move to `onChunk` or pre-stream to be protective, not audit-only.
+- **MEDIUM**: 13 prompt rules in `system-prompt.ts` have zero counterparts in `response-checker.ts` — model drift is undetected for rules like "2-project hard limit", "100-word cap", "no 1st/2nd/3rd ranking", language matching, "no 'I recommend X'".
+- **MEDIUM**: Intent-classifier emits 8 `*_query` intents but the system prompt branches on buyer persona (`family`, `investor`, `value`, `premium`) — these never appear in classifier output. The `intent` parameter threaded into `checkResponse` is accepted but never read.
+- **MEDIUM**: `/chat` route is 323 kB First Load JS (8% over target). Needs a `next/dynamic` code-split pass on artifact renderers + framer-motion deferred loading.
+- **LOW**: pgvector migration file is on disk but not applied to Neon. RAG retriever no-ops until applied.
+
+Resolved since fleet sweep:
+- ISSUE-09 (NextAuth signIn upsert) — already implemented in `src/lib/auth.ts`.
+- ISSUE-57 (builder rename block) — already implemented in `src/app/api/admin/builders/[id]/route.ts` with 409 response.
+- SCORE-FIX (deliveryScore max) — false alarm; code is consistent on /30 everywhere.
