@@ -56,6 +56,7 @@ model Project {
   @@index([isActive])
   @@index([decisionTag])
   @@index([constructionStatus])
+  @@index([builderName])
 }
 
 model Builder {
@@ -219,6 +220,7 @@ deals             Deal[]
   @@index([userId])
   @@index([buyerStage])
   @@index([lastMessageAt])
+  @@index([createdAt])
 }
 
 model SavedProject {
@@ -251,7 +253,7 @@ model Deal {
   sessionId        String?
   session          ChatSession? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
   projectId        String?
-  project          Project?  @relation(fields: [projectId], references: [id])
+  project          Project?  @relation(fields: [projectId], references: [id], onDelete: SetNull)
   builderBrandName String
   buyerName        String
   dealValue        Float
@@ -265,6 +267,7 @@ model Deal {
   @@index([createdAt])
   @@index([projectId])
   @@index([sessionId])
+  @@index([paymentStatus])
 }
 model MarketAlert {
   id          String   @id @default(cuid())
