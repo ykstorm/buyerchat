@@ -67,17 +67,35 @@ const PRIORITY_WEIGHTS: Record<BuyerPriority, Record<keyof CategoryScores, numbe
   balanced: BASE_WEIGHTS,
 }
 
+// Guard against undefined/NaN/null in any category — an undefined multiplied
+// by a weight silently produces NaN, which then propagates into every
+// downstream card field. Coerce to a neutral 50 (mid-scale) in that case so
+// the card still renders something meaningful rather than "NaN / 100".
+function safeScore(n: unknown): number {
+  if (typeof n !== 'number' || !Number.isFinite(n)) return 50
+  if (n < 0) return 0
+  if (n > 100) return 100
+  return n
+}
+
 export function calculateWeightedScore(
   scores: CategoryScores,
   priority: BuyerPriority = 'balanced'
 ): WeightedScore {
   const weights = PRIORITY_WEIGHTS[priority]
+  const safe: CategoryScores = {
+    location: safeScore(scores?.location),
+    amenities: safeScore(scores?.amenities),
+    builderTrust: safeScore(scores?.builderTrust),
+    infrastructure: safeScore(scores?.infrastructure),
+    demand: safeScore(scores?.demand),
+  }
   const breakdown: Record<keyof CategoryScores, number> = {
-    location: scores.location * weights.location,
-    amenities: scores.amenities * weights.amenities,
-    builderTrust: scores.builderTrust * weights.builderTrust,
-    infrastructure: scores.infrastructure * weights.infrastructure,
-    demand: scores.demand * weights.demand,
+    location: safe.location * weights.location,
+    amenities: safe.amenities * weights.amenities,
+    builderTrust: safe.builderTrust * weights.builderTrust,
+    infrastructure: safe.infrastructure * weights.infrastructure,
+    demand: safe.demand * weights.demand,
   }
   const total = Object.values(breakdown).reduce((a, b) => a + b, 0)
   return { total: Math.round(total), breakdown, priority }

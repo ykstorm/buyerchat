@@ -30,12 +30,17 @@ export function buildRiskAlerts(
     alerts.push({ level: 'high', message: `${nameB} has a low builder trust score. Delivery certainty is not guaranteed.` })
   }
 
-  // Risk-averse buyer: point them toward the project with the stronger builder trust winner
-  if (context.riskAverse && diffs.categoryWinners.builderTrust === 'B') {
-    alerts.push({ level: 'medium', message: `Since you prioritise safety, note that ${nameB} has a stronger builder track record despite other advantages ${nameA} may offer.` })
-  }
-  if (context.riskAverse && diffs.categoryWinners.builderTrust === 'A') {
-    alerts.push({ level: 'medium', message: `Since you prioritise safety, note that ${nameA} has a stronger builder track record despite other advantages ${nameB} may offer.` })
+  // Risk-averse buyer: the builder-trust winner is the safer pick. Resolve
+  // winner/loser names up front instead of inlining A/B checks — the prior
+  // version had the trust-winner pointing at the losing project's name.
+  if (context.riskAverse && diffs.categoryWinners.builderTrust !== 'tie') {
+    const trustWinner = diffs.categoryWinners.builderTrust
+    const winnerName = trustWinner === 'A' ? nameA : nameB
+    const otherName = trustWinner === 'A' ? nameB : nameA
+    alerts.push({
+      level: 'medium',
+      message: `Since you prioritise safety, ${winnerName} has the stronger builder track record. Any other advantages ${otherName} may offer do not outweigh delivery confidence for a safety-first buyer.`,
+    })
   }
 
   // Budget sensitive + hidden costs
