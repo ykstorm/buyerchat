@@ -13,11 +13,11 @@ npx prisma studio        # DB browser UI
 npx prisma generate      # Regenerate Prisma client after schema edits
 ```
 
-No test suite is configured.
+Tests: `npm test` (vitest). Current coverage is `src/lib/decision-engine/*.test.ts` — score-engine invariants and risk-engine A/B direction.
 
 ## Stack (locked versions)
 
-- Next.js **15.2.2** — never upgrade beyond this
+- Next.js **15.2.9** — never upgrade beyond this
 - Prisma **7** — config in `prisma.config.ts`
 - Auth.js **v5** beta — JWT sessions, Google OAuth
 - Tailwind **v4** — PostCSS plugin
@@ -35,22 +35,27 @@ No test suite is configured.
 
 ### Routing
 
-**Public pages:** `/`, `/projects/[id]`, `/builders/[id]`, `/compare`, `/auth/signin`
+**Public pages:** `/`, `/chat`, `/projects`, `/projects/[id]`, `/builders/[id]`, `/compare`, `/dashboard`, `/auth/signin`
 
-**Admin pages** (`/admin/...`): protected by `session.user.email === process.env.ADMIN_EMAIL`. Tabs: overview, projects, builders, buyers, followup, intelligence, revenue.
+**Admin pages** (`/admin/...`): protected by `session.user.email === process.env.ADMIN_EMAIL`. Current pages include overview, projects (+ new/edit), builders (+ new/edit), buyers (+ detail), followup, intelligence, revenue, settings, visits, and `/admin` index.
 
-**API routes** (`src/app/api/`): 22 routes split into public (rate-limited), auth (`/api/auth/[...nextauth]`), and admin (email-gated under `/api/admin/`).
+**API routes** (`src/app/api/`): 33 route handlers split into public (rate-limited), authenticated-user, and admin (email-gated under `/api/admin/`), plus auth route (`/api/auth/[...nextauth]`).
 
 ### AI Chat System
 
 The chat flows through `POST /api/chat` which:
-1. Sanitizes input (`src/lib/sanitize.ts`) and runs an `INJECTION_KEYWORDS` blocklist inline in the route
-2. Classifies intent into 8 types via `src/lib/intent-classifier.ts`
-3. Builds context (projects + localities + infrastructure) via `src/lib/context-builder.ts`, cached in-memory by `src/lib/context-cache.ts`
-4. Retrieves relevant knowledge chunks via `src/lib/rag/retriever.ts` (Neon pgvector, text-embedding-3-small, 600ms timeout, returns [] on fail)
-5. Runs `src/lib/decision-engine/` pipeline: score → recommend → tradeoff → risk → decision cards
-6. Streams response via Vercel AI SDK with GPT-4o using the system prompt in `src/lib/system-prompt.ts` (retrieved chunks spliced between PART 12 and PART 13)
-7. Validates response against hallucination/leakage rules via `src/lib/response-checker.ts` (post-stream, audit-only — see backlog)
+1. Rate limits by IP, validates request shape, caps history to 15 messages, and caps latest message to 800 chars
+2. Runs inline normalization and `INJECTION_KEYWORDS` blocklist in the route, then sanitizes with `src/lib/sanitize.ts`
+3. Classifies intent into 8 types via `src/lib/intent-classifier.ts`
+4. Builds context (projects + localities + infrastructure) via `src/lib/context-builder.ts`
+5. Builds the system prompt via `src/lib/system-prompt.ts`
+6. Runs `src/lib/decision-engine/` pipeline for comparison intent and injects decision-card analysis
+7. Streams response via Vercel AI SDK with GPT-4o
+8. Audits response with `src/lib/response-checker.ts` post-stream, persists `ChatSession` + `ChatMessageLog`, and sends critical alerts via Resend
+
+RAG status:
+- **Implemented infrastructure**: `src/lib/rag/retriever.ts`, `src/lib/rag/embed-writer.ts`, `scripts/embed-backfill.ts`, and `Embedding` model
+- **Current route behavior**: `/api/chat` currently builds prompt from structured context and does not pass retrieved chunks into `buildSystemPrompt`
 
 The system prompt (`system-prompt.ts`) is the core product logic — AaiGhar SOP v2.0 with a 6-layer project disclosure protocol and psychology-driven conversation branching.
 
@@ -64,23 +69,30 @@ The system prompt (`system-prompt.ts`) is the core product logic — AaiGhar SOP
 
 ### Security Guardrails
 
-- **Rate limiting**: In-memory, resets on cold start (known issue — Upstash Redis migration pending). Chat: 10 req/min, Projects: 30 req/min.
-- **Input**: Unicode NFKC normalization, invisible char stripping, injection keyword blocklist, 800-char message cap, 15-message history cap.
-- **Response**: `response-checker.ts` blocks responses that mention non-real projects, leak sensitive builder fields, or misalign with detected intent.
-- **Admin gate**: All `/api/admin/*` routes check `session.user.email === process.env.ADMIN_EMAIL`.
+- **Preventive**: admin/email gate on admin pages and `/api/admin/*`; origin checks for admin mutations; chat normalization + injection keyword blocklist; 800-char and 15-message caps; route-level rate limiting.
+- **Rate limiting backend**: Upstash Redis is used when `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` are configured; otherwise bounded in-memory fallback is used.
+- **Detective/audit-only**: `response-checker.ts` runs post-stream and logs violations; it does not block already-streamed output.
+- **Admin gate**: all `/api/admin/*` routes check `session.user.email === process.env.ADMIN_EMAIL`.
 
 ## Environment Variables
 
-Required (see `.env`):
+Primary required (see `.env.example`):
 ```
 DATABASE_URL, DIRECT_URL          # Neon Postgres
 NEXTAUTH_SECRET, AUTH_SECRET      # JWT signing
 OPENAI_API_KEY                    # GPT-4o
 ADMIN_EMAIL                       # Admin access gate
 GOOGLE_CLIENT_ID/SECRET           # OAuth
-MSG91_API_KEY                     # SMS/OTP
 RESEND_API_KEY, FROM_EMAIL        # Transactional email
 CLOUDINARY_CLOUD_NAME/API_KEY/SECRET  # Image uploads
+```
+
+Common optional:
+```
+NEXT_PUBLIC_APP_URL               # Canonical app URL (metadata, middleware origin allowlist)
+UPSTASH_REDIS_REST_URL, UPSTASH_REDIS_REST_TOKEN  # Distributed rate limit/context cache backend
+SENTRY_DSN, NEXT_PUBLIC_SENTRY_DSN # Observability
+NEXT_PUBLIC_BASE_URL              # Share URL fallback on project detail page
 ```
 
 ## Admin Overview Page (Founder Dashboard)
@@ -94,7 +106,7 @@ Key design decisions:
 - **Pipeline snapshot table**: sessions in hot stages only, commission = `buyerBudget * 0.015`, sorted by budget desc. No chart library — pure Tailwind.
 - **This week activity**: 4 `StatPill` components with a left-border accent, querying `createdAt >= startOfWeek`.
 - **Follow-up queue**: filters sessions with `lastMessageAt < 2 days ago` via `twoDaysAgo` date; uses `getUrgency()` from `admin-utils.ts`.
-- All queries in one `Promise.all` — 14 parallel DB calls, wrapped in try/catch with zeroed fallbacks.
+- All queries in one `Promise.all` — 16 parallel DB calls, wrapped in try/catch with zeroed fallbacks.
 
 ## RAG (v1)
 
@@ -108,12 +120,20 @@ Design doc: `.claude/fleet/rag-v1-design.md`.
 
 ## Known Open Issues
 
-- **HIGH**: Rate limiter and context cache use in-memory stores — must migrate to Upstash Redis before production Vercel deployment. Partial mitigation: `src/lib/rate-limit.ts` now has bounded eviction (MAX 10k entries, race-safe).
 - **HIGH**: `response-checker.ts` runs post-stream — violations are logged but the buyer already received the response. `CONTACT_LEAK` and `BUSINESS_LEAK` checks need to move to `onChunk` or pre-stream to be protective, not audit-only.
 - **MEDIUM**: 13 prompt rules in `system-prompt.ts` have zero counterparts in `response-checker.ts` — model drift is undetected for rules like "2-project hard limit", "100-word cap", "no 1st/2nd/3rd ranking", language matching, "no 'I recommend X'".
 - **MEDIUM**: Intent-classifier emits 8 `*_query` intents but the system prompt branches on buyer persona (`family`, `investor`, `value`, `premium`) — these never appear in classifier output. The `intent` parameter threaded into `checkResponse` is accepted but never read.
 - **MEDIUM**: `/chat` route is 323 kB First Load JS (8% over target). Needs a `next/dynamic` code-split pass on artifact renderers + framer-motion deferred loading.
-- **LOW**: pgvector migration file is on disk but not applied to Neon. RAG retriever no-ops until applied.
+- **MEDIUM**: RAG infrastructure exists, but `src/app/api/chat/route.ts` does not currently pass retrieval chunks into `buildSystemPrompt`; retrieval integration should be completed before claiming retrieval-augmented responses.
+- **LOW**: pgvector migration file is on disk but not applied to Neon in environments where migrations were not run.
+
+## Docs Freshness Guardrail
+
+When adding features, update docs in the same PR:
+- Route additions/removals -> update routing/API surface in this file and `README.md`
+- Env var additions/removals -> update `.env.example` first, then `README.md` and this file
+- Security behavior changes -> mark each control as preventive vs audit-only
+- AI pipeline changes -> update the numbered `/api/chat` flow and RAG status
 
 Resolved since fleet sweep:
 - ISSUE-09 (NextAuth signIn upsert) — already implemented in `src/lib/auth.ts`.

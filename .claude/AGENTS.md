@@ -21,7 +21,7 @@ Vercel AI SDK 6 (`ai` package), React 19, TypeScript strict.
 Non-negotiables:
 - Never upgrade beyond the locked stack versions.
 - Deployable to Vercel Fluid Compute on Node.js 24 (no Edge-only APIs).
-- No test suite exists — validation is `npm run build` + manual browser test.
+- Validation stack: `npm test` (vitest, decision-engine coverage), `npm run build` (type+bundle), manual browser smoke for UI.
 
 ---
 
