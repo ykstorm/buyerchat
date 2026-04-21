@@ -52,11 +52,18 @@ ID: ${p.id}
   const _cardStr = decisionCard ? JSON.stringify(decisionCard, null, 2) : ''
   const cardBlock = _cardStr.length > 3000 ? _cardStr.slice(0, 3000) + '\n... [truncated]' : _cardStr
 
+  // PART 17 — rendered only when retrieval returned chunks. Empty string otherwise
+  // so downstream prompt surface stays byte-identical to the no-RAG path.
   const ragBlock = retrievedChunks && retrievedChunks.length > 0
-    ? `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-RELEVANT KNOWLEDGE (retrieved):
-${retrievedChunks.map((c) => c.content).join('\n\n')}
+    ? `
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PART 17 — RETRIEVED KNOWLEDGE BASE CONTEXT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+The following snippets were retrieved from the Homesty knowledge base by semantic similarity to the buyer's current question. Use them as SUPPORTING context only — they are not authoritative.
 
+TRUST HIERARCHY: If a snippet contradicts project_json (PART 11), trust project_json (it's authoritative). Snippets may be stale, partial, or scoped to a narrower topic than the current query. Never quote a snippet verbatim — paraphrase and integrate only facts that clearly align with PART 11 and PART 12.
+
+${retrievedChunks.map((c, i) => `[${i + 1}] ${c.content}`).join('\n\n')}
 `
     : ''
 
@@ -283,7 +290,7 @@ ${localityJSON}
 INFRASTRUCTURE:
 ${infraJSON}
 
-${ragBlock}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 PART 13 — LOCATION INTELLIGENCE
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 South Bopal: More established. Stronger day-to-day convenience. Better school access (DPS, Shanti Asiatic). Commercial strip developed. Better for families who value immediate usability.
@@ -369,7 +376,7 @@ User: I want to book a site visit for The Planet.
 Assistant: I can arrange that for you. Which date works best — the booking widget in the project card handles OTP-verified scheduling directly. Once you pick a date, you will get an OTP-verified visit token.
 
 <!--CARD:{"type":"visit_prompt","projectId":"<the-planet-id>","reason":"Buyer wants to book a visit"}-->
-`
+${ragBlock}`
 
   return prompt
 }

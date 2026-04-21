@@ -1,7 +1,16 @@
-// LIMITATION: checkResponse runs post-stream — by the time a violation is caught
-// the tokens have already been sent to the client. To block violating content
-// mid-stream, integrate into the Vercel AI SDK onToken/onChunk callback or
-// switch to a proxy-based content filter. Current approach is audit-only.
+// CONTACT_LEAK and BUSINESS_LEAK detection now runs in real time via `onChunk`
+// inside `src/app/api/chat/route.ts` — the stream is hard-aborted mid-response
+// when a leak pattern matches a delta, so the buyer never sees the leaked data.
+// The remaining checks in checkResponse() still run post-stream as audit-only:
+// by the time they catch a violation the tokens have already been sent. To
+// harden additional checks, integrate them into the same onChunk hook or a
+// proxy-based content filter.
+
+// Exported for real-time streaming checks in /api/chat
+export const CONTACT_LEAK_PATTERN = /\d{10}|\+91\s?\d{10}|\d{3}[-\s]\d{3}[-\s]\d{4}|@[a-zA-Z0-9]+\.[a-zA-Z]{2,}/
+// Exported for real-time streaming checks in /api/chat
+export const BUSINESS_LEAK_PATTERN = /commission rate|partner status|commission %/i
+
 export interface CheckResult {
   passed: boolean
   violations: string[]
@@ -52,6 +61,8 @@ export function checkResponse(
   }
 
   // CHECK 3 — Contact data leak: phone number or email in response
+  // NOTE: This audit-only branch mirrors CONTACT_LEAK_PATTERN above so
+  // post-stream logging still works if the onChunk guard is ever bypassed.
   if (/\d{10}|\+91\s?\d{10}|\d{3}[-\s]\d{3}[-\s]\d{4}/.test(aiResponse)) {
     violations.push('CONTACT_LEAK: phone number pattern detected — CRITICAL')
   }

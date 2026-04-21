@@ -63,7 +63,8 @@ Verification: `npm test` runs the vitest suite (decision-engine NaN + A/B correc
 
 RAG status:
 - Implemented infrastructure: `src/lib/rag/embed-writer.ts`, `src/lib/rag/retriever.ts`, `scripts/embed-backfill.ts`, `Embedding` model in Prisma.
-- Current chat route behavior: structured context + decision-card flow is active; retrieval chunks are not wired into the current `buildSystemPrompt` call in `src/app/api/chat/route.ts`.
+- Code is wired end-to-end: `/api/chat` calls `retrieveChunks()` after intent classification, threads the result into `buildSystemPrompt`, and renders it as PART 17 (RETRIEVED KNOWLEDGE BASE CONTEXT) when any chunks return. Retriever has a 600ms timeout, a 0.30 cosine-similarity floor, and returns `[]` on any failure — chat flow continues normally on empty.
+- NOT LIVE yet: migration `prisma/migrations/20260421000000_add_rag_embeddings/` is on disk but **UNAPPLIED**. Until an operator runs `npx prisma migrate deploy` (after enabling the `pgvector` extension on the Neon database), the retriever no-ops silently and PART 17 is never rendered. Do not claim retrieval-augmented responses in production until the migration has been applied and an `embed:backfill` has been run.
 
 ## Security Posture
 

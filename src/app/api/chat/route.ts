@@ -7,13 +7,18 @@ import { buildSystemPrompt } from '@/lib/system-prompt'
 import { retrieveChunks } from '@/lib/rag/retriever'
 import { classifyIntent } from '@/lib/intent-classifier'
 import { buildDecisionCard } from '@/lib/decision-engine/decision-card-builder'
-import { checkResponse } from '@/lib/response-checker'
+import { checkResponse, CONTACT_LEAK_PATTERN, BUSINESS_LEAK_PATTERN } from '@/lib/response-checker'
 import { sanitizeAdminInput } from '@/lib/sanitize'
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth'
 import { Resend } from 'resend'
 import { randomUUID } from 'crypto'
 import { z } from 'zod'
+import * as Sentry from '@sentry/nextjs'
+
+const STREAM_ABORT_FALLBACK = 'Dekho, kuch problem hui. Dubara try karein.'
+const CONTACT_LEAK_ABORT_MSG = 'Contact information leak detected'
+const BUSINESS_LEAK_ABORT_MSG = 'Business information leak detected'
 
 const ChatRequestSchema = z.object({
   messages: z.array(z.object({
@@ -117,7 +122,13 @@ if (hasInjection) {
   try { context = await buildContextPayload() }
   catch (err) { console.error('Context build error:', err); return NextResponse.json({ error: 'Service temporarily unavailable.' }, { status: 503 }) }
 
-  const retrieved = await retrieveChunks(sanitizedMsg).catch(() => [])
+  // RAG retrieval — non-blocking: retriever has built-in 600ms timeout,
+  // 0.30 cosine-similarity floor, and returns [] on any failure (including
+  // unapplied migration / missing pgvector). Chat flow continues on empty.
+  const retrieved = await retrieveChunks(sanitizedMsg, 6).catch(() => [])
+  if (retrieved.length > 0) {
+    console.log(`[RAG] Retrieved ${retrieved.length} chunks`)
+  }
 
   const isComparison = /compare|vs|versus|which is better|which one/i.test(sanitizedMsg)
   let decisionCard = null
@@ -195,6 +206,12 @@ if (hasInjection) {
 
   const finalMemory = postVisitContext ?? buyerMemory
 
+  // Tracks whether the stream was aborted mid-response because a leak pattern
+  // matched in onChunk. When true, onFinish should skip persistence of the
+  // partial/empty assistant message and the response wrapper will deliver the
+  // Hinglish fallback instead of the (possibly leaky) partial content.
+  let streamAbortedByLeak = false
+
   const result = streamText({
     model: openai('gpt-4o'),
     system: buildSystemPrompt(context, decisionCard, finalMemory, retrieved),
@@ -202,8 +219,63 @@ if (hasInjection) {
     temperature: 0.3,
     maxOutputTokens: 500,
     abortSignal: AbortSignal.timeout(15_000),
+    onChunk: async ({ chunk }) => {
+      if (chunk.type === 'text-delta') {
+        // In AI SDK v6 the text-delta shape carries the string on `text`.
+        // Keep the fallback to `delta` guarded in case the runtime shape
+        // differs from the typings.
+        const text = (chunk as { text?: string; delta?: string }).text
+          ?? (chunk as { delta?: string }).delta
+          ?? ''
+        if (CONTACT_LEAK_PATTERN.test(text)) {
+          streamAbortedByLeak = true
+          Sentry.captureMessage('[CONTACT_LEAK_DETECTED] Streaming halted mid-response', 'warning')
+          throw new Error(CONTACT_LEAK_ABORT_MSG)
+        }
+        if (BUSINESS_LEAK_PATTERN.test(text)) {
+          streamAbortedByLeak = true
+          Sentry.captureMessage('[BUSINESS_LEAK_DETECTED] Streaming halted mid-response', 'warning')
+          throw new Error(BUSINESS_LEAK_ABORT_MSG)
+        }
+      }
+    },
+    onError: ({ error }) => {
+      const message = error instanceof Error ? error.message : String(error)
+      const isLeakAbort =
+        message === CONTACT_LEAK_ABORT_MSG || message === BUSINESS_LEAK_ABORT_MSG
+      Sentry.captureException(error, {
+        tags: { context: 'streaming_abort', leak_abort: String(isLeakAbort) },
+      })
+      if (!isLeakAbort) {
+        console.error('streamText onError:', error)
+      }
+    },
     onFinish: async ({ text, usage }) => {
       try {
+        // If the stream was aborted by a leak, do NOT persist the partial
+        // assistant message. We still record the violation on the session
+        // so admins can audit the attempt.
+        if (streamAbortedByLeak) {
+          try {
+            await prisma.chatSession.update({
+              where: { id: chatSession!.id },
+              data: {
+                userMessage: sanitizedMsg,
+                aiResponse: '',
+                intent,
+                responsePassedChecks: false,
+                violations: ['CONTACT_LEAK_OR_BUSINESS_LEAK: stream aborted mid-response — CRITICAL'],
+              }
+            })
+            await prisma.chatMessageLog.create({
+              data: { sessionId: chatSession!.id, role: 'user', content: sanitizedMsg }
+            })
+          } catch (err) {
+            console.error('onFinish (leak-abort) persistence error:', err)
+          }
+          return
+        }
+
         const projectNames = context.projects.map((p: any) => p.name)
         const { passed, violations } = checkResponse(text, projectNames, intent)
     
@@ -326,8 +398,40 @@ if (hasInjection) {
     }
     })
     
-  const stream = result.toTextStreamResponse()
-  return new Response(stream.body, {
+  // Wrap the underlying text stream so we can convert a leak-abort into a
+  // graceful Hinglish fallback instead of surfacing a truncated/leaky
+  // response to the buyer. Pass-through for the happy path.
+  const encoder = new TextEncoder()
+  const source = result.toTextStreamResponse()
+  const wrapped = new ReadableStream<Uint8Array>({
+    async start(controller) {
+      const reader = source.body?.getReader()
+      if (!reader) {
+        controller.close()
+        return
+      }
+      try {
+        while (true) {
+          const { done, value } = await reader.read()
+          if (done) break
+          if (streamAbortedByLeak) break
+          if (value) controller.enqueue(value)
+        }
+      } catch (err) {
+        // Most common cause here is onChunk throwing on a detected leak.
+        // onError already logged to Sentry; fall through to the fallback.
+        Sentry.captureException(err, {
+          tags: { context: 'streaming_abort', stage: 'stream_wrapper' },
+        })
+      }
+      if (streamAbortedByLeak) {
+        controller.enqueue(encoder.encode(STREAM_ABORT_FALLBACK))
+      }
+      controller.close()
+    },
+  })
+
+  return new Response(wrapped, {
     headers: {
       'Content-Type': 'text/plain; charset=utf-8',
       'x-session-id': chatSession.id,
