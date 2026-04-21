@@ -6,6 +6,7 @@ import { invalidateContextCache } from '@/lib/context-cache'
 import { logAdminAction } from '@/lib/audit-log'
 import { computeGrade } from '@/lib/grade'
 import { sanitizeAdminInput } from '@/lib/sanitize'
+import { embedBuilder } from '@/lib/rag/embed-writer'
 
 const BuilderSchema = z.object({
   builderName: z.string().min(1),
@@ -58,7 +59,10 @@ try {
   })
   await invalidateContextCache()
   await logAdminAction('create', 'builder', { id: builder.id, builderName: builder.builderName }, session!.user!.email!)
-
+  // Fire-and-forget embedding — OpenAI failure must never block the admin save.
+  embedBuilder(builder.builderName).catch((err) =>
+    console.error('[embed-writer] embedBuilder failed for', builder.builderName, err)
+  )
   return NextResponse.json(builder, { status: 201 })
 }
 catch (err) {

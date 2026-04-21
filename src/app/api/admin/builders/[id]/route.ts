@@ -5,6 +5,7 @@ import { invalidateContextCache } from '@/lib/context-cache'
 import { logAdminAction } from '@/lib/audit-log'
 import { computeGrade } from '@/lib/grade'
 import { sanitizeAdminInput } from '@/lib/sanitize'
+import { embedBuilder } from '@/lib/rag/embed-writer'
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth()
@@ -79,6 +80,10 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     })
     await invalidateContextCache()
     await logAdminAction('update', 'builder', { id, builderName: builder.builderName }, session!.user!.email!)
+    // Fire-and-forget embedding — OpenAI failure must never block the admin save.
+    embedBuilder(builder.builderName).catch((err) =>
+      console.error('[embed-writer] embedBuilder failed for', builder.builderName, err)
+    )
     return NextResponse.json(builder)
   } catch (err) {
     console.error('Builder PUT error:', err)

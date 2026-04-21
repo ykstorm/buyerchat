@@ -4,6 +4,7 @@ import { streamText } from 'ai'
 import { rateLimit } from '@/lib/rate-limit'
 import { buildContextPayload } from '@/lib/context-builder'
 import { buildSystemPrompt } from '@/lib/system-prompt'
+import { retrieveChunks } from '@/lib/rag/retriever'
 import { classifyIntent } from '@/lib/intent-classifier'
 import { buildDecisionCard } from '@/lib/decision-engine/decision-card-builder'
 import { checkResponse } from '@/lib/response-checker'
@@ -115,6 +116,9 @@ if (hasInjection) {
   let context
   try { context = await buildContextPayload() }
   catch (err) { console.error('Context build error:', err); return NextResponse.json({ error: 'Service temporarily unavailable.' }, { status: 503 }) }
+
+  const retrieved = await retrieveChunks(sanitizedMsg).catch(() => [])
+
   const isComparison = /compare|vs|versus|which is better|which one/i.test(sanitizedMsg)
   let decisionCard = null
   if (isComparison && context.projects.length >= 2) {
@@ -193,7 +197,7 @@ if (hasInjection) {
 
   const result = streamText({
     model: openai('gpt-4o'),
-    system: buildSystemPrompt(context, decisionCard, finalMemory),
+    system: buildSystemPrompt(context, decisionCard, finalMemory, retrieved),
     messages: cappedMessages,
     temperature: 0.3,
     maxOutputTokens: 500,

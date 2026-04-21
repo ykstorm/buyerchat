@@ -4,6 +4,8 @@ import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth'
 import { sanitizeAdminInput } from '@/lib/sanitize'
 import { logAdminAction } from '@/lib/audit-log'
+import { invalidateContextCache } from '@/lib/context-cache'
+import { embedProject } from '@/lib/rag/embed-writer'
 
 const ProjectCreateSchema = z.object({
   projectName: z.string().min(1).max(200),
@@ -79,7 +81,12 @@ export async function POST(req: NextRequest) {
         longitude: d.longitude ?? 72.5714,
       }
     })
+    await invalidateContextCache()
     await logAdminAction('create', 'project', { id: project.id, projectName: project.projectName }, session!.user!.email!)
+    // Fire-and-forget embedding — OpenAI failure must never block the admin save.
+    embedProject(project.id).catch((err) =>
+      console.error('[embed-writer] embedProject failed for', project.id, err)
+    )
     return NextResponse.json(project, { status: 201 })
   } catch (err) {
     console.error('Project POST error:', err)

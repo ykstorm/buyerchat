@@ -6,6 +6,7 @@ import { sanitizeAdminInput } from '@/lib/sanitize'
 import { invalidateContextCache } from '@/lib/context-cache'
 import { logAdminAction } from '@/lib/audit-log'
 import { computeGrade } from '@/lib/grade'
+import { embedProject } from '@/lib/rag/embed-writer'
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -134,6 +135,10 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 
     await invalidateContextCache()
     await logAdminAction('update', 'project', { id, projectName: project.projectName }, session!.user!.email!)
+    // Fire-and-forget embedding — OpenAI failure must never block the admin save.
+    embedProject(project.id).catch((err) =>
+      console.error('[embed-writer] embedProject failed for', project.id, err)
+    )
     return NextResponse.json(project)
   } catch (err) {
     console.error('Project PUT error:', err)

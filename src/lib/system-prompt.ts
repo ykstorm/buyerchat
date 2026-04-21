@@ -1,13 +1,15 @@
 // system-prompt.ts — v4.0 — Homesty.ai SOP v2.0 + Decision Card Engine
 // MERGE: security guardrails preserved + conversational quality layer added
 
+import type { RetrievedChunk } from '@/lib/rag/retriever'
+
 export function buildSystemPrompt(ctx: {
   projects: unknown[]
   localities: unknown[]
   infrastructure: unknown[]
   dataAsOf: string
   locationIntelligence?: string
-}, decisionCard?: unknown, buyerMemory?: string | null): string {
+}, decisionCard?: unknown, buyerMemory?: string | null, retrievedChunks?: RetrievedChunk[]): string {
 
   const projects = ctx.projects as any[]
   const projectList = projects.map((p: any) => {
@@ -49,6 +51,14 @@ ID: ${p.id}
 
   const _cardStr = decisionCard ? JSON.stringify(decisionCard, null, 2) : ''
   const cardBlock = _cardStr.length > 3000 ? _cardStr.slice(0, 3000) + '\n... [truncated]' : _cardStr
+
+  const ragBlock = retrievedChunks && retrievedChunks.length > 0
+    ? `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+RELEVANT KNOWLEDGE (retrieved):
+${retrievedChunks.map((c) => c.content).join('\n\n')}
+
+`
+    : ''
 
   const prompt = `${buyerMemory ? `BUYER RETURN MEMORY: ${buyerMemory} Greet them warmly acknowledging their previous search if this is a new conversation start.\n\n` : ''}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -273,7 +283,7 @@ ${localityJSON}
 INFRASTRUCTURE:
 ${infraJSON}
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+${ragBlock}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 PART 13 — LOCATION INTELLIGENCE
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 South Bopal: More established. Stronger day-to-day convenience. Better school access (DPS, Shanti Asiatic). Commercial strip developed. Better for families who value immediate usability.

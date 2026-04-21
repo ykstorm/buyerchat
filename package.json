@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "embed:backfill": "tsx scripts/embed-backfill.ts"
   },
   "dependencies": {
     "@ai-sdk/openai": "^3.0.47",
@@ -30,6 +31,7 @@
     "csv-parse": "^6.2.1",
     "dotenv": "^17.3.1",
     "framer-motion": "^12.38.0",
+    "js-tiktoken": "^1.0.21",
     "lucide-react": "^0.577.0",
     "next": "15.2.9",
     "next-auth": "^5.0.0-beta.25",
