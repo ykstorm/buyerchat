@@ -3,6 +3,8 @@
  * Single source of truth — imported by chat-client, ChatCenter, ChatRightPanel, and all artifact cards.
  */
 
+import type { BuilderAIContext } from './builder-ai-context'
+
 export type ProjectType = {
   id: string
   projectName: string
@@ -42,4 +44,7 @@ export type Artifact = {
   type: ArtifactType
   data: ProjectType
   dataB?: ProjectType
+  // Optional resolved builder attached for builder_trust artifacts.
+  // When undefined, BuilderTrustCard hides detailed subscore bars.
+  builder?: BuilderAIContext | null
 }

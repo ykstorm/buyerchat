@@ -7,6 +7,7 @@ import { LazyMotion, domAnimation } from 'framer-motion'
 import ChatCenter, { type Message } from '@/components/chat/ChatCenter'
 import ChatRightPanel from '@/components/chat/ChatRightPanel'
 import type { ProjectType, ArtifactType, Artifact } from '@/lib/types/chat'
+import type { BuilderAIContext } from '@/lib/types/builder-ai-context'
 
 // Sidebar stays lazy — closed by default, its framer-motion swipe logic
 // (useMotionValue/animate) is idle until the user opens it. RightPanel is
@@ -23,9 +24,9 @@ let idCounter = 0
 const uid = () => `msg-${++idCounter}-${Date.now()}`
 
 export default function ChatClient({
-  projects, userId, userName, userImage
+  projects, builders = [], userId, userName, userImage
 }: {
-  projects: ProjectType[]; userId: string | null; userName: string | null; userImage: string | null
+  projects: ProjectType[]; builders?: BuilderAIContext[]; userId: string | null; userName: string | null; userImage: string | null
 }) {
   const searchParams = useSearchParams()
   const router = useRouter()
@@ -278,26 +279,90 @@ export default function ChatClient({
         setMessages(prev => prev.map(m => m.id === assistantId ? { ...m, content: full } : m))
       }
 
+      // Minimal fallback project for when CARD references an ID/name we don't have.
+      // ProjectCardV2's 5-branch fallback lands on "Price on request".
+      const fallbackProject = (label?: string): ProjectType => ({
+        id: `missing-${Date.now()}`,
+        projectName: label ?? 'Project not found in current data',
+        builderName: '—',
+        pricePerSqft: null,
+        minPrice: 0,
+        maxPrice: 0,
+        possessionDate: new Date(),
+        constructionStatus: '',
+        microMarket: '',
+        decisionTag: null,
+        honestConcern: null,
+        analystNote: null,
+        possessionFlag: null,
+        configurations: null,
+        bankApprovals: null,
+        priceNote: null,
+        pricePerSqftType: null,
+        loadingFactor: null,
+        allInPrice: null,
+        trustScore: null,
+        trustGrade: null,
+      })
+
       // Handle parsed CARD triggers as artifacts (CARD is the ONLY path that creates artifacts)
       for (const card of parsedCards) {
         let artifact: Artifact | null = null
 
         if (card.type === 'project_card' && card.projectId) {
           const project = projects.find(p => p.id === card.projectId)
-          if (project) artifact = { type: 'project_card', data: project }
+          if (project) {
+            artifact = { type: 'project_card', data: project }
+          } else {
+            console.warn('[ARTIFACT] unresolved', card)
+            artifact = { type: 'project_card', data: fallbackProject(card.projectName) }
+          }
         } else if (card.type === 'cost_breakdown' && card.projectId) {
           const project = projects.find(p => p.id === card.projectId)
-          if (project) artifact = { type: 'cost_breakdown', data: project }
+          if (project) {
+            artifact = { type: 'cost_breakdown', data: project }
+          } else {
+            console.warn('[ARTIFACT] unresolved', card)
+            artifact = { type: 'project_card', data: fallbackProject(card.projectName) }
+          }
         } else if (card.type === 'comparison' && card.projectIdA && card.projectIdB) {
           const projectA = projects.find(p => p.id === card.projectIdA)
           const projectB = projects.find(p => p.id === card.projectIdB)
-          if (projectA && projectB) artifact = { type: 'comparison', data: projectA, dataB: projectB }
+          if (projectA && projectB) {
+            artifact = { type: 'comparison', data: projectA, dataB: projectB }
+          } else {
+            console.warn('[ARTIFACT] unresolved', card)
+            artifact = { type: 'project_card', data: fallbackProject() }
+          }
         } else if (card.type === 'visit_prompt' && card.projectId) {
           const project = projects.find(p => p.id === card.projectId)
-          if (project) artifact = { type: 'visit_prompt', data: project }
+          if (project) {
+            artifact = { type: 'visit_prompt', data: project }
+          } else {
+            console.warn('[ARTIFACT] unresolved', card)
+            artifact = { type: 'project_card', data: fallbackProject(card.projectName) }
+          }
         } else if (card.type === 'builder_trust' && card.builderName) {
-          const project = projects.find(p => p.builderName.toLowerCase().includes(card.builderName!.toLowerCase()))
-          if (project) artifact = { type: 'builder_trust', data: { ...project, trustScore: card.trustScore ?? project.trustScore, trustGrade: card.grade ?? project.trustGrade } }
+          const needle = card.builderName.toLowerCase()
+          // Prefer explicit builders list; fall back to project-name substring match for legacy CARDs.
+          const builder = builders.find(b =>
+            (b.builderName ?? '').toLowerCase() === needle ||
+            (b.brandName ?? '').toLowerCase() === needle ||
+            (b.builderName ?? '').toLowerCase().includes(needle) ||
+            (b.brandName ?? '').toLowerCase().includes(needle)
+          ) ?? null
+          const project = projects.find(p => p.builderName.toLowerCase().includes(needle))
+          if (project) {
+            artifact = {
+              type: 'builder_trust',
+              data: { ...project, trustScore: card.trustScore ?? builder?.totalTrustScore ?? project.trustScore, trustGrade: card.grade ?? builder?.grade ?? project.trustGrade },
+              builder,
+            }
+            if (!builder) console.warn('[ARTIFACT] unresolved', card)
+          } else {
+            console.warn('[ARTIFACT] unresolved', card)
+            artifact = { type: 'project_card', data: fallbackProject(card.builderName) }
+          }
         }
 
         if (artifact) {
@@ -518,6 +583,7 @@ export default function ChatClient({
         append={append}
         loadingSession={loadingSession}
         artifact={artifact}
+        builders={builders}
         showArtifact={showArtifact}
         onToggleArtifact={() => setShowArtifact(v => !v)}
         onRetry={lastFailedMsg ? retryLast : undefined}
@@ -541,6 +607,7 @@ export default function ChatClient({
 
       <ChatRightPanel
         artifact={artifact}
+        builders={builders}
         onArtifactBack={goArtifactBack}
         onArtifactForward={goArtifactForward}
         canGoBack={artifactIndex > 0}

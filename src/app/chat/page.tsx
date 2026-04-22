@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Suspense } from 'react'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import type { BuilderAIContext } from '@/lib/types/builder-ai-context'
 import ChatClient from './chat-client'
 
 export const metadata: Metadata = {
@@ -16,26 +17,50 @@ export const metadata: Metadata = {
 
 export default async function ChatPage() {
   const session = await auth()
-  const projects = await prisma.project.findMany({
-    where: { isActive: true },
-    select: {
-      id: true, projectName: true, builderName: true,
-      pricePerSqft: true, minPrice: true, maxPrice: true,
-      possessionDate: true, constructionStatus: true, microMarket: true,
-      decisionTag: true, honestConcern: true, analystNote: true,
-      possessionFlag: true, configurations: true, bankApprovals: true,
-      priceNote: true, pricePerSqftType: true, loadingFactor: true, allInPrice: true, charges: true, carpetSqftMin: true, sbaSqftMin: true,
-      builder: { select: { totalTrustScore: true, grade: true } }
-    }
-  })
+  const [projects, builders] = await Promise.all([
+    prisma.project.findMany({
+      where: { isActive: true },
+      select: {
+        id: true, projectName: true, builderName: true,
+        pricePerSqft: true, minPrice: true, maxPrice: true,
+        possessionDate: true, constructionStatus: true, microMarket: true,
+        decisionTag: true, honestConcern: true, analystNote: true,
+        possessionFlag: true, configurations: true, bankApprovals: true,
+        priceNote: true, pricePerSqftType: true, loadingFactor: true, allInPrice: true, charges: true, carpetSqftMin: true, sbaSqftMin: true,
+        builder: { select: { totalTrustScore: true, grade: true } }
+      }
+    }),
+    // Sensitive fields (contactPhone, contactEmail, commissionRatePct, partnerStatus)
+    // are deliberately NOT selected — BuilderTrustCard only needs the 5 subscores + agreement.
+    prisma.builder.findMany({
+      select: {
+        id: true, builderName: true, brandName: true,
+        deliveryScore: true, reraScore: true, qualityScore: true,
+        financialScore: true, responsivenessScore: true,
+        totalTrustScore: true, grade: true, agreementSigned: true,
+      }
+    }),
+  ])
   const mappedProjects = projects.map((p: any) => ({
     ...p,
     trustScore: p.builder?.totalTrustScore ?? null,
     trustGrade: p.builder?.grade ?? null,
   }))
+  const mappedBuilders: BuilderAIContext[] = builders.map((b: any) => ({
+    id: b.id,
+    builderName: b.builderName,
+    brandName: b.brandName,
+    totalTrustScore: b.totalTrustScore,
+    grade: b.grade,
+    deliveryScore: b.deliveryScore,
+    reraScore: b.reraScore,
+    qualityScore: b.qualityScore,
+    financialScore: b.financialScore,
+    responsivenessScore: b.responsivenessScore,
+    agreementSigned: b.agreementSigned,
+  }))
   return (
     <>
-      <style>{`body { background: #FAFAF8 !important; }`}</style>
       <div className="fixed inset-0 z-50 bg-paper grain">
         <div
           className="fixed inset-0 pointer-events-none z-0 opacity-[0.025]"
@@ -50,7 +75,7 @@ export default async function ChatPage() {
             <div className="w-5 h-5 border-2 border-[#E7E5E4] border-t-[#1C1917] rounded-full animate-spin" />
           </div>
         }>
-          <ChatClient projects={mappedProjects} userId={session?.user?.id ?? null} userName={session?.user?.name ?? null} userImage={session?.user?.image ?? null} />
+          <ChatClient projects={mappedProjects} builders={mappedBuilders} userId={session?.user?.id ?? null} userName={session?.user?.name ?? null} userImage={session?.user?.image ?? null} />
         </Suspense>
       </div>
     </>

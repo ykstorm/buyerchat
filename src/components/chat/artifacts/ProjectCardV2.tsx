@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
 import { m, useMotionValue, useTransform } from 'framer-motion'
+import { signIn } from 'next-auth/react'
 import type { ProjectType } from '@/lib/types/chat'
 
 const formatL = (n: number | null | undefined) => n ? Math.round(n / 100000) : null
@@ -10,6 +11,7 @@ export default function ProjectCardV2({ project }: { project: ProjectType }) {
   const [saved, setSaved] = useState(false)
   const [saving, setSaving] = useState(false)
   const [hovered, setHovered] = useState(false)
+  const [showSignInPrompt, setShowSignInPrompt] = useState(false)
   const x = useMotionValue(0)
   const y = useMotionValue(0)
   const rotateX = useTransform(y, [-100, 100], [4, -4])
@@ -37,8 +39,17 @@ export default function ProjectCardV2({ project }: { project: ProjectType }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ projectId: project.id })
       })
-      if (prev ? !res.ok : (!res.ok && res.status !== 409)) setSaved(prev)
-      else window.dispatchEvent(new CustomEvent('saved-projects-updated'))
+      if (res.status === 401) {
+        // Anonymous save attempt — revert and surface a sign-in prompt pill
+        // instead of silently failing.
+        setSaved(prev)
+        setShowSignInPrompt(true)
+        setTimeout(() => setShowSignInPrompt(false), 4000)
+      } else if (prev ? !res.ok : (!res.ok && res.status !== 409)) {
+        setSaved(prev)
+      } else {
+        window.dispatchEvent(new CustomEvent('saved-projects-updated'))
+      }
     } catch { setSaved(prev) }
     setSaving(false)
   }
@@ -98,6 +109,7 @@ export default function ProjectCardV2({ project }: { project: ProjectType }) {
         <m.button
           type="button"
           onClick={toggleSave}
+          aria-label={saved ? 'Remove from saved' : 'Save project'}
           whileTap={{ scale: 0.85 }}
           className="absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center backdrop-blur-sm"
           style={{ background: saved ? '#1B4F8A' : 'rgba(255,255,255,0.2)', border: '1px solid rgba(255,255,255,0.3)' }}
@@ -106,6 +118,24 @@ export default function ProjectCardV2({ project }: { project: ProjectType }) {
             <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/>
           </svg>
         </m.button>
+        {/* Sign-in prompt pill — appears for 4s when anonymous save hits 401 */}
+        {showSignInPrompt && (
+          <m.button
+            type="button"
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            onClick={() => {
+              const callbackUrl = typeof window !== 'undefined' ? window.location.href : '/chat'
+              signIn('google', { callbackUrl })
+            }}
+            aria-label="Sign in to save this project"
+            className="absolute top-12 right-3 px-2.5 py-1 rounded-full text-[10px] font-semibold backdrop-blur-sm shadow-md transition-opacity hover:opacity-90"
+            style={{ background: 'var(--bg-accent-green)', color: 'var(--text-accent-green)', border: '1px solid var(--border-accent-green)' }}
+          >
+            Sign in to save →
+          </m.button>
+        )}
         {/* Location */}
         <div className="absolute bottom-3 left-3">
           <span className="text-[10px] font-medium text-white/70 uppercase tracking-wider">{project.microMarket}</span>

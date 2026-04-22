@@ -1,6 +1,6 @@
 "use client"
 import { useState } from "react"
-import Link from "next/link"
+import { signIn } from "next-auth/react"
 
 interface VisitBookingProps {
   projectId: string
@@ -113,9 +113,20 @@ export function VisitBooking({ projectId, projectName }: VisitBookingProps) {
             <p className="text-[14px] font-semibold" style={{ color: 'var(--text-primary)' }}>Sign in to book</p>
             <p className="text-[12px] mt-1" style={{ color: 'var(--text-secondary)' }}>Your OTP token protects your commission. Sign in to claim it.</p>
           </div>
-          <Link href="/api/auth/signin" className="w-full py-2.5 rounded-full text-[13px] font-medium text-white text-center transition-opacity hover:opacity-90" style={{ background: '#1B4F8A' }}>
+          <button
+            type="button"
+            aria-label="Sign in with Google to book visit"
+            onClick={() => {
+              // Preserve draft: return to the exact chat URL the buyer was on,
+              // so after OAuth they land back on the same artifact state.
+              const callbackUrl = typeof window !== 'undefined' ? window.location.href : '/chat'
+              signIn('google', { callbackUrl })
+            }}
+            className="w-full py-2.5 rounded-full text-[13px] font-medium text-white text-center transition-opacity hover:opacity-90"
+            style={{ background: '#1B4F8A' }}
+          >
             Sign in with Google
-          </Link>
+          </button>
           <button type="button" onClick={() => setStatus('idle')} className="text-[11px] transition-colors" style={{ color: 'var(--text-muted)' }}>
             ← Back
           </button>

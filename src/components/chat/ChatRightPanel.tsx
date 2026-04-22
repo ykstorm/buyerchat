@@ -4,6 +4,7 @@ import React from 'react'
 import dynamic from 'next/dynamic'
 import { m, AnimatePresence } from 'framer-motion'
 import type { ProjectType, Artifact } from '@/lib/types/chat'
+import type { BuilderAIContext } from '@/lib/types/builder-ai-context'
 
 // Lazy-load all artifact renderers — each pulls framer-motion + chart/date
 // utilities that we don't need until an artifact actually mounts. ssr:false
@@ -44,6 +45,7 @@ const BuilderTrustCard = dynamic(() => import('./artifacts/BuilderTrustCard'), {
 
 export default function ChatRightPanel({
   artifact,
+  builders = [],
   onArtifactBack,
   onArtifactForward,
   canGoBack,
@@ -54,6 +56,7 @@ export default function ChatRightPanel({
   onSelectArtifact,
 }: {
   artifact: Artifact | null
+  builders?: BuilderAIContext[]
   onArtifactBack?: () => void
   onArtifactForward?: () => void
   canGoBack?: boolean
@@ -63,6 +66,19 @@ export default function ChatRightPanel({
   artifactHistory?: Artifact[]
   onSelectArtifact?: (index: number) => void
 }) {
+  // Resolve a builder for a builder_trust artifact: prefer artifact.builder attached
+  // at parse time, fall back to name lookup in the builders prop.
+  const resolveBuilder = (a: Artifact | null): BuilderAIContext | null => {
+    if (!a || a.type !== 'builder_trust') return null
+    if (a.builder) return a.builder
+    const needle = (a.data.builderName ?? '').toLowerCase()
+    return builders.find(b =>
+      (b.builderName ?? '').toLowerCase() === needle ||
+      (b.brandName ?? '').toLowerCase() === needle ||
+      needle.includes((b.builderName ?? '').toLowerCase()) ||
+      needle.includes((b.brandName ?? '').toLowerCase())
+    ) ?? null
+  }
   const [showHistoryMenu, setShowHistoryMenu] = React.useState(false)
 
   return (
@@ -152,18 +168,26 @@ export default function ChatRightPanel({
               ) : artifact.type === 'builder_trust' ? (
                 <>
                   <p className="text-[11px] font-medium text-[#A8A29E] uppercase tracking-wider mb-3">Builder trust</p>
-                  <BuilderTrustCard builder={{
-                    brandName: artifact.data.builderName,
-                    builderName: artifact.data.builderName,
-                    grade: artifact.data.trustGrade ?? 'C',
-                    totalTrustScore: artifact.data.trustScore ?? 0,
-                    deliveryScore: 0,
-                    reraScore: 0,
-                    qualityScore: 0,
-                    financialScore: 0,
-                    responsivenessScore: 0,
-                    agreementSigned: false,
-                  }} />
+                  {(() => {
+                    const b = resolveBuilder(artifact)
+                    return (
+                      <BuilderTrustCard
+                        builder={{
+                          brandName: b?.brandName ?? artifact.data.builderName,
+                          builderName: b?.builderName ?? artifact.data.builderName,
+                          grade: b?.grade ?? artifact.data.trustGrade ?? 'C',
+                          totalTrustScore: b?.totalTrustScore ?? artifact.data.trustScore ?? 0,
+                          deliveryScore: b?.deliveryScore ?? 0,
+                          reraScore: b?.reraScore ?? 0,
+                          qualityScore: b?.qualityScore ?? 0,
+                          financialScore: b?.financialScore ?? 0,
+                          responsivenessScore: b?.responsivenessScore ?? 0,
+                          agreementSigned: b?.agreementSigned ?? false,
+                        }}
+                        hasSubscores={!!b}
+                      />
+                    )
+                  })()}
                 </>
               ) : (
                 <>

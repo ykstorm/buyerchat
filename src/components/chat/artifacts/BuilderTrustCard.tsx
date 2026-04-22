@@ -17,7 +17,7 @@ type BuilderData = {
 const gradeColor = (g: string) =>
   g === 'A' ? '#34D399' : g === 'B' ? '#60A5FA' : g === 'C' ? '#FBBF24' : '#F87171'
 
-export default function BuilderTrustCard({ builder }: { builder: BuilderData }) {
+export default function BuilderTrustCard({ builder, hasSubscores = true }: { builder: BuilderData; hasSubscores?: boolean }) {
   const scores = [
     { label: 'Delivery', value: builder.deliveryScore, max: 30 },
     { label: 'RERA', value: builder.reraScore, max: 20 },
@@ -73,27 +73,35 @@ export default function BuilderTrustCard({ builder }: { builder: BuilderData }) 
         </div>
       </div>
 
-      {/* Score breakdown */}
-      <div className="px-5 py-4 border-b border-[#F4F3F0]">
-        <p className="text-[9px] font-semibold uppercase tracking-wider text-[#A8A29E] mb-3">Score Breakdown</p>
-        <div className="space-y-2.5">
-          {scores.map(s => (
-            <div key={s.label} className="flex items-center gap-3">
-              <span className="text-[10px] text-[#78716C] w-16 flex-shrink-0">{s.label}</span>
-              <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background: '#F4F3F0' }}>
-                <m.div
-                  initial={{ width: 0 }}
-                  animate={{ width: `${(s.value / s.max) * 100}%` }}
-                  transition={{ duration: 0.8, ease: 'easeOut', delay: 0.3 }}
-                  className="h-full rounded-full"
-                  style={{ background: '#1B4F8A' }}
-                />
+      {/* Score breakdown — hidden when builder not resolved (shows total gauge only) */}
+      {hasSubscores ? (
+        <div className="px-5 py-4" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+          <p className="text-[9px] font-semibold uppercase tracking-wider mb-3" style={{ color: 'var(--text-muted)' }}>Score Breakdown</p>
+          <div className="space-y-2.5">
+            {scores.map(s => (
+              <div key={s.label} className="flex items-center gap-3">
+                <span className="text-[10px] w-16 flex-shrink-0" style={{ color: 'var(--text-secondary)' }}>{s.label}</span>
+                <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--bg-subtle)' }}>
+                  <m.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${(s.value / s.max) * 100}%` }}
+                    transition={{ duration: 0.8, ease: 'easeOut', delay: 0.3 }}
+                    className="h-full rounded-full"
+                    style={{ background: '#1B4F8A' }}
+                  />
+                </div>
+                <span className="text-[10px] font-mono font-medium w-10 text-right" style={{ color: 'var(--text-primary)' }}>{s.value}/{s.max}</span>
               </div>
-              <span className="text-[10px] font-mono font-medium text-[#1C1917] w-10 text-right">{s.value}/{s.max}</span>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="px-5 py-4" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+          <p className="text-[11px] italic" style={{ color: 'var(--text-muted)' }}>
+            Detailed scores unavailable
+          </p>
+        </div>
+      )}
 
       {/* Trust signals */}
       <div className="px-5 py-4">

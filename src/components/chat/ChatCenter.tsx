@@ -6,6 +6,7 @@ import dynamic from 'next/dynamic'
 import { FormEvent, useRef, useEffect, useState, memo, useMemo } from 'react'
 import ReactMarkdown from 'react-markdown'
 import type { ProjectType, Artifact } from '@/lib/types/chat'
+import type { BuilderAIContext } from '@/lib/types/builder-ai-context'
 
 // Mobile/inline artifact renderers — same lazy strategy as ChatRightPanel.
 // Skeletons use dark-mode tokens + approximate rendered heights.
@@ -175,6 +176,7 @@ type Props = {
   append: (msg: { role: 'user'; content: string }) => void
   loadingSession?: boolean
   artifact?: Artifact | null
+  builders?: BuilderAIContext[]
   showArtifact?: boolean
   onToggleArtifact?: () => void
   canGoBack?: boolean
@@ -199,7 +201,18 @@ const STARTERS = [
   "I'm confused — help me decide",
 ]
 
-export default function ChatCenter({ messages, input, handleInputChange, handleSubmit, isLoading, append, loadingSession, artifact, showArtifact, onToggleArtifact, canGoBack, canGoForward, onArtifactBack, onArtifactForward, artifactCurrent, artifactTotal, artifactHistory, onSelectArtifact, compareToast, buyerStage }: Props) {
+export default function ChatCenter({ messages, input, handleInputChange, handleSubmit, isLoading, append, loadingSession, artifact, builders = [], showArtifact, onToggleArtifact, canGoBack, canGoForward, onArtifactBack, onArtifactForward, artifactCurrent, artifactTotal, artifactHistory, onSelectArtifact, compareToast, buyerStage }: Props) {
+  const resolveBuilder = (a: Artifact | null): BuilderAIContext | null => {
+    if (!a || a.type !== 'builder_trust') return null
+    if (a.builder) return a.builder
+    const needle = (a.data.builderName ?? '').toLowerCase()
+    return builders.find(b =>
+      (b.builderName ?? '').toLowerCase() === needle ||
+      (b.brandName ?? '').toLowerCase() === needle ||
+      needle.includes((b.builderName ?? '').toLowerCase()) ||
+      needle.includes((b.brandName ?? '').toLowerCase())
+    ) ?? null
+  }
   const bottomRef = useRef<HTMLDivElement>(null)
   const [mouse, setMouse] = useState({ x: 0, y: 0 })
   const mouseRafRef = useRef<number>(0)
@@ -443,16 +456,20 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
         </div>
       )}
 
-      {/* Mobile artifact — full-screen overlay modal */}
+      {/* Mobile artifact — overlay modal.
+          Leaves the bottom ~88px clear so the input bar stays visible
+          (input bar is sticky-bottom at z-20; modal + backdrop sit above
+          at z-40 but stop short of the input so buyers can still type). */}
       <AnimatePresence>
         {artifact && showArtifact && (
           <m.div
-            className="lg:hidden fixed inset-0 z-40 flex flex-col"
+            className="lg:hidden fixed inset-x-0 top-0 z-40 flex flex-col"
+            style={{ bottom: 'calc(88px + env(safe-area-inset-bottom, 0px))' }}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
           >
-            {/* Backdrop */}
+            {/* Backdrop — covers only the area above the input bar */}
             <m.div
               className="absolute inset-0 bg-black/30 backdrop-blur-sm"
               onClick={onToggleArtifact}
@@ -482,11 +499,12 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
                   if (dx > 60 && canGoBack) { onArtifactBack?.(); return }
                 }
               }}
-              className="relative z-10 mt-12 mx-3 rounded-2xl overflow-hidden flex flex-col shadow-[0_20px_60px_rgba(0,0,0,0.2)]"
+              className="relative z-10 mt-12 mx-3 mb-3 rounded-2xl overflow-hidden flex flex-col shadow-[0_20px_60px_rgba(0,0,0,0.2)]"
               style={{
                 background: 'var(--bg-surface)',
-                maxHeight: 'calc(100dvh - 80px)',
-                paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+                // Modal container already stops above input bar (parent has bottom: 88px);
+                // cap height so mid-sized content doesn't force overflow into the input area.
+                maxHeight: 'calc(100dvh - 140px)',
                 willChange: 'transform, opacity',
               }}
             >
@@ -554,18 +572,26 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
                   : artifact.type === 'visit_prompt'
                   ? <VisitPromptCard project={artifact.data} />
                   : artifact.type === 'builder_trust'
-                  ? <BuilderTrustCard builder={{
-                      brandName: artifact.data.builderName,
-                      builderName: artifact.data.builderName,
-                      grade: artifact.data.trustGrade ?? 'C',
-                      totalTrustScore: artifact.data.trustScore ?? 0,
-                      deliveryScore: 0,
-                      reraScore: 0,
-                      qualityScore: 0,
-                      financialScore: 0,
-                      responsivenessScore: 0,
-                      agreementSigned: false,
-                    }} />
+                  ? (() => {
+                      const b = resolveBuilder(artifact)
+                      return (
+                        <BuilderTrustCard
+                          builder={{
+                            brandName: b?.brandName ?? artifact.data.builderName,
+                            builderName: b?.builderName ?? artifact.data.builderName,
+                            grade: b?.grade ?? artifact.data.trustGrade ?? 'C',
+                            totalTrustScore: b?.totalTrustScore ?? artifact.data.trustScore ?? 0,
+                            deliveryScore: b?.deliveryScore ?? 0,
+                            reraScore: b?.reraScore ?? 0,
+                            qualityScore: b?.qualityScore ?? 0,
+                            financialScore: b?.financialScore ?? 0,
+                            responsivenessScore: b?.responsivenessScore ?? 0,
+                            agreementSigned: b?.agreementSigned ?? false,
+                          }}
+                          hasSubscores={!!b}
+                        />
+                      )
+                    })()
                   : <ProjectCard project={artifact.data} />}
               </div>
             </m.div>
@@ -633,7 +659,7 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
         </div>
       )}
 
-      <div className="backdrop-blur-sm px-4 py-3 sticky bottom-0 z-20 flex-shrink-0" style={{ borderTop: '1px solid var(--border-subtle)', background: 'color-mix(in srgb, var(--bg-base) 90%, transparent)', paddingBottom: 'max(16px, env(safe-area-inset-bottom))' }}>
+      <div className="backdrop-blur-sm px-4 py-3 sticky bottom-0 z-50 flex-shrink-0" style={{ borderTop: '1px solid var(--border-subtle)', background: 'color-mix(in srgb, var(--bg-base) 90%, transparent)', paddingBottom: 'max(16px, env(safe-area-inset-bottom))' }}>
         <form onSubmit={handleSubmit} className="flex gap-2 items-center">
           <input
             value={input}
