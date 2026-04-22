@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma'
-import { daysBetween, formatLakh, getPersonaLabel, getStageLabel } from '@/lib/admin-utils'
+import { daysBetween, formatLakh, getPersonaLabel, getStageLabel, getBuyerDisplayName } from '@/lib/admin-utils'
 import { DarkMetricCard, DarkCard, DarkBadge } from '@/components/admin/DarkCard'
 import { auth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
@@ -29,7 +29,10 @@ export default async function FollowUpPage() {
     sessions = await prisma.chatSession.findMany({
       orderBy: { lastMessageAt: 'asc' },
       take: 50,
-      include: { _count: { select: { messages: true } } }
+      include: {
+        _count: { select: { messages: true } },
+        user: { select: { name: true, email: true } },
+      }
     })
   } catch (err) {
     console.error('Follow-up fetch error:', err)
@@ -113,17 +116,30 @@ export default async function FollowUpPage() {
             <div>
               <p className="text-[11px] font-semibold uppercase tracking-wider mb-2" style={{ color: '#F87171' }}>🔴 Urgent — contact today ({urgent.length})</p>
               <div className="space-y-2">
-                {urgent.map(session => (
-                  <a key={session.id} href={`/admin/buyers/${session.id}`} className="flex items-center justify-between rounded-xl px-4 py-3 transition-colors hover:bg-white/5" style={{ background: 'rgba(248,113,113,0.06)', border: '1px solid rgba(248,113,113,0.15)' }}>
-                    <div>
-                      <p className="text-[12px] font-medium text-white">{session.buyerConfig ? `${session.buyerConfig} · ${getPersonaLabel(session.buyerPersona)}` : session.buyerBudget ? `₹${Math.round(session.buyerBudget/100000)}L buyer` : `Session ${session.id.slice(0,6)}`}</p>
-                      <p className="text-[11px] mt-0.5" style={{ color: '#9CA3AF' }}>{getStageLabel(session.buyerStage)} · {daysBetween(session.lastMessageAt)}d silent</p>
-                      <p className="text-[10px] mt-1" style={{ color: '#F87171' }}>{STAGE_RULES[session.buyerStage]?.action}</p>
+                {urgent.map(session => {
+                  const buyerName = getBuyerDisplayName(session, 30)
+                  const meta = session.buyerConfig
+                    ? `${session.buyerConfig} · ${getPersonaLabel(session.buyerPersona)}`
+                    : session.buyerBudget ? `₹${Math.round(session.buyerBudget / 100000)}L buyer` : `Session ${session.id.slice(0, 6)}`
+                  return (
+                    <a
+                      key={session.id}
+                      href={`/admin/buyers/${session.id}`}
+                      aria-label={`Contact urgent buyer ${buyerName}`}
+                      className="flex items-center justify-between rounded-xl px-4 py-3 transition-colors hover:bg-white/5"
+                      style={{ background: 'rgba(248,113,113,0.06)', border: '1px solid rgba(248,113,113,0.15)' }}
+                    >
+                      <div className="min-w-0 pr-2">
+                        <p className="text-[12px] font-semibold text-white truncate" title={buyerName}>{buyerName}</p>
+                        <p className="text-[11px] truncate" style={{ color: '#9CA3AF' }}>{meta}</p>
+                        <p className="text-[11px] mt-0.5" style={{ color: '#9CA3AF' }}>{getStageLabel(session.buyerStage)} · {daysBetween(session.lastMessageAt)}d silent</p>
+                        <p className="text-[10px] mt-1" style={{ color: '#F87171' }}>{STAGE_RULES[session.buyerStage]?.action}</p>
                         <DraftMessageButton sessionId={session.id} />
-                    </div>
-                    <DarkBadge label="Urgent" color="red" />
-                  </a>
-                ))}
+                      </div>
+                      <DarkBadge label="Urgent" color="red" />
+                    </a>
+                  )
+                })}
               </div>
             </div>
           )}
@@ -132,17 +148,30 @@ export default async function FollowUpPage() {
             <div>
               <p className="text-[11px] font-semibold uppercase tracking-wider mb-2" style={{ color: '#FBBF24' }}>🟡 High Priority ({high.length})</p>
               <div className="space-y-2">
-                {high.map(session => (
-                  <a key={session.id} href={`/admin/buyers/${session.id}`} className="flex items-center justify-between rounded-xl px-4 py-3 transition-colors hover:bg-white/5" style={{ background: 'rgba(251,191,36,0.06)', border: '1px solid rgba(251,191,36,0.12)' }}>
-                    <div>
-                      <p className="text-[12px] font-medium text-white">{session.buyerConfig ? `${session.buyerConfig} · ${getPersonaLabel(session.buyerPersona)}` : session.buyerBudget ? `₹${Math.round(session.buyerBudget/100000)}L buyer` : `Session ${session.id.slice(0,6)}`}</p>
-                      <p className="text-[11px] mt-0.5" style={{ color: '#9CA3AF' }}>{getStageLabel(session.buyerStage)} · {daysBetween(session.lastMessageAt)}d silent</p>
-                      <p className="text-[10px] mt-1" style={{ color: '#FBBF24' }}>{STAGE_RULES[session.buyerStage]?.action}</p>
+                {high.map(session => {
+                  const buyerName = getBuyerDisplayName(session, 30)
+                  const meta = session.buyerConfig
+                    ? `${session.buyerConfig} · ${getPersonaLabel(session.buyerPersona)}`
+                    : session.buyerBudget ? `₹${Math.round(session.buyerBudget / 100000)}L buyer` : `Session ${session.id.slice(0, 6)}`
+                  return (
+                    <a
+                      key={session.id}
+                      href={`/admin/buyers/${session.id}`}
+                      aria-label={`Contact high-priority buyer ${buyerName}`}
+                      className="flex items-center justify-between rounded-xl px-4 py-3 transition-colors hover:bg-white/5"
+                      style={{ background: 'rgba(251,191,36,0.06)', border: '1px solid rgba(251,191,36,0.12)' }}
+                    >
+                      <div className="min-w-0 pr-2">
+                        <p className="text-[12px] font-semibold text-white truncate" title={buyerName}>{buyerName}</p>
+                        <p className="text-[11px] truncate" style={{ color: '#9CA3AF' }}>{meta}</p>
+                        <p className="text-[11px] mt-0.5" style={{ color: '#9CA3AF' }}>{getStageLabel(session.buyerStage)} · {daysBetween(session.lastMessageAt)}d silent</p>
+                        <p className="text-[10px] mt-1" style={{ color: '#FBBF24' }}>{STAGE_RULES[session.buyerStage]?.action}</p>
                         <DraftMessageButton sessionId={session.id} />
-                    </div>
-                    <DarkBadge label="High" color="amber" />
-                  </a>
-                ))}
+                      </div>
+                      <DarkBadge label="High" color="amber" />
+                    </a>
+                  )
+                })}
               </div>
             </div>
           )}
@@ -151,15 +180,28 @@ export default async function FollowUpPage() {
             <div>
               <p className="text-[11px] font-semibold uppercase tracking-wider mb-2" style={{ color: '#FB923C' }}>Overdue — past deadline ({overdue.filter(s => !urgent.includes(s) && !high.includes(s)).length})</p>
               <div className="space-y-2">
-                {overdue.filter(s => !urgent.includes(s) && !high.includes(s)).map(session => (
-                  <a key={session.id} href={`/admin/buyers/${session.id}`} className="flex items-center justify-between rounded-xl px-4 py-3 hover:bg-white/5 transition-colors" style={{ background: 'rgba(251,146,60,0.06)', border: '1px solid rgba(251,146,60,0.15)' }}>
-                    <div>
-                      <p className="text-[12px] font-medium text-white">{session.buyerConfig ? `${session.buyerConfig} · ${getPersonaLabel(session.buyerPersona)}` : session.buyerBudget ? `₹${Math.round(session.buyerBudget/100000)}L buyer` : `Session ${session.id.slice(0,6)}`}</p>
-                      <p className="text-[11px] mt-0.5" style={{ color: '#9CA3AF' }}>{getStageLabel(session.buyerStage)} · {daysBetween(session.lastMessageAt)}d overdue</p>
-                    </div>
-                    <DarkBadge label="Overdue" color="amber" />
-                  </a>
-                ))}
+                {overdue.filter(s => !urgent.includes(s) && !high.includes(s)).map(session => {
+                  const buyerName = getBuyerDisplayName(session, 30)
+                  const meta = session.buyerConfig
+                    ? `${session.buyerConfig} · ${getPersonaLabel(session.buyerPersona)}`
+                    : session.buyerBudget ? `₹${Math.round(session.buyerBudget / 100000)}L buyer` : `Session ${session.id.slice(0, 6)}`
+                  return (
+                    <a
+                      key={session.id}
+                      href={`/admin/buyers/${session.id}`}
+                      aria-label={`Open overdue buyer ${buyerName}`}
+                      className="flex items-center justify-between rounded-xl px-4 py-3 hover:bg-white/5 transition-colors"
+                      style={{ background: 'rgba(251,146,60,0.06)', border: '1px solid rgba(251,146,60,0.15)' }}
+                    >
+                      <div className="min-w-0 pr-2">
+                        <p className="text-[12px] font-semibold text-white truncate" title={buyerName}>{buyerName}</p>
+                        <p className="text-[11px] truncate" style={{ color: '#9CA3AF' }}>{meta}</p>
+                        <p className="text-[11px] mt-0.5" style={{ color: '#9CA3AF' }}>{getStageLabel(session.buyerStage)} · {daysBetween(session.lastMessageAt)}d overdue</p>
+                      </div>
+                      <DarkBadge label="Overdue" color="amber" />
+                    </a>
+                  )
+                })}
               </div>
             </div>
           )}
@@ -168,18 +210,31 @@ export default async function FollowUpPage() {
             <div>
               <p className="text-[11px] font-semibold uppercase tracking-wider mb-2" style={{ color: '#9CA3AF' }}>Re-engage — cold buyers ({reEngage.length})</p>
               <div className="space-y-2">
-                {reEngage.map(session => (
-                  <a key={session.id} href={`/admin/buyers/${session.id}`} className="flex items-center justify-between rounded-xl px-4 py-3 hover:bg-white/5 transition-colors" style={{ background: '#111827', border: '1px solid rgba(255,255,255,0.06)' }}>
-                    <div>
-                      <p className="text-[12px] font-medium text-white">{session.buyerConfig ? `${session.buyerConfig} · ${getPersonaLabel(session.buyerPersona)}` : session.buyerBudget ? `₹${Math.round(session.buyerBudget/100000)}L buyer` : `Session ${session.id.slice(0,6)}`} · {session.buyerBudget ? `₹${formatLakh(session.buyerBudget)}` : '—'}</p>
-                      <p className="text-[11px] mt-0.5" style={{ color: '#6B7280' }}>{daysBetween(session.lastMessageAt)}d cold · {getStageLabel(session.buyerStage)}</p>
-                    </div>
-                    <div className="flex flex-col items-end gap-1.5">
-                      <DarkBadge label={`${daysBetween(session.lastMessageAt)}d`} color="gray" />
-                      <DraftMessageButton sessionId={session.id} />
-                    </div>
-                  </a>
-                ))}
+                {reEngage.map(session => {
+                  const buyerName = getBuyerDisplayName(session, 30)
+                  const meta = session.buyerConfig
+                    ? `${session.buyerConfig} · ${getPersonaLabel(session.buyerPersona)}`
+                    : session.buyerBudget ? `₹${Math.round(session.buyerBudget / 100000)}L buyer` : `Session ${session.id.slice(0, 6)}`
+                  return (
+                    <a
+                      key={session.id}
+                      href={`/admin/buyers/${session.id}`}
+                      aria-label={`Re-engage buyer ${buyerName}`}
+                      className="flex items-center justify-between rounded-xl px-4 py-3 hover:bg-white/5 transition-colors"
+                      style={{ background: '#111827', border: '1px solid rgba(255,255,255,0.06)' }}
+                    >
+                      <div className="min-w-0 pr-2">
+                        <p className="text-[12px] font-semibold text-white truncate" title={buyerName}>{buyerName}</p>
+                        <p className="text-[11px] truncate" style={{ color: '#9CA3AF' }}>{meta} · {session.buyerBudget ? `₹${formatLakh(session.buyerBudget)}` : '—'}</p>
+                        <p className="text-[11px] mt-0.5" style={{ color: '#6B7280' }}>{daysBetween(session.lastMessageAt)}d cold · {getStageLabel(session.buyerStage)}</p>
+                      </div>
+                      <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
+                        <DarkBadge label={`${daysBetween(session.lastMessageAt)}d`} color="gray" />
+                        <DraftMessageButton sessionId={session.id} />
+                      </div>
+                    </a>
+                  )
+                })}
               </div>
             </div>
           )}

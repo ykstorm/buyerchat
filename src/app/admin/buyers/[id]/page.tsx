@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/prisma'
 import { DarkBadge } from '@/components/admin/DarkCard'
-import { formatLakh, getStageLabel, getPersonaLabel } from '@/lib/admin-utils'
+import { formatLakh, getStageLabel, getPersonaLabel, getBuyerDisplayName } from '@/lib/admin-utils'
 import { auth } from '@/lib/auth'
 import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
@@ -21,7 +21,8 @@ export default async function BuyerDetailPage({ params }: { params: Promise<{ id
     session = await prisma.chatSession.findUnique({
       where: { id },
       include: {
-        messages: { orderBy: { createdAt: 'asc' } }
+        messages: { orderBy: { createdAt: 'asc' } },
+        user: { select: { name: true, email: true } },
       }
     })
   } catch (err) {
@@ -30,17 +31,21 @@ export default async function BuyerDetailPage({ params }: { params: Promise<{ id
 
   if (!session) notFound()
 
+  const buyerDisplayName = getBuyerDisplayName(session)
+
   return (
     <div className="max-w-3xl" style={{ background: '#0A0F1E', minHeight: '100vh' }}>
       <div className="flex items-center gap-3 mb-5">
         <Link href="/admin/buyers" className="text-[12px] hover:underline" style={{ color: '#60A5FA' }}>← Buyers</Link>
         <span style={{ color: '#374151' }}>/</span>
-        <span className="text-[12px] font-mono" style={{ color: '#6B7280' }}>{id.slice(0, 16)}…</span>
+        <span className="text-[12px] font-semibold text-white truncate" title={buyerDisplayName}>{buyerDisplayName}</span>
+        <span style={{ color: '#374151' }}>·</span>
+        <span className="text-[11px] font-mono" style={{ color: '#4B5563' }}>{id.slice(0, 12)}…</span>
       </div>
 
       {/* Session metadata */}
       <div className="rounded-2xl p-4 mb-4" style={{ background: '#111827', border: '1px solid rgba(255,255,255,0.07)' }}>
-        <p className="text-[13px] font-semibold text-white mb-4">Session Profile</p>
+        <p className="text-[13px] font-semibold text-white mb-4">Session Profile · <span style={{ color: '#9CA3AF' }}>{buyerDisplayName}</span></p>
         <div className="grid grid-cols-4 gap-4">
           {[
             { label: 'Persona', value: getPersonaLabel(session.buyerPersona) },

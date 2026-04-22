@@ -1,6 +1,6 @@
 // src/app/admin/overview/page.tsx — v3 Founder Dashboard
 import { prisma } from '@/lib/prisma'
-import { formatLakh, daysBetween, getStageLabel, getUrgency } from '@/lib/admin-utils'
+import { formatLakh, daysBetween, getStageLabel, getUrgency, getBuyerDisplayName } from '@/lib/admin-utils'
 import { auth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
@@ -34,7 +34,9 @@ export default async function OverviewPage() {
   let reraAlertCount = 0
   let urgentSessions: {
     id: string; buyerPersona: string | null; buyerConfig: string | null;
-    buyerStage: string; lastMessageAt: Date
+    buyerStage: string; lastMessageAt: Date;
+    customName: string | null;
+    user: { name: string | null; email: string | null } | null;
   }[] = []
   let weekChatCount = 0
   let weekVisitCount = 0
@@ -43,7 +45,9 @@ export default async function OverviewPage() {
   let stageCounts: Record<string, number> = {}
   let pipelineSessions: {
     id: string; buyerPersona: string | null; buyerConfig: string | null;
-    buyerStage: string; buyerBudget: number | null
+    buyerStage: string; buyerBudget: number | null;
+    customName: string | null;
+    user: { name: string | null; email: string | null } | null;
   }[] = []
   let latestDeal: {
     builderBrandName: string; buyerName: string; dealValue: number;
@@ -74,7 +78,11 @@ export default async function OverviewPage() {
         where: { lastMessageAt: { lt: twoDaysAgo } },
         orderBy: { lastMessageAt: 'asc' },
         take: 6,
-        select: { id: true, buyerPersona: true, buyerConfig: true, buyerStage: true, lastMessageAt: true },
+        select: {
+          id: true, buyerPersona: true, buyerConfig: true, buyerStage: true, lastMessageAt: true,
+          customName: true,
+          user: { select: { name: true, email: true } },
+        },
       }).catch(() => []),
       prisma.chatSession.count({ where: { createdAt: { gte: startOfWeek } } }).catch(() => 0),
       prisma.siteVisit.count({ where: { createdAt: { gte: startOfWeek } } }).catch(() => 0),
@@ -84,7 +92,11 @@ export default async function OverviewPage() {
         where: { buyerStage: { in: ['comparison', 'visit_trigger', 'pre_visit', 'post_visit'] } },
         orderBy: [{ buyerBudget: 'desc' }, { lastMessageAt: 'desc' }],
         take: 8,
-        select: { id: true, buyerPersona: true, buyerConfig: true, buyerStage: true, buyerBudget: true },
+        select: {
+          id: true, buyerPersona: true, buyerConfig: true, buyerStage: true, buyerBudget: true,
+          customName: true,
+          user: { select: { name: true, email: true } },
+        },
       }).catch(() => []),
       prisma.deal.findFirst({
         orderBy: { createdAt: 'desc' },
@@ -263,15 +275,23 @@ export default async function OverviewPage() {
             ) : urgentSessions.slice(0, 5).map(s => {
               const { label: urgencyLabel, color: urgencyColor } = getUrgency(s.lastMessageAt)
               const isRed = urgencyColor === 'red'
+              const buyerName = getBuyerDisplayName(s, 24)
               return (
-                <Link key={s.id} href={`/admin/buyers/${s.id}`} className="flex items-center justify-between rounded-lg px-3 py-2 transition-colors hover:bg-white/5" style={{ background: isRed ? 'rgba(239,68,68,0.08)' : 'rgba(245,158,11,0.06)' }}>
-                  <div>
-                    <p className="text-[11px] font-medium" style={{ color: isRed ? '#F87171' : '#FCD34D' }}>
+                <Link
+                  key={s.id}
+                  href={`/admin/buyers/${s.id}`}
+                  aria-label={`Follow up with ${buyerName}`}
+                  className="flex items-center justify-between rounded-lg px-3 py-2 transition-colors hover:bg-white/5"
+                  style={{ background: isRed ? 'rgba(239,68,68,0.08)' : 'rgba(245,158,11,0.06)' }}
+                >
+                  <div className="min-w-0 pr-2">
+                    <p className="text-[11px] font-semibold truncate text-white" title={buyerName}>{buyerName}</p>
+                    <p className="text-[10px] truncate" style={{ color: isRed ? '#F87171' : '#FCD34D' }}>
                       {s.buyerConfig ?? 'Buyer'} · {getStageLabel(s.buyerStage)}
                     </p>
                     <p className="text-[10px]" style={{ color: '#6B7280' }}>{daysBetween(s.lastMessageAt)}d silent</p>
                   </div>
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: isRed ? 'rgba(239,68,68,0.2)' : 'rgba(245,158,11,0.15)', color: isRed ? '#F87171' : '#FBBF24' }}>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full flex-shrink-0" style={{ background: isRed ? 'rgba(239,68,68,0.2)' : 'rgba(245,158,11,0.15)', color: isRed ? '#F87171' : '#FBBF24' }}>
                     {urgencyLabel}
                   </span>
                 </Link>
@@ -289,20 +309,29 @@ export default async function OverviewPage() {
           <div className="space-y-1.5">
             {pipelineSessions.length === 0 ? (
               <p className="text-[12px]" style={{ color: '#4B5563' }}>No active pipeline</p>
-            ) : pipelineSessions.slice(0, 6).map(s => (
-              <Link key={s.id} href={`/admin/buyers/${s.id}`} className="flex items-center justify-between rounded-lg px-3 py-2 hover:bg-white/5 transition-colors">
-                <div>
-                  <p className="text-[11px] font-medium text-white">{s.buyerConfig ?? '—'} · {getStageLabel(s.buyerStage)}</p>
-                  <p className="text-[10px]" style={{ color: '#6B7280' }}>{s.buyerPersona ?? 'buyer'}</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-[11px] font-semibold" style={{ color: '#34D399' }}>
-                    {s.buyerBudget ? `₹${formatLakh(s.buyerBudget * 0.015)}` : '—'}
-                  </p>
-                  <p className="text-[9px]" style={{ color: '#4B5563' }}>est. commission</p>
-                </div>
-              </Link>
-            ))}
+            ) : pipelineSessions.slice(0, 6).map(s => {
+              const buyerName = getBuyerDisplayName(s, 24)
+              return (
+                <Link
+                  key={s.id}
+                  href={`/admin/buyers/${s.id}`}
+                  aria-label={`Open buyer ${buyerName}`}
+                  className="flex items-center justify-between rounded-lg px-3 py-2 hover:bg-white/5 transition-colors"
+                >
+                  <div className="min-w-0 pr-2">
+                    <p className="text-[11px] font-semibold text-white truncate" title={buyerName}>{buyerName}</p>
+                    <p className="text-[10px] truncate" style={{ color: '#9CA3AF' }}>{s.buyerConfig ?? '—'} · {getStageLabel(s.buyerStage)}</p>
+                    <p className="text-[10px]" style={{ color: '#6B7280' }}>{s.buyerPersona ?? 'buyer'}</p>
+                  </div>
+                  <div className="text-right flex-shrink-0">
+                    <p className="text-[11px] font-semibold" style={{ color: '#34D399' }}>
+                      {s.buyerBudget ? `₹${formatLakh(s.buyerBudget * 0.015)}` : '—'}
+                    </p>
+                    <p className="text-[9px]" style={{ color: '#4B5563' }}>est. commission</p>
+                  </div>
+                </Link>
+              )
+            })}
           </div>
         </div>
 

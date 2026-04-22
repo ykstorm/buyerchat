@@ -102,3 +102,31 @@ export function getQualityColor(score: number): string {
   if (score >= 3) return '#F87171'
   return '#4B5563'
 }
+
+/**
+ * Derive a human-readable buyer name for a ChatSession for admin display only.
+ * NEVER use the result as a primary key — navigation must stay ID-based.
+ *
+ * Source chain (first non-empty wins):
+ *   1. Linked User.name          (authenticated via Google OAuth)
+ *   2. Linked User.email         (authenticated but no profile name)
+ *   3. ChatSession.customName    (user-renamed or auto-named from first message)
+ *   4. "Anonymous"
+ *
+ * Pass `maxLen` to clamp output (kanban card ~20, table row ~30).
+ */
+export function getBuyerDisplayName(
+  session: {
+    customName?: string | null
+    user?: { name?: string | null; email?: string | null } | null
+  } | null | undefined,
+  maxLen?: number
+): string {
+  const raw =
+    session?.user?.name?.trim() ||
+    session?.user?.email?.trim() ||
+    session?.customName?.trim() ||
+    'Anonymous'
+  if (!maxLen || raw.length <= maxLen) return raw
+  return raw.slice(0, maxLen - 1).trimEnd() + '…'
+}

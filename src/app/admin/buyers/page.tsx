@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma'
-import { daysBetween, formatLakh, getPersonaLabel, getStageLabel, getSessionQualityScore, getQualityColor } from '@/lib/admin-utils'
+import { daysBetween, formatLakh, getPersonaLabel, getStageLabel, getSessionQualityScore, getQualityColor, getBuyerDisplayName } from '@/lib/admin-utils'
 import { auth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
@@ -101,7 +101,10 @@ export default async function BuyersPage({
     sessions = await prisma.chatSession.findMany({
       orderBy: { lastMessageAt: 'desc' },
       take: buyerLimit + 1,
-      include: { _count: { select: { messages: true } } },
+      include: {
+        _count: { select: { messages: true } },
+        user: { select: { name: true, email: true } },
+      },
     })
   } catch (err) { console.error('Buyers fetch error:', err) }
   const hasMoreBuyers = sessions.length > buyerLimit
@@ -118,6 +121,7 @@ export default async function BuyersPage({
         include: {
           _count: { select: { messages: true } },
           messages: { orderBy: { createdAt: 'asc' }, take: 1, select: { content: true, role: true } },
+          user: { select: { name: true, email: true } },
         },
       })
     } catch (err) { console.error('Chat logs fetch error:', err) }
@@ -128,6 +132,7 @@ export default async function BuyersPage({
           where: { id: selectedSessionId },
           include: {
             messages: { orderBy: { createdAt: 'asc' } },
+            user: { select: { name: true, email: true } },
           },
         })
       } catch (err) { console.error('Session fetch error:', err) }
@@ -181,8 +186,9 @@ export default async function BuyersPage({
                         const days = daysBetween(session.lastMessageAt)
                         const urgency = urgencyLabel(days, session.buyerStage)
                         const risk = getLeakageScore(session)
+                        const buyerName = getBuyerDisplayName(session, 20)
                         return (
-                          <Link key={session.id} href={`/admin/buyers/${session.id}`}>
+                          <Link key={session.id} href={`/admin/buyers/${session.id}`} aria-label={`Open buyer ${buyerName}`}>
                             <div className="rounded-xl p-2.5 transition-all hover:scale-[1.02]" style={{ background: hotStage ? 'rgba(251,191,36,0.06)' : '#111827', border: `1px solid ${hotStage ? 'rgba(251,191,36,0.15)' : 'rgba(255,255,255,0.07)'}` }}>
                               <div className="flex items-center justify-between mb-1">
                                 <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-semibold" style={{ background: 'rgba(96,165,250,0.15)', color: '#60A5FA' }}>
@@ -192,7 +198,8 @@ export default async function BuyersPage({
                                   <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full" style={{ color: urgencyColor(days) === '#F87171' ? '#F87171' : '#FBBF24', background: urgencyColor(days) === '#F87171' ? 'rgba(248,113,113,0.15)' : 'rgba(251,191,36,0.15)' }}>{urgency}</span>
                                 )}
                               </div>
-                              <p className="text-[11px] font-medium text-white truncate">{getPersonaLabel(session.buyerPersona)} · {session.buyerConfig ?? '—'}</p>
+                              <p className="text-[11px] font-semibold text-white truncate" title={buyerName}>{buyerName}</p>
+                              <p className="text-[10px] truncate" style={{ color: '#9CA3AF' }}>{getPersonaLabel(session.buyerPersona)} · {session.buyerConfig ?? '—'}</p>
                               <p className="text-[10px] mt-0.5" style={{ color: '#6B7280' }}>{session.buyerBudget ? `₹${formatLakh(session.buyerBudget)}` : 'Budget ?'} · {days}d ago</p>
                               <div className="mt-1 flex items-center gap-1.5">
                                 <LeakageBadge score={risk} />
@@ -235,15 +242,20 @@ export default async function BuyersPage({
                     const days = daysBetween(session.lastMessageAt)
                     const urgency = urgencyLabel(days, session.buyerStage)
                     const risk = getLeakageScore(session)
+                    const buyerName = getBuyerDisplayName(session, 30)
                     return (
                       <tr key={session.id} className="hover:bg-white/5 transition-colors cursor-pointer" style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
                         <td className="py-2.5 px-3">
-                          <Link href={`/admin/buyers/${session.id}`} className="flex items-center gap-2">
+                          <Link
+                            href={`/admin/buyers/${session.id}`}
+                            aria-label={`Open buyer ${buyerName}`}
+                            className="flex items-center gap-2"
+                          >
                             <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-semibold flex-shrink-0" style={{ background: 'rgba(96,165,250,0.15)', color: '#60A5FA' }}>
                               {getPersonaLabel(session.buyerPersona).charAt(0)}
                             </div>
-                            <span className="font-medium text-white hover:text-[#60A5FA] whitespace-nowrap transition-colors">
-                              {session.customName || (session.buyerBudget ? `₹${Math.round(session.buyerBudget/100000)}L · ${session.buyerConfig ?? ''}` : session.id.slice(0, 8))}…
+                            <span className="font-medium text-white hover:text-[#60A5FA] whitespace-nowrap transition-colors" title={buyerName}>
+                              {buyerName}
                             </span>
                           </Link>
                         </td>
@@ -293,16 +305,24 @@ export default async function BuyersPage({
               {chatSessions.map(s => {
                 const firstMsg = s.messages?.[0]
                 const isSelected = s.id === selectedSessionId
+                const buyerName = getBuyerDisplayName(s, 30)
+                const subtitle = s.buyerBudget
+                  ? `₹${Math.round(s.buyerBudget / 100000)}L · ${s.buyerConfig ?? 'buyer'}`
+                  : firstMsg ? firstMsg.content.slice(0, 50) + '…' : 'New session'
                 return (
                   <Link key={s.id} href={`/admin/buyers?tab=chat-logs&session=${s.id}`}
+                    aria-label={`View chat for ${buyerName}`}
                     className="block px-4 py-3 transition-colors hover:bg-white/5"
                     style={{ borderBottom: '1px solid rgba(255,255,255,0.04)', background: isSelected ? 'rgba(96,165,250,0.08)' : '' }}>
                     <div className="flex items-center justify-between mb-1">
                       <StageBadge stage={s.buyerStage} />
                       <span className="text-[10px]" style={{ color: '#4B5563' }}>{s._count.messages} msgs</span>
                     </div>
-                    <p className="text-[11px] text-white truncate mb-0.5">
-                      {s.customName || (s.buyerBudget ? `₹${Math.round(s.buyerBudget/100000)}L · ${s.buyerConfig ?? 'buyer'}` : firstMsg ? firstMsg.content.slice(0, 50) + '…' : 'New session')}
+                    <p className="text-[11px] font-semibold text-white truncate" title={buyerName}>
+                      {buyerName}
+                    </p>
+                    <p className="text-[10px] truncate mb-0.5" style={{ color: '#9CA3AF' }}>
+                      {subtitle}
                     </p>
                     <p className="text-[10px]" style={{ color: '#4B5563' }}>
                       {new Date(s.lastMessageAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
@@ -321,9 +341,11 @@ export default async function BuyersPage({
               <>
                 <div className="px-4 py-3 flex items-center justify-between" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
                   <div>
-                    <p className="text-[12px] font-medium text-white">{getPersonaLabel(selectedSession.buyerPersona)} · {selectedSession.buyerConfig ?? '—'}</p>
+                    <p className="text-[12px] font-semibold text-white" title={getBuyerDisplayName(selectedSession)}>
+                      {getBuyerDisplayName(selectedSession, 40)}
+                    </p>
                     <p className="text-[10px]" style={{ color: '#6B7280' }}>
-                      {selectedSession.messages.length} messages · {getStageLabel(selectedSession.buyerStage)}
+                      {getPersonaLabel(selectedSession.buyerPersona)} · {selectedSession.buyerConfig ?? '—'} · {selectedSession.messages.length} messages · {getStageLabel(selectedSession.buyerStage)}
                       {selectedSession.buyerBudget ? ` · ₹${formatLakh(selectedSession.buyerBudget)}` : ''}
                     </p>
                   </div>
