@@ -218,7 +218,10 @@ if (hasInjection) {
   // Separate flag for markdown abort — same behavior (fallback + skip persist)
   // but a distinct Sentry tag so admins can distinguish format drift from
   // the stricter contact/business leak aborts.
-  let streamAbortedByMarkdown = false
+  // Retained as const false after demoting NO_MARKDOWN from onChunk to
+  // audit-only. Kept to preserve the existing onFinish / wrapper branches
+  // without a larger refactor — they become dead branches but compile clean.
+  const streamAbortedByMarkdown = false
   // Buffer assembled from text-delta chunks so multi-chunk markdown patterns
   // (e.g. `**bol` + `d**`) still match. The onChunk regex needs cross-delta
   // context; a per-delta test would miss patterns that straddle deltas.
@@ -249,14 +252,15 @@ if (hasInjection) {
           Sentry.captureMessage('[BUSINESS_LEAK_DETECTED] Streaming halted mid-response', 'warning')
           throw new Error(BUSINESS_LEAK_ABORT_MSG)
         }
-        // NO_MARKDOWN — test against the rolling assembled buffer so
-        // patterns that straddle delta boundaries still match.
+        // NO_MARKDOWN — DEMOTED from onChunk abort to audit-only after a
+        // production incident where bullet-style replies ("\n* **Name**")
+        // tripped the regex mid-stream and the fallback was concatenated
+        // directly onto partial tokens ("...WestDekho, kuch problem hui").
+        // Markdown drift is a formatting polish issue, not a safety issue
+        // like CONTACT_LEAK / BUSINESS_LEAK — not worth truncating a
+        // response in-flight. Kept post-stream audit in response-checker.
+        // Buffer retained for potential future logging; not acted on here.
         streamBuffer += text
-        if (MARKDOWN_PATTERN.test(streamBuffer)) {
-          streamAbortedByMarkdown = true
-          Sentry.captureMessage('[MARKDOWN_DETECTED] Streaming halted mid-response', 'warning')
-          throw new Error(MARKDOWN_ABORT_MSG)
-        }
       }
     },
     onError: ({ error }) => {
