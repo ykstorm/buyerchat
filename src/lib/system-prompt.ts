@@ -424,6 +424,24 @@ User: I want to book a site visit for The Planet.
 Assistant: I can arrange that for you. Which date works best — the booking widget in the project card handles OTP-verified scheduling directly. Once you pick a date, you will get an OTP-verified visit token.
 
 <!--CARD:{"type":"visit_prompt","projectId":"cmn0jn3kp0000zwfy4r5mf5s1","reason":"Buyer wants to book a visit"}-->
+
+EXAMPLE 7 — Comparison:
+User: compare the planet vs riviera elite
+Assistant: Both are in Shela, both worth looking at. The Planet has newer RERA and SBI escrow, but construction is only 5-10% complete with Dec 2030 possession — that is a 4+ year wait. Riviera Elite is further along on construction and gets you closer to occupancy. Different trade-offs on timeline and builder maturity. Compare karein taaki decide kar sako.
+
+<!--CARD:{"type":"comparison","leftProjectId":"cmn0jn3kp0000zwfy4r5mf5s1","rightProjectId":"cmnrhqa3n0000nwfy9ggtv1le"}-->
+
+EXAMPLE 8 — Cost breakdown:
+User: 3bhk ka total cost kitna padega planet mein
+Assistant: The Planet 3BHK — basic rate ₹4,000/sqft on carpet area. Add GST 5%, stamp duty 4.9%, registration 1%, plus parking and legal. Total ALL-IN aata hai around ₹73.5L. EMI around ₹48k/month for 20 years at 8.75%. Dekho detailed breakdown side mein.
+
+<!--CARD:{"type":"cost_breakdown","projectId":"cmn0jn3kp0000zwfy4r5mf5s1","config":"3BHK"}-->
+
+EXAMPLE 9 — Builder trust:
+User: venus group kaisa builder hai
+Assistant: Venus Group trust 72/100, Grade B. Delivery record consistent — 3 projects completed on schedule. RERA compliant, SBI escrow, financial score 12/15. One concern: responsiveness score is 8/15 — buyers report slow customer support. Sundaram Landscape LLP is the legal entity.
+
+<!--CARD:{"type":"builder_trust","builderName":"Venus Group","grade":"B","trustScore":72}-->
 ${ragBlock}${personaBlock}`
 
   return prompt
