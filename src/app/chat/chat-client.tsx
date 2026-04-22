@@ -5,24 +5,18 @@ import { useSearchParams, useRouter } from 'next/navigation'
 import dynamic from 'next/dynamic'
 import { LazyMotion, domAnimation } from 'framer-motion'
 import ChatCenter, { type Message } from '@/components/chat/ChatCenter'
+import ChatRightPanel from '@/components/chat/ChatRightPanel'
 import type { ProjectType, ArtifactType, Artifact } from '@/lib/types/chat'
 
-// Sidebar + RightPanel are not needed for first paint on mobile (sidebar is
-// closed by default) or for the empty-artifact desktop view. Lazy-loading
-// them moves framer-motion swipe logic (ChatSidebar useMotionValue/animate)
-// and the 6 artifact renderers out of the initial bundle.
+// Sidebar stays lazy — closed by default, its framer-motion swipe logic
+// (useMotionValue/animate) is idle until the user opens it. RightPanel is
+// NOT lazy anymore: the outer-lazy + inner-lazy (artifact renderers) chain
+// made the first card render silently fail (empty-div loader ignored the
+// artifact prop on first message). The 6 artifact renderers inside
+// ChatRightPanel remain next/dynamic — I12's real bundle win survives.
 const ChatSidebar = dynamic(() => import('@/components/chat/ChatSidebar'), {
   ssr: false,
   loading: () => null,
-})
-const ChatRightPanel = dynamic(() => import('@/components/chat/ChatRightPanel'), {
-  ssr: false,
-  loading: () => (
-    <div
-      className="w-[380px] flex-shrink-0 h-full hidden lg:block"
-      style={{ borderLeft: '1px solid var(--border)', background: 'var(--bg-base)' }}
-    />
-  ),
 })
 
 let idCounter = 0

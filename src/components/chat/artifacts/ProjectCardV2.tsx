@@ -119,41 +119,82 @@ export default function ProjectCardV2({ project }: { project: ProjectType }) {
         </h2>
         <p className="text-[11px] mb-3" style={{ color: 'var(--text-secondary)' }}>{project.builderName}</p>
 
-        {/* Price */}
-        {project.pricePerSqft ? (
-          <div className="mb-3">
-            <div className="flex items-baseline gap-2">
-              <span className="text-[22px] font-bold text-[#1B4F8A]" style={{ fontFamily: 'var(--font-mono)' }}>
-                ₹{project.pricePerSqft.toLocaleString('en-IN')}
-              </span>
-              <span className="text-[11px] text-[#A8A29E]">/sqft SBU</span>
-            </div>
-            {project.loadingFactor && (
-              <p className="text-[10px] text-[#A8A29E]">₹{Math.round(project.pricePerSqft * (project.loadingFactor ?? 1.37)).toLocaleString('en-IN')}/sqft Carpet</p>
-            )}
-            {project.allInPrice && project.allInPrice > 0 && (
-              <m.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                className="mt-2 rounded-xl px-3 py-2"
-                style={{ background: 'var(--bg-accent-green)', border: '1px solid var(--border-accent-green)' }}
-              >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-[9px] font-semibold uppercase tracking-wider" style={{ color: 'var(--text-accent-green)' }}>ALL-IN</p>
-                    <p className="text-[16px] font-bold" style={{ color: 'var(--text-accent-green)' }}>₹{Math.round(project.allInPrice / 100000)}L</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-[9px] uppercase tracking-wider" style={{ color: 'var(--text-accent-green-light)' }}>EMI ~</p>
-                    <p className="text-[12px] font-semibold" style={{ color: 'var(--text-accent-green)' }}>₹{emi(project.allInPrice).toLocaleString('en-IN')}/mo</p>
-                  </div>
+        {/* Price — 5-branch fallback: pricePerSqft → min/max range → allInPrice → priceNote → "Price on request".
+            priceNote is always rendered as a secondary line when a structured price branch fires, since it's the most reliable field (16/16 projects populate it). */}
+        {(() => {
+          const hasPps = !!(project.pricePerSqft && project.pricePerSqft > 0)
+          const hasRange = project.minPrice > 0 && project.maxPrice > 0
+          const hasAllIn = !!(project.allInPrice && project.allInPrice > 0)
+          const AllInBlock = hasAllIn ? (
+            <m.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              className="mt-2 rounded-xl px-3 py-2"
+              style={{ background: 'var(--bg-accent-green)', border: '1px solid var(--border-accent-green)' }}
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-[9px] font-semibold uppercase tracking-wider" style={{ color: 'var(--text-accent-green)' }}>ALL-IN</p>
+                  <p className="text-[16px] font-bold" style={{ color: 'var(--text-accent-green)' }}>₹{Math.round((project.allInPrice ?? 0) / 100000)}L</p>
                 </div>
-              </m.div>
-            )}
-          </div>
-        ) : (
-          <p className="text-[13px] text-[#A8A29E] mb-3">Price on request</p>
-        )}
+                <div className="text-right">
+                  <p className="text-[9px] uppercase tracking-wider" style={{ color: 'var(--text-accent-green-light)' }}>EMI ~</p>
+                  <p className="text-[12px] font-semibold" style={{ color: 'var(--text-accent-green)' }}>₹{emi(project.allInPrice ?? 0).toLocaleString('en-IN')}/mo</p>
+                </div>
+              </div>
+            </m.div>
+          ) : null
+          const NoteLine = project.priceNote ? (
+            <p className="text-[10px] mt-1.5 italic" style={{ color: 'var(--text-secondary)' }}>{project.priceNote}</p>
+          ) : null
+
+          if (hasPps) {
+            return (
+              <div className="mb-3">
+                <div className="flex items-baseline gap-2">
+                  <span className="text-[22px] font-bold text-[#1B4F8A]" style={{ fontFamily: 'var(--font-mono)' }}>
+                    ₹{project.pricePerSqft!.toLocaleString('en-IN')}
+                  </span>
+                  <span className="text-[11px] text-[#A8A29E]">/sqft {project.pricePerSqftType ?? 'SBU'}</span>
+                </div>
+                {project.loadingFactor && (
+                  <p className="text-[10px] text-[#A8A29E]">₹{Math.round(project.pricePerSqft! * (project.loadingFactor ?? 1.37)).toLocaleString('en-IN')}/sqft Carpet</p>
+                )}
+                {AllInBlock}
+                {NoteLine}
+              </div>
+            )
+          }
+          if (hasRange) {
+            const min = Math.round(project.minPrice / 100000)
+            const max = Math.round(project.maxPrice / 100000)
+            const label = min === max ? `₹${min}L` : `₹${min}–${max}L`
+            return (
+              <div className="mb-3">
+                <div className="flex items-baseline gap-2">
+                  <span className="text-[22px] font-bold text-[#1B4F8A]" style={{ fontFamily: 'var(--font-mono)' }}>{label}</span>
+                  <span className="text-[11px] text-[#A8A29E]">total</span>
+                </div>
+                {AllInBlock}
+                {NoteLine}
+              </div>
+            )
+          }
+          if (hasAllIn) {
+            return (
+              <div className="mb-3">
+                {AllInBlock}
+                {NoteLine}
+              </div>
+            )
+          }
+          if (project.priceNote) {
+            return (
+              <p className="text-[13px] mb-3" style={{ color: 'var(--text-secondary)' }}>{project.priceNote}</p>
+            )
+          }
+          return <p className="text-[13px] text-[#A8A29E] mb-3">Price on request</p>
+        })()}
 
         {/* Meta row */}
         <div className="flex gap-2 mb-3 min-w-0">
