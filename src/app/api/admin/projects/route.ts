@@ -5,6 +5,7 @@ import { auth } from '@/lib/auth'
 import { sanitizeAdminInput } from '@/lib/sanitize'
 import { logAdminAction } from '@/lib/audit-log'
 import { invalidateContextCache } from '@/lib/context-cache'
+import { invalidateAdminCache } from '@/lib/admin-cache'
 import { embedProject } from '@/lib/rag/embed-writer'
 
 const ProjectCreateSchema = z.object({
@@ -82,6 +83,7 @@ export async function POST(req: NextRequest) {
       }
     })
     await invalidateContextCache()
+    await invalidateAdminCache('projects:')
     await logAdminAction('create', 'project', { id: project.id, projectName: project.projectName }, session!.user!.email!)
     // Fire-and-forget embedding — OpenAI failure must never block the admin save.
     embedProject(project.id).catch((err) =>

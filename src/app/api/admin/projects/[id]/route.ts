@@ -4,6 +4,7 @@ import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { sanitizeAdminInput } from '@/lib/sanitize'
 import { invalidateContextCache } from '@/lib/context-cache'
+import { invalidateAdminCache } from '@/lib/admin-cache'
 import { logAdminAction } from '@/lib/audit-log'
 import { computeGrade } from '@/lib/grade'
 import { embedProject } from '@/lib/rag/embed-writer'
@@ -134,6 +135,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     }
 
     await invalidateContextCache()
+    await invalidateAdminCache('projects:')
     await logAdminAction('update', 'project', { id, projectName: project.projectName }, session!.user!.email!)
     // Fire-and-forget embedding — OpenAI failure must never block the admin save.
     embedProject(project.id).catch((err) =>
@@ -155,6 +157,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
     const { id } = await params
     const project = await prisma.project.findUnique({ where: { id }, select: { projectName: true } })
     await prisma.project.update({ where: { id }, data: { isActive: false } })
+    await invalidateAdminCache('projects:')
     await logAdminAction('delete', 'project', { id, projectName: project?.projectName ?? '—' }, session!.user!.email!)
     return NextResponse.json({ success: true })
   } catch (err) {

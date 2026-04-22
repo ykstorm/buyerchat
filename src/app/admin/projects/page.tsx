@@ -4,8 +4,49 @@ import { auth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import MatchedBuyersButton from '@/components/admin/MatchedBuyersButton'
+import { getAdminCache, setAdminCache } from '@/lib/admin-cache'
 
 export const dynamic = 'force-dynamic'
+
+// Fields required to render the admin list view. Heavy columns (charges JSON,
+// amenities/unitTypes arrays, latitude/longitude, scoring breakdowns, notes
+// other than honestConcern) are deliberately excluded — they are only needed
+// on `/admin/projects/[id]`. See I21 perf fix.
+type ProjectRow = {
+  id: string
+  projectName: string
+  builderName: string
+  microMarket: string
+  constructionStatus: string
+  minPrice: number
+  maxPrice: number
+  pricePerSqft: number
+  reraNumber: string
+  isActive: boolean
+  decisionTag: string | null
+  honestConcern: string | null
+  builder: {
+    brandName: string
+    grade: string
+    totalTrustScore: number
+  } | null
+}
+
+const PROJECT_LIST_SELECT = {
+  id: true,
+  projectName: true,
+  builderName: true,
+  microMarket: true,
+  constructionStatus: true,
+  minPrice: true,
+  maxPrice: true,
+  pricePerSqft: true,
+  reraNumber: true,
+  isActive: true,
+  decisionTag: true,
+  honestConcern: true,
+  builder: { select: { brandName: true, grade: true, totalTrustScore: true } },
+} as const
 
 export default async function ProjectsPage({
   searchParams,
@@ -19,18 +60,29 @@ export default async function ProjectsPage({
   const { limit: limitParam } = await searchParams
   const projectLimit = Math.min(Number(limitParam) || 50, 500)
 
-  let projects: any[] = []
+  let projects: ProjectRow[] = []
   let hasMoreProjects = false
   try {
-    projects = await prisma.project.findMany({
-      include: {
-        builder: { select: { brandName: true, grade: true, totalTrustScore: true } }
-      },
-      orderBy: { createdAt: 'desc' },
-      take: projectLimit + 1,
-    })
-    hasMoreProjects = projects.length > projectLimit
-    if (hasMoreProjects) projects = projects.slice(0, projectLimit)
+    // Cache the trimmed list for 60s. Keyed by limit so /admin/projects?limit=N
+    // variants do not collide. Invalidated on Project POST/PUT/DELETE via
+    // `invalidateAdminCache('projects:')` — see src/app/api/admin/projects/*.
+    const cacheKey = `projects:list:${projectLimit}`
+    type Cached = { projects: ProjectRow[]; hasMoreProjects: boolean }
+    const cached = await getAdminCache<Cached>(cacheKey)
+    if (cached) {
+      projects = cached.projects
+      hasMoreProjects = cached.hasMoreProjects
+    } else {
+      const rows = await prisma.project.findMany({
+        select: PROJECT_LIST_SELECT,
+        orderBy: { createdAt: 'desc' },
+        take: projectLimit + 1,
+      })
+      hasMoreProjects = rows.length > projectLimit
+      projects = hasMoreProjects ? rows.slice(0, projectLimit) : rows
+      // Fire-and-forget cache write — never block the render on Redis latency.
+      setAdminCache<Cached>(cacheKey, { projects, hasMoreProjects }, 60).catch(() => {})
+    }
   } catch (err) {
     console.error('Projects fetch error:', err)
   }
