@@ -51,6 +51,8 @@ model Project {
   siteVisits          SiteVisit[]
   deals               Deal[]
   savedBy             SavedProject[]
+  pricing             ProjectPricing?
+  pricingHistory      PricingHistory[]
 
   @@index([microMarket])
   @@index([isActive])
@@ -306,4 +308,84 @@ model Embedding {
 
   @@unique([sourceType, sourceId])
   @@index([sourceType, sourceId])
+}
+
+model ProjectPricing {
+  id                String   @id @default(cuid())
+  projectId         String   @unique
+  project           Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  propertyType      String   // "flat" | "villa"
+
+  // FLAT fields (nullable — only used when propertyType=="flat")
+  basicRatePerSqft  Int?
+  plcRatePerSqft    Int?
+  floorRisePerSqft  Int?
+  floorRiseFrom     Int?     @default(1)
+  unitFloorNo       Int?
+
+  // VILLA fields (nullable — only used when propertyType=="villa")
+  landRatePerSqyd   Int?
+  consRatePerSqyd   Int?
+  plcRatePerSqyd    Int?
+
+  // Dev & Govt
+  audaGebAecCharge  Int?
+  developmentFixed  Int?
+  infrastructure    Int?
+
+  // Maintenance & Deposits
+  societyMaintDeposit   Int?
+  advanceRunningMaint   Int?
+  townshipDeposit       Int?
+  townshipAdvance       Int?
+
+  // Fixed Charges
+  carParkingAmount  Int?
+  carParkingCount   Int?     @default(1)
+  clubMembership    Int?
+  legalCharges      Int?
+  otherCharges      Json?    // [{ label: string, amount: number }]
+
+  // Tax & Stamp
+  saleDeedAmount      Int?
+  gstPercent          Float  @default(5.0)
+  stampDutyPercent    Float  @default(4.9)
+  registrationPercent Float  @default(1.0)
+
+  // Computed (denormalized for fast query)
+  basicCostTotal    Int?
+  plcTotal          Int?
+  devGovtTotal      Int?
+  maintenanceTotal  Int?
+  fixedChargesTotal Int?
+  stampRegTotal     Int?
+  gstTotal          Int?
+  grandTotalAllIn   Int?
+
+  // Metadata
+  lastUpdated       DateTime @updatedAt
+  updatedBy         String?
+  pricingVersion    Int      @default(1)
+
+  history           PricingHistory[]
+
+  @@index([projectId])
+}
+
+model PricingHistory {
+  id                String   @id @default(cuid())
+  pricingId         String
+  pricing           ProjectPricing @relation(fields: [pricingId], references: [id], onDelete: Cascade)
+  projectId         String
+  project           Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  basicRatePerSqft  Int?
+  grandTotalAllIn   Int?
+  snapshotJson      Json     // full pricing snapshot at this point
+  changedAt         DateTime @default(now())
+  changedBy         String?
+  changeReason      String?
+
+  @@index([projectId, changedAt])
 }

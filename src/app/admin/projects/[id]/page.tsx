@@ -303,6 +303,13 @@ export default function ProjectEditPage() {
           </h1>
         </div>
         <div className="flex items-center gap-2">
+          {!isNew && (
+            <a href={`/admin/projects/${id}/pricing`}
+              aria-label="Open full pricing Step 3 editor"
+              className="text-[12px] text-[#60A5FA] border border-[#60A5FA]/30 px-3 py-1.5 rounded-lg hover:bg-[#60A5FA]/10 transition-colors">
+              Full pricing editor →
+            </a>
+          )}
           <button type="button" onClick={() => router.back()}
             className="text-[12px] text-[#9CA3AF] border border-white/10 px-3 py-1.5 rounded-lg hover:bg-white/5 transition-colors">
             Cancel
