@@ -1,5 +1,5 @@
 "use client"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { signIn } from "next-auth/react"
 
 interface VisitBookingProps {
@@ -9,6 +9,18 @@ interface VisitBookingProps {
 
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+
+// Draft persistence — survives OAuth full-page reload.
+const DRAFT_TTL_MS = 30 * 60 * 1000 // 30 min
+const draftKey = (projectId: string) => `buyerchat:visitdraft:${projectId}`
+
+type VisitDraft = {
+  name: string
+  phone: string
+  selectedDateIso: string | null
+  pending: boolean
+  ts: number
+}
 
 function getDatePills(): { label: string; date: Date }[] {
   return Array.from({ length: 7 }).map((_, i) => {
@@ -29,6 +41,64 @@ export function VisitBooking({ projectId, projectName }: VisitBookingProps) {
   const pills = getDatePills()
   const canSubmit = !!selectedDate && name.trim().length > 0 && phone.trim().length === 10
 
+  // On mount: rehydrate draft from sessionStorage if the buyer was mid-OAuth.
+  useEffect(() => {
+    if (typeof window === 'undefined' || !projectId) return
+    try {
+      const raw = window.sessionStorage.getItem(draftKey(projectId))
+      if (!raw) return
+      const draft = JSON.parse(raw) as VisitDraft
+      if (!draft || typeof draft !== 'object') return
+      const fresh = typeof draft.ts === 'number' && Date.now() - draft.ts < DRAFT_TTL_MS
+      if (!fresh) {
+        window.sessionStorage.removeItem(draftKey(projectId))
+        return
+      }
+      if (draft.name) setName(draft.name)
+      if (draft.phone) setPhone(draft.phone)
+      if (draft.selectedDateIso) {
+        const d = new Date(draft.selectedDateIso)
+        if (!Number.isNaN(d.getTime())) setSelectedDate(d)
+      }
+      if (draft.pending) {
+        // Clear the pending flag but keep the draft in storage until booking completes
+        // or the user navigates away. This way a second OAuth attempt re-rehydrates.
+        window.sessionStorage.setItem(
+          draftKey(projectId),
+          JSON.stringify({ ...draft, pending: false, ts: Date.now() })
+        )
+      }
+    } catch {
+      /* storage unavailable — no-op */
+    }
+    // Only run on projectId change (mount-equivalent for this artifact)
+  }, [projectId])
+
+  const persistDraft = (pending: boolean) => {
+    if (typeof window === 'undefined' || !projectId) return
+    try {
+      const draft: VisitDraft = {
+        name,
+        phone,
+        selectedDateIso: selectedDate ? selectedDate.toISOString() : null,
+        pending,
+        ts: Date.now(),
+      }
+      window.sessionStorage.setItem(draftKey(projectId), JSON.stringify(draft))
+    } catch {
+      /* storage unavailable — no-op */
+    }
+  }
+
+  const clearDraft = () => {
+    if (typeof window === 'undefined' || !projectId) return
+    try {
+      window.sessionStorage.removeItem(draftKey(projectId))
+    } catch {
+      /* no-op */
+    }
+  }
+
   const handleConfirm = async () => {
     if (!canSubmit || status === 'loading') return
     setStatus('loading')
@@ -47,6 +117,7 @@ export function VisitBooking({ projectId, projectName }: VisitBookingProps) {
         const data = await res.json()
         setToken(data.visitToken ?? 'Already booked')
         setStatus('success')
+        clearDraft()
         return
       }
       if (res.status === 401) {
@@ -80,6 +151,7 @@ export function VisitBooking({ projectId, projectName }: VisitBookingProps) {
       }
       setToken(data.visitToken)
       setStatus('success')
+      clearDraft()
     } catch (err) {
       setStatus('error')
       setErrorMsg(err instanceof Error ? err.message : 'Network error. Please try again.')
@@ -117,8 +189,11 @@ export function VisitBooking({ projectId, projectName }: VisitBookingProps) {
             type="button"
             aria-label="Sign in with Google to book visit"
             onClick={() => {
-              // Preserve draft: return to the exact chat URL the buyer was on,
-              // so after OAuth they land back on the same artifact state.
+              // Preserve draft: persist name/phone/date to sessionStorage so that
+              // after the OAuth full-page reload the buyer returns to the same
+              // artifact with their entries intact. Return URL is the chat page
+              // so artifact state re-renders naturally.
+              persistDraft(true)
               const callbackUrl = typeof window !== 'undefined' ? window.location.href : '/chat'
               signIn('google', { callbackUrl })
             }}

@@ -7,11 +7,17 @@ import type { ProjectType } from '@/lib/types/chat'
 const formatL = (n: number | null | undefined) => n ? Math.round(n / 100000) : null
 const emi = (allIn: number) => Math.round(allIn * 0.00729 * Math.pow(1.00729, 240) / (Math.pow(1.00729, 240) - 1))
 
+// Pending-save persistence — survives the OAuth full-page reload so the save
+// auto-retries once the buyer is authenticated.
+const PENDING_SAVE_TTL_MS = 10 * 60 * 1000 // 10 min
+const pendingSaveKey = (projectId: string) => `buyerchat:pendingsave:${projectId}`
+
 export default function ProjectCardV2({ project }: { project: ProjectType }) {
   const [saved, setSaved] = useState(false)
   const [saving, setSaving] = useState(false)
   const [hovered, setHovered] = useState(false)
   const [showSignInPrompt, setShowSignInPrompt] = useState(false)
+  const [showSavedToast, setShowSavedToast] = useState(false)
   const x = useMotionValue(0)
   const y = useMotionValue(0)
   const rotateX = useTransform(y, [-100, 100], [4, -4])
@@ -20,9 +26,59 @@ export default function ProjectCardV2({ project }: { project: ProjectType }) {
 
   useEffect(() => {
     let cancelled = false
-    fetch('/api/saved').then(r => r.json()).then(data => {
+    // Check sessionStorage for a pending-save intent (post-OAuth return).
+    let pending: { ts: number } | null = null
+    if (typeof window !== 'undefined') {
+      try {
+        const raw = window.sessionStorage.getItem(pendingSaveKey(project.id))
+        if (raw) {
+          const parsed = JSON.parse(raw) as { ts: number }
+          if (parsed && typeof parsed.ts === 'number' && Date.now() - parsed.ts < PENDING_SAVE_TTL_MS) {
+            pending = parsed
+          } else {
+            window.sessionStorage.removeItem(pendingSaveKey(project.id))
+          }
+        }
+      } catch { /* no-op */ }
+    }
+
+    fetch('/api/saved').then(async r => {
       if (cancelled) return
-      if ((data.savedProjects ?? []).some((s: any) => s.projectId === project.id)) setSaved(true)
+      if (r.status !== 200) {
+        // Not signed in — can't auto-retry; leave pending-save in storage so a
+        // subsequent authed mount can still fire.
+        return null
+      }
+      const data = await r.json()
+      const alreadySaved = (data.savedProjects ?? []).some((s: any) => s.projectId === project.id)
+      if (alreadySaved) {
+        setSaved(true)
+        // Clean up stale pending-save key — no retry needed.
+        if (pending && typeof window !== 'undefined') {
+          try { window.sessionStorage.removeItem(pendingSaveKey(project.id)) } catch {}
+        }
+        return null
+      }
+      // Signed in, not saved — auto-retry if we had a pending intent.
+      if (pending) {
+        try {
+          const saveRes = await fetch('/api/saved', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ projectId: project.id }),
+          })
+          if (!cancelled && (saveRes.ok || saveRes.status === 409)) {
+            setSaved(true)
+            setShowSavedToast(true)
+            setTimeout(() => { if (!cancelled) setShowSavedToast(false) }, 2000)
+            window.dispatchEvent(new CustomEvent('saved-projects-updated'))
+          }
+        } catch { /* no-op */ }
+        if (typeof window !== 'undefined') {
+          try { window.sessionStorage.removeItem(pendingSaveKey(project.id)) } catch {}
+        }
+      }
+      return null
     }).catch(() => {})
     return () => { cancelled = true }
   }, [project.id])
@@ -126,6 +182,15 @@ export default function ProjectCardV2({ project }: { project: ProjectType }) {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
             onClick={() => {
+              // Persist intent to retry the save after OAuth round-trip.
+              if (typeof window !== 'undefined') {
+                try {
+                  window.sessionStorage.setItem(
+                    pendingSaveKey(project.id),
+                    JSON.stringify({ ts: Date.now() })
+                  )
+                } catch { /* no-op */ }
+              }
               const callbackUrl = typeof window !== 'undefined' ? window.location.href : '/chat'
               signIn('google', { callbackUrl })
             }}
@@ -135,6 +200,20 @@ export default function ProjectCardV2({ project }: { project: ProjectType }) {
           >
             Sign in to save →
           </m.button>
+        )}
+        {/* Saved toast — appears for 2s when a pending save auto-completes post-OAuth */}
+        {showSavedToast && (
+          <m.div
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            aria-label="Project saved"
+            role="status"
+            className="absolute top-12 right-3 px-2.5 py-1 rounded-full text-[10px] font-semibold backdrop-blur-sm shadow-md"
+            style={{ background: 'var(--bg-accent-green)', color: 'var(--text-accent-green)', border: '1px solid var(--border-accent-green)' }}
+          >
+            Saved ✓
+          </m.div>
         )}
         {/* Location */}
         <div className="absolute bottom-3 left-3">

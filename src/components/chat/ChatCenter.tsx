@@ -125,6 +125,13 @@ export type Message = {
   id: string
   role: 'user' | 'assistant'
   content: string
+  // Optional inline action (e.g. "Sign in to continue" on a 401). Rendered as
+  // a pill button below the bubble content. Purely presentational — the
+  // handler is wired up by the owning component via onMessageAction.
+  action?: {
+    kind: 'signin'
+    label: string
+  }
 }
 
 /* ── Stable markdown component overrides (created once, never re-allocated) ── */
@@ -136,7 +143,7 @@ const MD_COMPONENTS = {
 }
 
 /* ── Memoized single message bubble — only re-renders when its content changes ── */
-const ChatBubble = memo(function ChatBubble({ msg, isGrouped }: { msg: Message; isGrouped: boolean }) {
+const ChatBubble = memo(function ChatBubble({ msg, isGrouped, onAction }: { msg: Message; isGrouped: boolean; onAction?: (msg: Message) => void }) {
   return (
     <div className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'} ${isGrouped ? 'mt-0.5' : 'mt-4'}`}>
       {msg.role === 'assistant' && !isGrouped && (
@@ -161,6 +168,17 @@ const ChatBubble = memo(function ChatBubble({ msg, isGrouped }: { msg: Message; 
           <ReactMarkdown components={MD_COMPONENTS}>{msg.content}</ReactMarkdown>
         )}
       </div>
+      {msg.action && msg.role === 'assistant' && (
+        <button
+          type="button"
+          onClick={() => onAction?.(msg)}
+          aria-label={msg.action.label}
+          className="mt-2 ml-8 px-3 py-1.5 rounded-full text-[11px] font-semibold transition-opacity hover:opacity-90"
+          style={{ background: '#1B4F8A', color: '#fff', border: '1px solid #1B4F8A' }}
+        >
+          {msg.action.label} →
+        </button>
+      )}
     </div>
   )
 })
@@ -190,6 +208,9 @@ type Props = {
   onRetry?: () => void
   compareToast?: string | null
   buyerStage?: string | null
+  onMessageAction?: (msg: Message) => void
+  userName?: string | null
+  userImage?: string | null
 }
 
 const STARTERS = [
@@ -201,7 +222,7 @@ const STARTERS = [
   "I'm confused — help me decide",
 ]
 
-export default function ChatCenter({ messages, input, handleInputChange, handleSubmit, isLoading, append, loadingSession, artifact, builders = [], showArtifact, onToggleArtifact, canGoBack, canGoForward, onArtifactBack, onArtifactForward, artifactCurrent, artifactTotal, artifactHistory, onSelectArtifact, compareToast, buyerStage }: Props) {
+export default function ChatCenter({ messages, input, handleInputChange, handleSubmit, isLoading, append, loadingSession, artifact, builders = [], showArtifact, onToggleArtifact, canGoBack, canGoForward, onArtifactBack, onArtifactForward, artifactCurrent, artifactTotal, artifactHistory, onSelectArtifact, compareToast, buyerStage, onMessageAction, userName, userImage }: Props) {
   const resolveBuilder = (a: Artifact | null): BuilderAIContext | null => {
     if (!a || a.type !== 'builder_trust') return null
     if (a.builder) return a.builder
@@ -396,7 +417,7 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
 
             return (
               <div key={msg.id}>
-                <ChatBubble msg={msg} isGrouped={isGrouped} />
+                <ChatBubble msg={msg} isGrouped={isGrouped} onAction={onMessageAction} />
                 {/* Context-aware chips — only after last AI message */}
                 {isLastAI && (
                   <div className="flex flex-wrap gap-1.5 mt-2 ml-8">
@@ -619,9 +640,52 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
         )}
       </AnimatePresence>
 
-      {/* Artifact history button — top right of chat */}
+      {/* Top-right user chip — visible confirmation of logged-in state.
+          Shows user avatar (or initial) when signed in, else a subtle
+          "Sign in" pill. Not a button when signed in — purely visual. */}
+      <div
+        className="absolute top-3 right-3 z-40 flex items-center"
+        aria-hidden={false}
+      >
+        {userName ? (
+          userImage ? (
+            <img
+              src={userImage}
+              alt={userName}
+              aria-label={userName}
+              title={userName}
+              width={28}
+              height={28}
+              className="w-7 h-7 rounded-full shadow-sm"
+              style={{ border: '1px solid var(--border)', background: 'var(--bg-surface)' }}
+            />
+          ) : (
+            <div
+              aria-label={userName}
+              title={userName}
+              role="img"
+              className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-semibold shadow-sm"
+              style={{ background: 'var(--bg-subtle)', color: 'var(--text-primary)', border: '1px solid var(--border)' }}
+            >
+              {userName.trim().charAt(0).toUpperCase()}
+            </div>
+          )
+        ) : (
+          <button
+            type="button"
+            aria-label="Sign in with Google"
+            onClick={() => onMessageAction?.({ id: 'topbar-signin', role: 'assistant', content: '', action: { kind: 'signin', label: 'Sign in' } })}
+            className="px-3 py-1 rounded-full text-[11px] font-medium shadow-sm transition-opacity hover:opacity-90"
+            style={{ background: 'var(--bg-surface)', color: 'var(--text-secondary)', border: '1px solid var(--border)' }}
+          >
+            Sign in
+          </button>
+        )}
+      </div>
+
+      {/* Artifact history button — top right of chat (shifted left to clear the avatar chip) */}
       {artifactHistory && artifactHistory.length > 0 && messages.length > 0 && !showArtifact && (
-        <div className="lg:hidden absolute top-3 right-3 z-40">
+        <div className="lg:hidden absolute top-3 right-14 z-40">
           <div className="relative" ref={artifactMenuRef}>
             <button
               type="button"

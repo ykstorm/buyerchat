@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef, FormEvent } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
+import { signIn } from 'next-auth/react'
 import dynamic from 'next/dynamic'
 import { LazyMotion, domAnimation } from 'framer-motion'
 import ChatCenter, { type Message } from '@/components/chat/ChatCenter'
@@ -194,8 +195,14 @@ export default function ChatClient({
 
       if (!res.ok || !res.body) {
         let userMsg = 'Something went wrong. Please try again.'
-        if (res.status === 429) {
-          userMsg = 'You are sending messages too fast. Please wait a minute and try again.'
+        let action: Message['action'] | undefined
+        if (res.status === 401) {
+          // JWT expired mid-session. Don't treat as a generic failure —
+          // surface a sign-in CTA inline so the buyer can recover.
+          userMsg = 'Session expired. Sign in to continue.'
+          action = { kind: 'signin', label: 'Sign in to continue' }
+        } else if (res.status === 429) {
+          userMsg = "You're sending messages too fast. Please wait a moment."
         } else if (res.status === 503) {
           userMsg = 'Service temporarily unavailable. Please try again in a moment.'
         } else if (res.status === 400) {
@@ -204,8 +211,10 @@ export default function ChatClient({
             if (typeof errData?.error === 'string') userMsg = errData.error
           } catch {}
         }
-        setMessages(prev => [...prev, { id: assistantId, role: 'assistant', content: userMsg }])
-        setLastFailedMsg(userContent)
+        setMessages(prev => [...prev, { id: assistantId, role: 'assistant', content: userMsg, action }])
+        // 401 is a recoverable auth state — don't mark as "last failed" (retry
+        // won't help without sign-in).
+        if (res.status !== 401) setLastFailedMsg(userContent)
         return
       }
 
@@ -596,6 +605,14 @@ export default function ChatClient({
         artifactTotal={artifactHistory.length}
         artifactHistory={artifactHistory}
         compareToast={compareToast}
+        userName={userName}
+        userImage={userImage}
+        onMessageAction={(msg) => {
+          if (msg.action?.kind === 'signin') {
+            const callbackUrl = typeof window !== 'undefined' ? window.location.href : '/chat'
+            signIn('google', { callbackUrl })
+          }
+        }}
         onSelectArtifact={(index) => {
           artifactIndexRef.current = index
           setArtifactIndex(index)
