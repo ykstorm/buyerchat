@@ -144,6 +144,7 @@ PART 18: ACTIVE PERSONA (4 disjoint blocks — family / investor / value / premi
 - Don't swap classifier persona priority without testing canonical cases. I15 draft wanted `investor > value > premium > family` — would regress `"4BHK penthouse under 2Cr"` from premium to value. Budget regex expansion was the real fix.
 - Don't invent project IDs in prompts. Query Neon via temp script, delete after. The Planet: `cmn0jn3kp0000zwfy4r5mf5s1`.
 - Don't modify Prisma schema without `--create-only` — pending migrations must be reviewed and applied deliberately.
+- **Don't add a new UI surface without grepping for existing ones first.** I22 added an avatar chip + anonymous "Sign in" pill in ChatCenter but didn't audit ChatSidebar for a pre-existing sign-in affordance. Worse: ChatCenter gated on `userName`, ChatSidebar gated on `userId` — so for Google accounts without a display name, both rendered simultaneously and the user saw two sign-in prompts while signed in. Before adding ANY new visible UI (buttons, pills, nav links, badges, toasts), grep the surrounding directory for existing equivalents and confirm the render condition matches the canonical signal (for auth that's `userId`, not `userName`).
 
 ### Agent verification pattern (MANDATORY)
 ```bash

@@ -209,6 +209,7 @@ type Props = {
   compareToast?: string | null
   buyerStage?: string | null
   onMessageAction?: (msg: Message) => void
+  userId?: string | null
   userName?: string | null
   userImage?: string | null
 }
@@ -222,7 +223,7 @@ const STARTERS = [
   "I'm confused — help me decide",
 ]
 
-export default function ChatCenter({ messages, input, handleInputChange, handleSubmit, isLoading, append, loadingSession, artifact, builders = [], showArtifact, onToggleArtifact, canGoBack, canGoForward, onArtifactBack, onArtifactForward, artifactCurrent, artifactTotal, artifactHistory, onSelectArtifact, compareToast, buyerStage, onMessageAction, userName, userImage }: Props) {
+export default function ChatCenter({ messages, input, handleInputChange, handleSubmit, isLoading, append, loadingSession, artifact, builders = [], showArtifact, onToggleArtifact, canGoBack, canGoForward, onArtifactBack, onArtifactForward, artifactCurrent, artifactTotal, artifactHistory, onSelectArtifact, compareToast, buyerStage, onMessageAction, userId, userName, userImage }: Props) {
   const resolveBuilder = (a: Artifact | null): BuilderAIContext | null => {
     if (!a || a.type !== 'builder_trust') return null
     if (a.builder) return a.builder
@@ -641,19 +642,24 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
       </AnimatePresence>
 
       {/* Top-right user chip — visible confirmation of logged-in state.
-          Shows user avatar (or initial) when signed in, else a subtle
-          "Sign in" pill. Not a button when signed in — purely visual. */}
+          Gate on userId (canonical signed-in signal from auth.ts) — NOT
+          userName. Google accounts without display names have userId set
+          but userName null; gating on userName caused the chip to show
+          "Sign in" pill alongside the sidebar's "Sign out" for those
+          users. Sidebar footer uses userId as its guard, so matching
+          here eliminates the duplicate-signin drift.
+          Display priority: userImage > userName initial > '?' initial. */}
       <div
         className="absolute top-3 right-3 z-40 flex items-center"
         aria-hidden={false}
       >
-        {userName ? (
+        {userId ? (
           userImage ? (
             <img
               src={userImage}
-              alt={userName}
-              aria-label={userName}
-              title={userName}
+              alt={userName ?? 'Signed-in user'}
+              aria-label={userName ?? 'Signed-in user'}
+              title={userName ?? 'Signed in'}
               width={28}
               height={28}
               className="w-7 h-7 rounded-full shadow-sm"
@@ -661,13 +667,13 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
             />
           ) : (
             <div
-              aria-label={userName}
-              title={userName}
+              aria-label={userName ?? 'Signed-in user'}
+              title={userName ?? 'Signed in'}
               role="img"
               className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-semibold shadow-sm"
               style={{ background: 'var(--bg-subtle)', color: 'var(--text-primary)', border: '1px solid var(--border)' }}
             >
-              {userName.trim().charAt(0).toUpperCase()}
+              {userName?.trim().charAt(0).toUpperCase() ?? '?'}
             </div>
           )
         ) : (

@@ -605,6 +605,7 @@ export default function ChatClient({
         artifactTotal={artifactHistory.length}
         artifactHistory={artifactHistory}
         compareToast={compareToast}
+        userId={userId}
         userName={userName}
         userImage={userImage}
         onMessageAction={(msg) => {
