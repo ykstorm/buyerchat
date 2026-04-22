@@ -309,8 +309,48 @@ if (hasInjection) {
         }
 
         const projectNames = context.projects.map((p: any) => p.name)
-        const { passed, violations } = checkResponse(text, projectNames, classified, sanitizedMsg)
-    
+        // I25 — thread the in-context builder allowlist so FABRICATED_BUILDER
+        // can distinguish "Venus Group" (known) from "Goyal & Co." (invented).
+        const knownBuilderNames = Array.from(
+          new Set(
+            (context.projects as any[])
+              .map(p => p.builderName)
+              .filter((b: unknown): b is string => typeof b === 'string' && b.trim().length > 0)
+          )
+        )
+        const { passed, violations } = checkResponse(
+          text,
+          projectNames,
+          classified,
+          sanitizedMsg,
+          knownBuilderNames
+        )
+
+        // I26 — forward every audit violation to Sentry as a 'warning' event
+        // with a stable tag schema so admins can filter by rule/persona.
+        // CONTACT_LEAK / BUSINESS_LEAK are already captured inside onChunk
+        // (stream was aborted mid-response) — skip them here to avoid double
+        // counting. HALLUCINATION also already triggers an email alert but
+        // has no Sentry coverage, so it's included.
+        for (const v of violations) {
+          // Rule name is the prefix before the first colon, e.g.
+          // "PROJECT_LIMIT: 3 project_card CARDs exceeds 2-project limit"
+          const ruleName = (v.split(':')[0] ?? 'UNKNOWN').trim()
+          if (ruleName === 'CONTACT_LEAK' || ruleName === 'BUSINESS_LEAK') {
+            // Already captured from onChunk with richer context; skip.
+            continue
+          }
+          Sentry.captureMessage(`[${ruleName}] ${v}`, {
+            level: 'warning',
+            tags: {
+              audit_violation: 'true',
+              rule: ruleName.toLowerCase(),
+              persona: classified.persona,
+              intent: classified.intent,
+            },
+          })
+        }
+
         // Update chat session with full response data
         const savedSession = await prisma.chatSession.update({
           where: { id: chatSession!.id },

@@ -3,6 +3,34 @@ import { getCachedContext, setCachedContext, invalidateContextCache } from '@/li
 import { computeUrgencySignals } from '@/lib/urgency-signals'
 // BuilderAIContext type enforces sensitive field exclusion at compile time (see types/builder-ai-context.ts)
 
+// I25 completeness filter — keep only projects with enough critical data for
+// the LLM to reason about. 6 critical fields, threshold 4/6 (0.6). If filter
+// would leave < 3 projects, fall back to 0.4 (~2.4/6) so context doesn't
+// starve on a young DB. Fields chosen to match PART 11 PROJECT_JSON schema
+// and the fabricated-data incident (sparse projects triggered confabulation).
+interface CompletenessInput {
+  builderName?: string | null
+  reraNumber?: string | null
+  microMarket?: string | null
+  pricePerSqft?: number | null
+  minPrice?: number | null
+  possessionDate?: Date | null
+  decisionTag?: string | null
+}
+
+export function projectCompleteness(p: CompletenessInput): number {
+  const fields = [
+    !!(p.builderName && p.builderName.trim().length > 0),
+    !!(p.reraNumber && p.reraNumber.trim().length > 0),
+    !!(p.microMarket && p.microMarket.trim().length > 0),
+    !!((p.pricePerSqft && p.pricePerSqft > 0) || (p.minPrice && p.minPrice > 0)),
+    !!p.possessionDate,
+    !!(p.decisionTag && p.decisionTag.trim().length > 0),
+  ]
+  const present = fields.filter(Boolean).length
+  return present / fields.length
+}
+
 export async function buildContextPayload() {
   try {
     const cached = await getCachedContext()
@@ -70,7 +98,16 @@ export async function buildContextPayload() {
       }),
     ])
 
-    const projectsWithSignals = projects.map(p => {
+    // I25 Fix B — completeness filter. Sparse projects (eg "Vishwanath Sarathya
+    // West" during the Apr-2026 incident) gave the model a minimal-data surface
+    // it then confabulated around. Require >= 0.6 (4/6 critical fields) by
+    // default; relax to >= 0.4 only if the strict threshold leaves < 3 projects.
+    const strictProjects = projects.filter(p => projectCompleteness(p) >= 0.6)
+    const eligibleProjects = strictProjects.length >= 3
+      ? strictProjects
+      : projects.filter(p => projectCompleteness(p) >= 0.4)
+
+    const projectsWithSignals = eligibleProjects.map(p => {
       const urgency = computeUrgencySignals({
         availableUnits: p.availableUnits,
         possessionDate: p.possessionDate,
@@ -81,6 +118,7 @@ export async function buildContextPayload() {
         id: p.id,
         name: p.projectName,
         builder: p.builderName,
+        builderName: p.builderName,
         brandName: p.builder?.brandName,
         trustGrade: p.builder?.grade,
         trustScore: p.builder?.totalTrustScore,
@@ -101,6 +139,10 @@ export async function buildContextPayload() {
         unitTypes: p.unitTypes,
         possession: p.possessionDate ? p.possessionDate.toISOString().split('T')[0] : 'TBD',
         rera: p.reraNumber,
+        // I25 Fix A — expose RERA under the canonical schema name so PART 11
+        // PROJECT_JSON (and PART 8.5 hard lock rule 4) can surface the verbatim
+        // value instead of the model wrongly claiming "RERA not available".
+        reraNumber: p.reraNumber,
         status: p.constructionStatus,
         amenities: p.amenities,
         decisionTag: p.decisionTag ?? null,

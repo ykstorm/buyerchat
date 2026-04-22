@@ -9,6 +9,7 @@
 // proxy-based content filter.
 
 import type { ClassifiedQuery } from './intent-classifier'
+import * as Sentry from '@sentry/nextjs'
 
 // Exported for real-time streaming checks in /api/chat
 export const CONTACT_LEAK_PATTERN = /\d{10}|\+91\s?\d{10}|\d{3}[-\s]\d{3}[-\s]\d{4}|@[a-zA-Z0-9]+\.[a-zA-Z]{2,}/
@@ -152,7 +153,8 @@ export function checkResponse(
   aiResponse: string,
   knownProjectNames: string[],
   classified: ClassifiedQuery,
-  buyerMessage?: string
+  buyerMessage?: string,
+  knownBuilderNames: string[] = []
 ): CheckResult {
   const violations: string[] = []
   const lower = aiResponse.toLowerCase()
@@ -304,6 +306,91 @@ export function checkResponse(
   // PART 7 RULE 3: "Never rank projects 1st/2nd/3rd".
   if (/\b(1st|2nd|3rd|first choice|second choice|third choice|number one|#1 pick)\b/i.test(aiResponse)) {
     violations.push('ORDINAL_RANKING: numbered/ordinal ranking language')
+  }
+
+  // CHECK 13 — FAKE_BOOKING_CLAIM (audit-only, I25).
+  // PART 8.5 rules 1 & 2: never claim a visit/booking/OTP is confirmed unless
+  // a visit_prompt CARD is emitted in the SAME response. Patterns below target
+  // the confirmation-language drift that caused the Apr-2026 fake-booking
+  // incident. Post-stream only — per I18-final, only leak/safety justifies
+  // mid-stream abort.
+  const FAKE_BOOKING_PATTERNS: Array<{ re: RegExp; label: string }> = [
+    { re: /(visit|appointment).{0,40}(scheduled|booked|confirmed|arranged|set up|set\s*up)/i, label: 'visit_claim' },
+    { re: /otp.{0,30}(sent|on its way|will be sent|coming|dispatched)/i, label: 'otp_claim' },
+    { re: /booking.{0,15}(confirmed|complete|done|successful)/i, label: 'booking_claim' },
+    { re: /your (visit|booking|appointment) is (now|all|set|confirmed)/i, label: 'direct_confirm' },
+  ]
+  const hasVisitPromptCard = allCards.some(c => c.type === 'visit_prompt')
+  if (!hasVisitPromptCard) {
+    for (const { re, label } of FAKE_BOOKING_PATTERNS) {
+      const m = aiResponse.match(re)
+      if (m) {
+        const phrase = m[0].length > 80 ? m[0].slice(0, 77) + '...' : m[0]
+        violations.push(`FAKE_BOOKING_CLAIM: ${label} — "${phrase}" (no visit_prompt CARD in response)`)
+        try {
+          Sentry.captureMessage('[FAKE_BOOKING_CLAIM] Booking-confirmation language without visit_prompt card', {
+            level: 'warning',
+            tags: { audit_violation: 'true', rule: 'FAKE_BOOKING_CLAIM', pattern: label },
+          })
+        } catch {
+          // Sentry init may be absent in test/local env — never throw from the checker.
+        }
+        break
+      }
+    }
+  }
+
+  // CHECK 14 — FABRICATED_BUILDER (audit-only, I25).
+  // PART 8.5 rule 3: never name a builder not in PROJECT_JSON. Conservative
+  // regex on proper-noun stem + builder-ish suffix ("Group", "Properties",
+  // "Builders", "Developers", "Constructions", "Realty", "LLP", "Pvt",
+  // "Estate", "Co."). The stem may be one-or-more capitalized words with
+  // optional `&` glue (so "Venus Group", "Shree Balaji Constructions", and
+  // "Goyal & Co." all match). Designed to under-flag rather than
+  // false-positive on place names — skips allowlisted builders and known
+  // project names (avoid double-flag with HALLUCINATION check).
+  if (knownBuilderNames.length > 0) {
+    const GENERIC_SOLO = new Set(['Group', 'Properties', 'Builders', 'LLP', 'Developers', 'Realty'])
+    const knownBuilderLower = knownBuilderNames
+      .filter(b => b && b.trim().length > 0)
+      .map(b => b.toLowerCase().trim())
+    const knownProjectLower = knownProjectNames.map(p => (p ?? '').toLowerCase().trim())
+    // Group 1 captures the stem (1+ cap words w/ optional `&` glue).
+    // The `(?:&\s*)?` between stem and suffix catches the "& Co." / "& Co"
+    // single-letter-company pattern seen with Indian family businesses.
+    const BUILDER_CANDIDATE_RE = /\b([A-Z][a-z]+(?:\s+(?:&\s+)?[A-Z][a-z]+)*)\s+(?:&\s*)?(Group|Properties|Builders|Developers|Constructions|Realty|LLP|Pvt|Estate|Co\.?)\b/g
+    const seen = new Set<string>()
+    let bm: RegExpExecArray | null
+    while ((bm = BUILDER_CANDIDATE_RE.exec(aiResponse)) !== null) {
+      const fullMatch = bm[0].trim().replace(/\s+/g, ' ')
+      const stem = bm[1].trim()
+      if (seen.has(fullMatch.toLowerCase())) continue
+      seen.add(fullMatch.toLowerCase())
+      // Skip lone generic suffix words ("Group" / "Properties" alone).
+      if (GENERIC_SOLO.has(stem)) continue
+      // Skip if the candidate IS a known builder (allowlisted).
+      const fullLower = fullMatch.toLowerCase()
+      const stemLower = stem.toLowerCase()
+      const isKnown = knownBuilderLower.some(k =>
+        k === fullLower || k === stemLower || fullLower.includes(k) || k.includes(stemLower)
+      )
+      if (isKnown) continue
+      // Skip if the candidate is a known project name (avoid flagging
+      // "Riviera Elite" as a builder when it's a project).
+      const isProject = knownProjectLower.some(p =>
+        p && (p === fullLower || p === stemLower || fullLower.includes(p) || p.includes(stemLower))
+      )
+      if (isProject) continue
+      violations.push(`FABRICATED_BUILDER: "${fullMatch}" not in known builder allowlist`)
+      try {
+        Sentry.captureMessage('[FABRICATED_BUILDER] Builder name not in allowlist', {
+          level: 'warning',
+          tags: { audit_violation: 'true', rule: 'FABRICATED_BUILDER', candidate: fullMatch },
+        })
+      } catch {
+        // Sentry init may be absent in test/local env — never throw from the checker.
+      }
+    }
   }
 
   return { passed: violations.length === 0, violations }

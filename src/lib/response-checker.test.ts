@@ -211,3 +211,67 @@ describe('ORDINAL_RANKING check', () => {
     expect(res.violations.some(v => v.startsWith('ORDINAL_RANKING'))).toBe(false)
   })
 })
+
+describe('FAKE_BOOKING_CLAIM check (I25)', () => {
+  it('flags visit-scheduled language with no visit_prompt card', () => {
+    const res = checkResponse(
+      'Great news — your visit is scheduled for tomorrow at 11am. See you then!',
+      [],
+      cq()
+    )
+    expect(res.violations.some(v => v.startsWith('FAKE_BOOKING_CLAIM'))).toBe(true)
+  })
+
+  it('passes when visit-setup language is accompanied by a visit_prompt card', () => {
+    const text =
+      `I'll set up the visit for tomorrow — pick a time on the widget and we are good.\n` +
+      `<!--CARD:{"type":"visit_prompt","projectId":"a","reason":"Buyer ready to book"}-->`
+    const res = checkResponse(text, [], cq())
+    expect(res.violations.some(v => v.startsWith('FAKE_BOOKING_CLAIM'))).toBe(false)
+  })
+
+  it('flags OTP-sent language even without a timestamp', () => {
+    const res = checkResponse('OTP will be sent shortly to your registered number.', [], cq())
+    expect(res.violations.some(v => v.startsWith('FAKE_BOOKING_CLAIM'))).toBe(true)
+  })
+})
+
+describe('FABRICATED_BUILDER check (I25)', () => {
+  const allowlist = ['Venus Group', 'Riviera Builders']
+
+  it('flags a builder name not in the allowlist', () => {
+    const res = checkResponse(
+      'Goyal & Co. has a strong track record in the area and is worth a look.',
+      ['The Planet', 'Riviera Elite'],
+      cq(),
+      undefined,
+      allowlist
+    )
+    expect(res.violations.some(v => v.startsWith('FABRICATED_BUILDER'))).toBe(true)
+    expect(res.violations.some(v => v.includes('Goyal'))).toBe(true)
+  })
+
+  it('passes when the mentioned builder IS in the allowlist', () => {
+    const res = checkResponse(
+      'Venus Group has delivered several projects in the area with consistent possession timelines.',
+      ['The Planet'],
+      cq(),
+      undefined,
+      allowlist
+    )
+    expect(res.violations.some(v => v.startsWith('FABRICATED_BUILDER'))).toBe(false)
+  })
+
+  it('does not flag a known project name that happens to look like a builder', () => {
+    // "Riviera Elite" is a project, not a builder — regex will not pick it up
+    // (no builder suffix) and even if it did, the known-project guard skips it.
+    const res = checkResponse(
+      'Riviera Elite is further along on construction than other options in Shela.',
+      ['Riviera Elite', 'The Planet'],
+      cq(),
+      undefined,
+      allowlist
+    )
+    expect(res.violations.some(v => v.startsWith('FABRICATED_BUILDER'))).toBe(false)
+  })
+})
