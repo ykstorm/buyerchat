@@ -31,8 +31,17 @@ export function classifyIntent(query: string): ClassifiedQuery {
   const q = query.toLowerCase()
 
   // --- Intent ----------------------------------------------------------
+  // NOTE: budget must be tested BEFORE location_query so multi-signal queries
+  // like "under 85L in shela" route to budget_query (not location_query). The
+  // shorthand-number pattern catches "85L", "1.5cr", "85 lakh", "1 crore" which
+  // the original alternation missed (the literal `l` was absent from the word
+  // list). See src/lib/intent-classifier.test.ts.
   let intent: QueryIntent = 'general_query'
-  if (/budget|price|cost|afford|crore|lakh|₹|rs\.|cheap|expensive/.test(q))
+  if (
+    /budget|price|cost|afford|crore|lakh|lac|₹|rs\.|cheap|expensive/.test(q) ||
+    /(?:under|below|within|above|over)\s+(?:rs\.?|inr|₹)?\s*\d+(?:\.\d+)?\s*(?:l|lakh|lac|cr|crore)?\b/.test(q) ||
+    /\b\d+(?:\.\d+)?\s*(?:l|lakh|lac|cr|crore)\b/.test(q)
+  )
     intent = 'budget_query'
   else if (/shela|south bopal|location|area|nearby|distance|school|hospital/.test(q))
     intent = 'location_query'
