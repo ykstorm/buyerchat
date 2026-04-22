@@ -1,6 +1,8 @@
-// CONTACT_LEAK and BUSINESS_LEAK detection now runs in real time via `onChunk`
-// inside `src/app/api/chat/route.ts` — the stream is hard-aborted mid-response
-// when a leak pattern matches a delta, so the buyer never sees the leaked data.
+// CONTACT_LEAK, BUSINESS_LEAK, and NO_MARKDOWN detection run in real time via
+// `onChunk` inside `src/app/api/chat/route.ts` — the stream is hard-aborted
+// mid-response when a pattern matches a delta, so the buyer never sees the
+// leaked / malformatted content.
+//
 // The remaining checks in checkResponse() still run post-stream as audit-only:
 // by the time they catch a violation the tokens have already been sent. To
 // harden additional checks, integrate them into the same onChunk hook or a
@@ -12,6 +14,12 @@ import type { ClassifiedQuery } from './intent-classifier'
 export const CONTACT_LEAK_PATTERN = /\d{10}|\+91\s?\d{10}|\d{3}[-\s]\d{3}[-\s]\d{4}|@[a-zA-Z0-9]+\.[a-zA-Z]{2,}/
 // Exported for real-time streaming checks in /api/chat
 export const BUSINESS_LEAK_PATTERN = /commission rate|partner status|commission %/i
+// Exported for real-time streaming checks in /api/chat — PART 8/PART 2 rule:
+// NO markdown bold / headers / bullets. Intentionally does NOT match code fences
+// (``` backticks), which the model is not expected to emit.
+// Covers: line-leading dash/star/plus bullets, `#`–`######` headers,
+// `**bold**` emphasis, `__underline__` emphasis.
+export const MARKDOWN_PATTERN = /(?:^|\n)\s*[-*+]\s|^#{1,6}\s|\*\*[^*]+\*\*|__[^_]+__/m
 
 export interface CheckResult {
   passed: boolean
@@ -24,10 +32,127 @@ const KNOWN_AREAS = [
   'ahmedabad', 'gujarat', 'india', 'magicbricks', 'buyerchat'
 ]
 
+// Lexical markers used by the language-match check. Not a real language
+// detector — just a cheap hint. If buyer density >> response density we
+// assume the model drifted back to English.
+const HINGLISH_MARKERS = new Set([
+  'hai', 'kya', 'kar', 'kaise', 'kaha', 'mein', 'ka', 'ki', 'ke',
+  'ko', 'se', 'par', 'bhi', 'nahi', 'haan', 'dekh', 'dekho', 'sach',
+  'bhai', 'bas', 'sirf', 'matra'
+])
+
+function hinglishDensity(text: string): number {
+  const words = text.toLowerCase().split(/\s+/).filter(Boolean)
+  if (words.length === 0) return 0
+  const hits = words.filter(w => {
+    const stripped = w.replace(/[^a-z]/g, '')
+    return HINGLISH_MARKERS.has(stripped)
+  }).length
+  return hits / words.length
+}
+
+// Persona-aware word cap thresholds. Default from PART 6 rule
+// ("~100 WORDS MAX") with headroom for natural variance; premium buyers
+// tolerate longer spec-heavy replies, value buyers want terse.
+function wordCapFor(persona: ClassifiedQuery['persona']): number {
+  if (persona === 'premium') return 160
+  if (persona === 'value') return 110
+  return 130
+}
+
+// Parse CARD JSON payloads out of the response. Silently skips malformed
+// JSON so a bad single card never blocks the rest of the check.
+interface ParsedCard {
+  type: string
+  projectId?: string
+  projectIdA?: string
+  projectIdB?: string
+}
+
+function parseCards(text: string): ParsedCard[] {
+  const cards: ParsedCard[] = []
+  const re = /<!--CARD:(\{[\s\S]*?\})-->/g
+  let m: RegExpExecArray | null
+  while ((m = re.exec(text)) !== null) {
+    try {
+      const parsed = JSON.parse(m[1]) as ParsedCard
+      if (parsed && typeof parsed.type === 'string') cards.push(parsed)
+    } catch {
+      // ignore malformed card JSON
+    }
+  }
+  return cards
+}
+
+// Valid card configurations from PART 15 / PART 8:
+//   - 1 project_card alone
+//   - 2 project_card alone (alternatives pivot)
+//   - 1 comparison alone
+//   - 1 cost_breakdown [+ 1 project_card]
+//   - 1 visit_prompt [+ 1 project_card]
+//   - 1 builder_trust [+ 1 project_card]
+// Anything else is flagged as CARD_DISCIPLINE violation. The 2-total cap
+// is a separate failure tag so the admin can see which rule fired.
+function checkCardDiscipline(cards: ParsedCard[]): string[] {
+  const violations: string[] = []
+  if (cards.length === 0) return violations
+
+  if (cards.length > 2) {
+    violations.push(`CARD_DISCIPLINE: ${cards.length} CARDs exceeds 2-block hard limit`)
+  }
+
+  const counts: Record<string, number> = {}
+  for (const c of cards) counts[c.type] = (counts[c.type] ?? 0) + 1
+
+  const types = Object.keys(counts)
+  const pc = counts['project_card'] ?? 0
+  const cmp = counts['comparison'] ?? 0
+  const cost = counts['cost_breakdown'] ?? 0
+  const visit = counts['visit_prompt'] ?? 0
+  const trust = counts['builder_trust'] ?? 0
+
+  // Duplicates of non-project_card types are never allowed.
+  for (const t of ['comparison', 'cost_breakdown', 'visit_prompt', 'builder_trust']) {
+    if ((counts[t] ?? 0) > 1) {
+      violations.push(`CARD_DISCIPLINE: duplicate ${t} card (${counts[t]} found)`)
+    }
+  }
+
+  // Reject ambiguous combos. project_card may pair with cost/visit/trust
+  // (one of them), but comparison must stand alone, and cost/visit/trust
+  // must not co-occur with each other.
+  const specialtyCount = (cmp > 0 ? 1 : 0) + (cost > 0 ? 1 : 0) + (visit > 0 ? 1 : 0) + (trust > 0 ? 1 : 0)
+  if (cmp > 0 && pc > 0) {
+    violations.push('CARD_DISCIPLINE: comparison must stand alone (no project_card alongside)')
+  }
+  if (specialtyCount > 1 && !(specialtyCount === 1)) {
+    // Two different specialty types together (e.g., cost_breakdown + visit_prompt)
+    const specialties = [
+      cmp > 0 && 'comparison',
+      cost > 0 && 'cost_breakdown',
+      visit > 0 && 'visit_prompt',
+      trust > 0 && 'builder_trust',
+    ].filter(Boolean) as string[]
+    if (specialties.length > 1) {
+      violations.push(`CARD_DISCIPLINE: multiple specialty cards (${specialties.join(' + ')})`)
+    }
+  }
+
+  // Sanity — unknown card type
+  const KNOWN_TYPES = new Set(['project_card', 'comparison', 'cost_breakdown', 'visit_prompt', 'builder_trust'])
+  const unknown = types.filter(t => !KNOWN_TYPES.has(t))
+  if (unknown.length > 0) {
+    violations.push(`CARD_DISCIPLINE: unknown card type(s) ${unknown.join(', ')}`)
+  }
+
+  return violations
+}
+
 export function checkResponse(
   aiResponse: string,
   knownProjectNames: string[],
-  classified: ClassifiedQuery
+  classified: ClassifiedQuery,
+  buyerMessage?: string
 ): CheckResult {
   const violations: string[] = []
   const lower = aiResponse.toLowerCase()
@@ -88,12 +213,7 @@ export function checkResponse(
     violations.push('INVESTMENT_GUARANTEE: unqualified financial promise in response')
   }
 
-  // CHECK 4b — Persona-aware guarantee tightening. Investor buyers are the
-  // ones who act on yield/appreciation language, so softer phrases that slip
-  // past CHECK 4 for general buyers ("sure to grow", "solid returns", etc.)
-  // still need to be flagged when we know the buyer is in investor mode.
-  // PART 18 system-prompt overlay also tells the model to avoid these; this
-  // check detects drift when it happens anyway.
+  // CHECK 4b — Persona-aware guarantee tightening.
   if (classified.persona === 'investor') {
     const softGuarantees = [
       'sure to grow', 'sure to appreciate', 'solid returns',
@@ -112,6 +232,78 @@ export function checkResponse(
   const mentionedOutOfArea = outOfArea.filter(a => lower.includes(a))
   if (mentionedOutOfArea.length > 0) {
     violations.push(`OUT_OF_AREA: mentioned ${mentionedOutOfArea.join(', ')}`)
+  }
+
+  // CHECK 6 — PROJECT_LIMIT (audit-only).
+  // PART 5 line ~163 / PART 15 line ~370: never mention more than 2 projects
+  // and never emit more than 2 project-card CARDs per response.
+  // Mid-stream counting is unreliable, so this runs post-stream only.
+  const allCards = parseCards(aiResponse)
+  const projectCardCount = allCards.filter(c => c.type === 'project_card').length
+  const mentionedProjectNames = knownProjectNames.filter(p =>
+    p && lower.includes(p.toLowerCase())
+  )
+  if (projectCardCount > 2) {
+    violations.push(`PROJECT_LIMIT: ${projectCardCount} project_card CARDs exceeds 2-project limit`)
+  }
+  if (mentionedProjectNames.length > 2) {
+    violations.push(`PROJECT_LIMIT: ${mentionedProjectNames.length} distinct project names mentioned (cap 2)`)
+  }
+
+  // CHECK 7 — NO_MARKDOWN (audit mirror; onChunk aborts live streams).
+  // Protects against markdown drift even when onChunk is bypassed.
+  if (MARKDOWN_PATTERN.test(aiResponse)) {
+    violations.push('NO_MARKDOWN: markdown bullets / bold / headers detected')
+  }
+
+  // CHECK 8 — LANGUAGE_MATCH (audit-only).
+  // PART 13 / lines ~125-140 / ~295-299: match buyer's language. Real
+  // failure mode is buyer Hinglish -> model replies pure English.
+  // Also check for accidental Gujarati/Devanagari leaking when buyer
+  // never used non-Latin script — flag as NON_LATIN_SCRIPT separately.
+  if (buyerMessage) {
+    const buyerDensity = hinglishDensity(buyerMessage)
+    const responseDensity = hinglishDensity(aiResponse)
+    if (buyerDensity > 0.15 && responseDensity < 0.05) {
+      violations.push(
+        `LANGUAGE_MISMATCH: buyer wrote Hinglish (density ${(buyerDensity * 100).toFixed(0)}%) ` +
+        `but response dropped to English (density ${(responseDensity * 100).toFixed(0)}%)`
+      )
+    }
+  }
+  // Non-Latin script in response: Devanagari U+0900-U+097F or Gujarati U+0A80-U+0AFF.
+  // Only flag if the buyer did NOT use that script — matching the buyer's own
+  // Devanagari input is explicitly allowed by PART 10.
+  const buyerHasNonLatin = !!buyerMessage && /[ऀ-ॿ઀-૿]/.test(buyerMessage)
+  if (!buyerHasNonLatin && /[ऀ-ॿ઀-૿]/.test(aiResponse)) {
+    violations.push('NON_LATIN_SCRIPT: response contains Devanagari / Gujarati characters with no buyer cue')
+  }
+
+  // CHECK 9 — WORD_CAP (audit-only, persona-aware).
+  // PART 6 line ~164: "~100 WORDS MAX".
+  // Strip CARD blocks before counting — they are metadata, not buyer-facing prose.
+  const prose = aiResponse.replace(/<!--CARD:[\s\S]*?-->/g, '').trim()
+  const wordCount = prose.split(/\s+/).filter(Boolean).length
+  const cap = wordCapFor(classified.persona)
+  if (wordCount > cap) {
+    violations.push(`WORD_CAP: ${wordCount} words exceeds ${cap}-word cap for persona=${classified.persona}`)
+  }
+
+  // CHECK 10 — CARD_DISCIPLINE (audit-only).
+  // PART 15 ~line 370: max 2 CARD blocks, one per type with a small set of
+  // valid combinations. Unknown types and bad combos are flagged individually.
+  violations.push(...checkCardDiscipline(allCards))
+
+  // CHECK 11 — SOFT_SELL_PHRASE (audit-only, HIGH drift).
+  // PART 8 line ~287: "NEVER say 'I recommend X'".
+  if (/\b(i recommend|i suggest|you should (?:choose|go for|pick)|best project|top choice|ideal for you)\b/i.test(aiResponse)) {
+    violations.push('SOFT_SELL_PHRASE: recommendation language ("I recommend" / "best project" / "ideal for you")')
+  }
+
+  // CHECK 12 — ORDINAL_RANKING (audit-only, HIGH drift).
+  // PART 7 RULE 3: "Never rank projects 1st/2nd/3rd".
+  if (/\b(1st|2nd|3rd|first choice|second choice|third choice|number one|#1 pick)\b/i.test(aiResponse)) {
+    violations.push('ORDINAL_RANKING: numbered/ordinal ranking language')
   }
 
   return { passed: violations.length === 0, violations }

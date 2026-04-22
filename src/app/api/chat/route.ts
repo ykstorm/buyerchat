@@ -7,7 +7,7 @@ import { buildSystemPrompt } from '@/lib/system-prompt'
 import { retrieveChunks } from '@/lib/rag/retriever'
 import { classifyIntent } from '@/lib/intent-classifier'
 import { buildDecisionCard } from '@/lib/decision-engine/decision-card-builder'
-import { checkResponse, CONTACT_LEAK_PATTERN, BUSINESS_LEAK_PATTERN } from '@/lib/response-checker'
+import { checkResponse, CONTACT_LEAK_PATTERN, BUSINESS_LEAK_PATTERN, MARKDOWN_PATTERN } from '@/lib/response-checker'
 import { sanitizeAdminInput } from '@/lib/sanitize'
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth'
@@ -19,6 +19,7 @@ import * as Sentry from '@sentry/nextjs'
 const STREAM_ABORT_FALLBACK = 'Dekho, kuch problem hui. Dubara try karein.'
 const CONTACT_LEAK_ABORT_MSG = 'Contact information leak detected'
 const BUSINESS_LEAK_ABORT_MSG = 'Business information leak detected'
+const MARKDOWN_ABORT_MSG = 'Markdown formatting detected'
 
 const ChatRequestSchema = z.object({
   messages: z.array(z.object({
@@ -214,6 +215,14 @@ if (hasInjection) {
   // partial/empty assistant message and the response wrapper will deliver the
   // Hinglish fallback instead of the (possibly leaky) partial content.
   let streamAbortedByLeak = false
+  // Separate flag for markdown abort — same behavior (fallback + skip persist)
+  // but a distinct Sentry tag so admins can distinguish format drift from
+  // the stricter contact/business leak aborts.
+  let streamAbortedByMarkdown = false
+  // Buffer assembled from text-delta chunks so multi-chunk markdown patterns
+  // (e.g. `**bol` + `d**`) still match. The onChunk regex needs cross-delta
+  // context; a per-delta test would miss patterns that straddle deltas.
+  let streamBuffer = ''
 
   const result = streamText({
     model: openai('gpt-4o'),
@@ -240,25 +249,41 @@ if (hasInjection) {
           Sentry.captureMessage('[BUSINESS_LEAK_DETECTED] Streaming halted mid-response', 'warning')
           throw new Error(BUSINESS_LEAK_ABORT_MSG)
         }
+        // NO_MARKDOWN — test against the rolling assembled buffer so
+        // patterns that straddle delta boundaries still match.
+        streamBuffer += text
+        if (MARKDOWN_PATTERN.test(streamBuffer)) {
+          streamAbortedByMarkdown = true
+          Sentry.captureMessage('[MARKDOWN_DETECTED] Streaming halted mid-response', 'warning')
+          throw new Error(MARKDOWN_ABORT_MSG)
+        }
       }
     },
     onError: ({ error }) => {
       const message = error instanceof Error ? error.message : String(error)
       const isLeakAbort =
         message === CONTACT_LEAK_ABORT_MSG || message === BUSINESS_LEAK_ABORT_MSG
+      const isMarkdownAbort = message === MARKDOWN_ABORT_MSG
       Sentry.captureException(error, {
-        tags: { context: 'streaming_abort', leak_abort: String(isLeakAbort) },
+        tags: {
+          context: 'streaming_abort',
+          leak_abort: String(isLeakAbort),
+          markdown_abort: String(isMarkdownAbort),
+        },
       })
-      if (!isLeakAbort) {
+      if (!isLeakAbort && !isMarkdownAbort) {
         console.error('streamText onError:', error)
       }
     },
     onFinish: async ({ text, usage }) => {
       try {
-        // If the stream was aborted by a leak, do NOT persist the partial
-        // assistant message. We still record the violation on the session
-        // so admins can audit the attempt.
-        if (streamAbortedByLeak) {
+        // If the stream was aborted by a leak OR markdown drift, do NOT
+        // persist the partial assistant message. We still record the
+        // violation on the session so admins can audit the attempt.
+        if (streamAbortedByLeak || streamAbortedByMarkdown) {
+          const abortTag = streamAbortedByLeak
+            ? 'CONTACT_LEAK_OR_BUSINESS_LEAK: stream aborted mid-response — CRITICAL'
+            : 'NO_MARKDOWN: stream aborted mid-response — format drift'
           try {
             await prisma.chatSession.update({
               where: { id: chatSession!.id },
@@ -267,20 +292,20 @@ if (hasInjection) {
                 aiResponse: '',
                 intent,
                 responsePassedChecks: false,
-                violations: ['CONTACT_LEAK_OR_BUSINESS_LEAK: stream aborted mid-response — CRITICAL'],
+                violations: [abortTag],
               }
             })
             await prisma.chatMessageLog.create({
               data: { sessionId: chatSession!.id, role: 'user', content: sanitizedMsg }
             })
           } catch (err) {
-            console.error('onFinish (leak-abort) persistence error:', err)
+            console.error('onFinish (stream-abort) persistence error:', err)
           }
           return
         }
 
         const projectNames = context.projects.map((p: any) => p.name)
-        const { passed, violations } = checkResponse(text, projectNames, classified)
+        const { passed, violations } = checkResponse(text, projectNames, classified, sanitizedMsg)
     
         // Update chat session with full response data
         const savedSession = await prisma.chatSession.update({
@@ -417,17 +442,18 @@ if (hasInjection) {
         while (true) {
           const { done, value } = await reader.read()
           if (done) break
-          if (streamAbortedByLeak) break
+          if (streamAbortedByLeak || streamAbortedByMarkdown) break
           if (value) controller.enqueue(value)
         }
       } catch (err) {
-        // Most common cause here is onChunk throwing on a detected leak.
-        // onError already logged to Sentry; fall through to the fallback.
+        // Most common cause here is onChunk throwing on a detected leak or
+        // markdown drift. onError already logged to Sentry; fall through to
+        // the fallback.
         Sentry.captureException(err, {
           tags: { context: 'streaming_abort', stage: 'stream_wrapper' },
         })
       }
-      if (streamAbortedByLeak) {
+      if (streamAbortedByLeak || streamAbortedByMarkdown) {
         controller.enqueue(encoder.encode(STREAM_ABORT_FALLBACK))
       }
       controller.close()
