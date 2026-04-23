@@ -28,12 +28,22 @@ export function chunkForProject(p: {
   priceNote: string | null
   decisionTag: string | null
 }): string {
-  const priceRange = `₹${(p.minPrice / 1e7).toFixed(1)}Cr – ₹${(p.maxPrice / 1e7).toFixed(1)}Cr`
+  // Skip "₹0.0Cr – ₹0.0Cr" noise: 11/16 projects currently have minPrice=0
+  // and embedding that template string is hallucination-adjacent (model
+  // retrieves it and confidently states "price is ₹0"). priceNote line below
+  // remains the reliable pricing signal (16/16 projects have it populated).
+  const hasRupeeBand = p.minPrice > 0 && p.maxPrice > 0
+  const priceRange = hasRupeeBand
+    ? `₹${(p.minPrice / 1e7).toFixed(1)}Cr – ₹${(p.maxPrice / 1e7).toFixed(1)}Cr`
+    : null
   const possession = p.possessionDate.toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })
   const amenityList = p.amenities.length > 0 ? p.amenities.join(', ') : 'not listed'
+  const configLine = priceRange
+    ? `Configurations: ${p.configurations ?? 'not specified'}. Price range: ${priceRange}.`
+    : `Configurations: ${p.configurations ?? 'not specified'}.`
   const lines: string[] = [
     `Project: ${p.projectName} by ${p.builderName}, located in ${p.microMarket}.`,
-    `Configurations: ${p.configurations ?? 'not specified'}. Price range: ${priceRange}.`,
+    configLine,
     `Possession: ${possession}. Amenities: ${amenityList}.`,
   ]
   if (p.honestConcern) lines.push(`Honest concern: ${p.honestConcern}`)
