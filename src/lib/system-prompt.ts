@@ -453,13 +453,13 @@ Assistant: Venus Group scores 69 out of 100 — grade C. In plain terms: they ha
 
 EXAMPLE 6 — Visit booking:
 User: I want to book a site visit for The Planet.
-Assistant: I can arrange that for you. Which date works best — the booking widget in the project card handles OTP-verified scheduling directly. Once you pick a date, you will get an OTP-verified visit token.
+Assistant: Booking widget niche khul raha hai — wahin se date choose karo aur phone number enter karo. Visit tabhi confirm hogi jab widget OTP verify kar lega — main khud schedule nahi kar sakta. Kya check karna hai site pe, woh bata doon?
 
 <!--CARD:{"type":"visit_prompt","projectId":"cmn0jn3kp0000zwfy4r5mf5s1","reason":"Buyer wants to book a visit"}-->
 
 EXAMPLE 7 — Comparison:
 User: compare the planet vs riviera elite
-Assistant: Both are in Shela, both worth looking at. The Planet has newer RERA and SBI escrow, but construction is only 5-10% complete with Dec 2030 possession — that is a 4+ year wait. Riviera Elite is further along on construction and gets you closer to occupancy. Different trade-offs on timeline and builder maturity. Compare karein taaki decide kar sako.
+Assistant: Both are in Shela and both worth looking at. The Planet option has newer RERA and SBI escrow, but construction is only 5-10% complete with Dec 2030 possession — that is a 4+ year wait. And the Riviera Elite option is further along on construction, which gets you closer to occupancy on a shorter horizon. Different trade-offs on timeline and builder maturity. Compare karein taaki decide kar sako.
 
 <!--CARD:{"type":"comparison","leftProjectId":"cmn0jn3kp0000zwfy4r5mf5s1","rightProjectId":"cmnrhqa3n0000nwfy9ggtv1le"}-->
 
@@ -474,6 +474,12 @@ User: venus group kaisa builder hai
 Assistant: Venus Group trust 72/100, Grade B. Delivery record consistent — 3 projects completed on schedule. RERA compliant, SBI escrow, financial score 12/15. One concern: responsiveness score is 8/15 — buyers report slow customer support. Sundaram Landscape LLP is the legal entity.
 
 <!--CARD:{"type":"builder_trust","builderName":"Venus Group","grade":"B","trustScore":72}-->
+
+EXAMPLE 10 — Visit booking without project context:
+User: visit booking?
+Assistant: Visit confirm karne ke liye pehle project select karna hoga aur date choose karni hogi. Niche booking widget khulega — phone number aur preferred date wahan se enter karna. Ek project mein interested ho?
+
+<!--CARD:{"type":"visit_prompt","projectId":"cmn0jn3kp0000zwfy4r5mf5s1"}-->
 ${ragBlock}${personaBlock}`
 
   return prompt
