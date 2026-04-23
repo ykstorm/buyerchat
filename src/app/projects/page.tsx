@@ -204,31 +204,8 @@ export default function ProjectsPage() {
 
   return (
     <>
-      <style>{`
-        :root {
-          --landing-bg: #F7F5F2;
-          --landing-bg-subtle: #F0EDE8;
-          --landing-bg-card: #FFFFFF;
-          --landing-text-primary: #1A1714;
-          --landing-text-secondary: #5C5449;
-          --landing-text-muted: #9C9389;
-          --landing-border: #E2DDD7;
-          --landing-accent: #B8924A;
-          --landing-accent-light: #F5ECD9;
-        }
-        [data-theme="dark"] {
-          --landing-bg: #0E0C0A;
-          --landing-bg-subtle: #161310;
-          --landing-bg-card: #1C1814;
-          --landing-text-primary: #EDE8E3;
-          --landing-text-secondary: #9C9389;
-          --landing-text-muted: #5C5449;
-          --landing-border: #2A2520;
-          --landing-accent: #C9A96E;
-          --landing-accent-light: rgba(184,146,74,0.1);
-        }
-      `}</style>
-
+      {/* Landing-scope CSS tokens (--landing-*) live in globals.css so the
+          pre-hydration theme script covers them — prevents dark-mode FOUC. */}
       <div style={{ background: 'var(--landing-bg)', minHeight: '100vh', fontFamily: 'var(--font-dm-sans), system-ui, sans-serif' }}>
         <div className="max-w-6xl mx-auto px-6">
 

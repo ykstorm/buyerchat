@@ -60,6 +60,20 @@
   --stage-visit-text: #791F1F;
   --stage-decision-bg: #E1F5EE;
   --stage-decision-text: #085041;
+  /* Landing-scope tokens (used by /, /projects). Hoisted from
+     per-page <style> blocks so the pre-hydration theme script (see
+     layout.tsx) covers them — no dark-mode FOUC on reload. */
+  --landing-bg: #F7F5F2;
+  --landing-bg-subtle: #F0EDE8;
+  --landing-bg-card: #FFFFFF;
+  --landing-text-primary: #1A1714;
+  --landing-text-secondary: #5C5449;
+  --landing-text-muted: #9C9389;
+  --landing-border: #E2DDD7;
+  --landing-accent: #B8924A;
+  --landing-accent-light: #F5ECD9;
+  --font-landing-display: 'Cormorant Garamond', Georgia, serif;
+  --font-landing-body: 'DM Sans', system-ui, sans-serif;
 }
 
 [data-theme="dark"] {
@@ -121,6 +135,16 @@
   --stage-visit-text: #FCA5A5;
   --stage-decision-bg: rgba(6,78,59,0.2);
   --stage-decision-text: #6EE7B7;
+  /* Landing-scope tokens — dark */
+  --landing-bg: #0E0C0A;
+  --landing-bg-subtle: #161310;
+  --landing-bg-card: #1C1814;
+  --landing-text-primary: #EDE8E3;
+  --landing-text-secondary: #9C9389;
+  --landing-text-muted: #5C5449;
+  --landing-border: #2A2520;
+  --landing-accent: #C9A96E;
+  --landing-accent-light: rgba(184,146,74,0.1);
 }
 
 /* Theme transitions — only on elements that actually change theme */

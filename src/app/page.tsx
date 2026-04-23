@@ -164,34 +164,8 @@ export default function HomePage() {
 
   return (
     <>
-      {/* Landing-page scoped CSS variables — don't conflict with chat/admin globals */}
-      <style>{`
-        :root {
-          --landing-bg: #F7F5F2;
-          --landing-bg-subtle: #F0EDE8;
-          --landing-bg-card: #FFFFFF;
-          --landing-text-primary: #1A1714;
-          --landing-text-secondary: #5C5449;
-          --landing-text-muted: #9C9389;
-          --landing-border: #E2DDD7;
-          --landing-accent: #B8924A;
-          --landing-accent-light: #F5ECD9;
-          --font-landing-display: 'Cormorant Garamond', Georgia, serif;
-          --font-landing-body: 'DM Sans', system-ui, sans-serif;
-        }
-        [data-theme="dark"] {
-          --landing-bg: #0E0C0A;
-          --landing-bg-subtle: #161310;
-          --landing-bg-card: #1C1814;
-          --landing-text-primary: #EDE8E3;
-          --landing-text-secondary: #9C9389;
-          --landing-text-muted: #5C5449;
-          --landing-border: #2A2520;
-          --landing-accent: #C9A96E;
-          --landing-accent-light: rgba(184,146,74,0.1);
-        }
-      `}</style>
-
+      {/* Landing-scope CSS tokens (--landing-*) live in globals.css so the
+          pre-hydration theme script covers them — prevents dark-mode FOUC. */}
       <div style={{ background: 'var(--landing-bg)', color: 'var(--landing-text-primary)', fontFamily: 'var(--font-landing-body)', transition: 'background-color 400ms ease, color 400ms ease' }}>
         <Grain />
         <CursorGlow />
