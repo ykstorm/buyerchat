@@ -372,3 +372,52 @@ describe('FABRICATED_BUILDER check (I25)', () => {
     expect(res.violations.some(v => v.startsWith('FABRICATED_BUILDER'))).toBe(false)
   })
 })
+
+describe('FABRICATED_STAT check', () => {
+  const knownProjectNames = ['The Planet', 'Riviera Elite']
+  const knownBuilderNames = ['Venus Group', 'Riviera Builders']
+
+  it('flags "250 projects delivered since 1971"', () => {
+    const res = checkResponse(
+      'Venus Group has 250 projects delivered since 1971 across Ahmedabad.',
+      knownProjectNames,
+      cq(),
+      undefined,
+      knownBuilderNames
+    )
+    expect(res.violations.some(v => v.startsWith('FABRICATED_STAT'))).toBe(true)
+  })
+
+  it('flags "40 years in business"', () => {
+    const res = checkResponse(
+      'Riviera Builders has 40 years in business with consistent delivery.',
+      knownProjectNames,
+      cq(),
+      undefined,
+      knownBuilderNames
+    )
+    expect(res.violations.some(v => v.startsWith('FABRICATED_STAT'))).toBe(true)
+  })
+
+  it('flags "founded in 1995"', () => {
+    const res = checkResponse(
+      'Venus Group was founded in 1995 and focuses on Shela.',
+      knownProjectNames,
+      cq(),
+      undefined,
+      knownBuilderNames
+    )
+    expect(res.violations.some(v => v.startsWith('FABRICATED_STAT'))).toBe(true)
+  })
+
+  it('does NOT fire on plain prose', () => {
+    const res = checkResponse(
+      'The project has strong fundamentals and a trusted builder.',
+      knownProjectNames,
+      cq(),
+      undefined,
+      knownBuilderNames
+    )
+    expect(res.violations.some(v => v.startsWith('FABRICATED_STAT'))).toBe(false)
+  })
+})

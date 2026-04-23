@@ -426,5 +426,33 @@ export function checkResponse(
     }
   }
 
+  // CHECK 15 — FABRICATED_STAT (audit-only, Sprint B Bug #2).
+  // PART 8.5 rule 6: never state numerical facts about builders / projects /
+  // RERA timelines unless the exact fact appears verbatim in PROJECT_JSON or
+  // BUILDER_JSON. The model has a bad habit of inventing plausible-sounding
+  // stats ("250 projects delivered since 1971", "40 years in business") when
+  // a builder's NAME is real but the stats aren't in our schema. Three regex
+  // patterns cover the common shapes; audit-only so we never abort the stream.
+  const FABRICATED_STAT_PATTERNS: Array<{ re: RegExp; label: string }> = [
+    { re: /(\d{2,4})\s+(projects|units|flats|apartments|homes|towers)\s+(delivered|completed|built|sold)/gi, label: 'delivered_count' },
+    { re: /(since|established|founded|from)\s+(in\s+)?(\d{4})/gi, label: 'founding_year' },
+    { re: /(\d+)\s+(years?|decades?)\s+(in|of)\s+(business|experience)/gi, label: 'years_in_business' },
+  ]
+  for (const { re, label } of FABRICATED_STAT_PATTERNS) {
+    let sm: RegExpExecArray | null
+    while ((sm = re.exec(aiResponse)) !== null) {
+      const phrase = sm[0].length > 80 ? sm[0].slice(0, 77) + '...' : sm[0]
+      violations.push(`FABRICATED_STAT: ${label} — "${phrase}"`)
+      try {
+        Sentry.captureMessage('[FABRICATED_STAT] Numerical builder/project stat without source', {
+          level: 'warning',
+          tags: { audit_violation: 'true', rule: 'FABRICATED_STAT', pattern: label, match: phrase },
+        })
+      } catch {
+        // Sentry init may be absent in test/local env — never throw from the checker.
+      }
+    }
+  }
+
   return { passed: violations.length === 0, violations }
 }
