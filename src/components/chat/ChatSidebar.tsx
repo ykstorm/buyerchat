@@ -403,6 +403,7 @@ const sidebar = (
         {filteredSessions.length === 0 && sessions.length === 0 && userId && (
           <p className="text-[12px] text-[#A8A29E] px-2 py-4 text-center">No past chats yet</p>
         )}
+        {/* I22-DUP: must gate on userId (canonical auth signal) to match ChatCenter + sidebar footer. */}
         {!userId && (
           <p className="text-[12px] text-[#A8A29E] px-2 py-4 text-center">Sign in to see chat history</p>
         )}
@@ -411,6 +412,7 @@ const sidebar = (
 
       {/* Footer */}
       <div className="px-4 py-3" style={{ borderTop: '1px solid var(--border)' }}>
+        {/* I22-DUP: must gate on userId (canonical auth signal) to match ChatCenter + sidebar footer. */}
         {userId ? (
           <div>
             {savedProjects.length > 0 && (
