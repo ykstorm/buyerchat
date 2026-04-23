@@ -8,8 +8,11 @@ import {
 import type { ClassifiedQuery } from './intent-classifier'
 
 // Helper: build a ClassifiedQuery with sensible defaults for a given persona.
-function cq(persona: ClassifiedQuery['persona'] = 'unknown'): ClassifiedQuery {
-  return { intent: 'general_query', persona }
+function cq(
+  persona: ClassifiedQuery['persona'] = 'unknown',
+  intent: ClassifiedQuery['intent'] = 'general_query'
+): ClassifiedQuery {
+  return { intent, persona }
 }
 
 // Fixed CTA phrase so we satisfy MISSING_CTA whenever we mention a project.
@@ -209,6 +212,88 @@ describe('ORDINAL_RANKING check', () => {
   it('"consider this option" passes', () => {
     const res = checkResponse('Consider this option given your priorities and timeline.', [], cq())
     expect(res.violations.some(v => v.startsWith('ORDINAL_RANKING'))).toBe(false)
+  })
+})
+
+describe('MISSING_CTA check (I27 — narrowed to PART 5 preconditions)', () => {
+  const projectNames = ['Alpha Heights', 'Beta Park']
+
+  it('generic general_query with project mention does NOT fire (narrowed)', () => {
+    // Pre-I27 behavior fired whenever a project was named. PART 5 says we
+    // should NOT push a visit this early — intent is chit-chat and there is
+    // no visit signal. The narrowed rule correctly skips.
+    const res = checkResponse(
+      'Alpha Heights is located in South Bopal near the main road.',
+      projectNames,
+      cq('unknown', 'general_query'),
+      'tell me about the area'
+    )
+    expect(res.violations.some(v => v.startsWith('MISSING_CTA'))).toBe(false)
+  })
+
+  it('comparison_query with project CARD and no CTA FIRES', () => {
+    // Classic PART 5 precondition territory — buyer is comparing, response
+    // is project-anchored, but there is no visit CTA in text or card.
+    const text =
+      'Alpha Heights and Beta Park both fit the brief but differ on possession.\n' +
+      '<!--CARD:{"type":"project_card","projectId":"a"}-->'
+    const res = checkResponse(
+      text,
+      projectNames,
+      cq('unknown', 'comparison_query'),
+      'compare alpha heights and beta park'
+    )
+    expect(res.violations.some(v => v.startsWith('MISSING_CTA'))).toBe(true)
+  })
+
+  it('comparison_query with inline "book a visit" CTA does NOT fire', () => {
+    const text =
+      'Alpha Heights is stronger on delivery, Beta Park on amenities. Want to book a visit to Alpha?\n' +
+      '<!--CARD:{"type":"project_card","projectId":"a"}-->'
+    const res = checkResponse(
+      text,
+      projectNames,
+      cq('unknown', 'comparison_query'),
+      'compare alpha heights and beta park'
+    )
+    expect(res.violations.some(v => v.startsWith('MISSING_CTA'))).toBe(false)
+  })
+
+  it('comparison_query with visit_prompt CARD satisfies CTA (no fire)', () => {
+    const text =
+      'Alpha Heights edges Beta Park on builder delivery for your timeline.\n' +
+      '<!--CARD:{"type":"visit_prompt","projectId":"a","reason":"buyer ready"}-->'
+    const res = checkResponse(
+      text,
+      projectNames,
+      cq('unknown', 'comparison_query'),
+      'compare alpha heights and beta park'
+    )
+    expect(res.violations.some(v => v.startsWith('MISSING_CTA'))).toBe(false)
+  })
+
+  it('general_query first-buyer message does NOT fire (intent_capture stage)', () => {
+    // Buyer just landed with "hi" — we have no budget, no persona, no project
+    // lock-in. PART 5 explicitly forbids a visit push here.
+    const res = checkResponse(
+      'Hi — welcome. Alpha Heights is one of the options in Shela. What is your budget?',
+      projectNames,
+      cq('unknown', 'general_query'),
+      'hi'
+    )
+    expect(res.violations.some(v => v.startsWith('MISSING_CTA'))).toBe(false)
+  })
+
+  it('visit_query with project mention, no CARD, no CTA text FIRES', () => {
+    // Buyer explicitly asked to book/see. Response fails to surface a CTA or
+    // project anchor card — this is exactly when MISSING_CTA should fire.
+    const res = checkResponse(
+      'Alpha Heights has a 2030 possession timeline and is still early in construction.',
+      projectNames,
+      cq('unknown', 'visit_query'),
+      'can i book a site visit for alpha heights'
+    )
+    expect(res.violations.some(v => v.startsWith('MISSING_CTA'))).toBe(true)
   })
 })
 

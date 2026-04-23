@@ -177,16 +177,49 @@ export function checkResponse(
     violations.push(`HALLUCINATION: invented names — ${hallucinated.join(', ')}`)
   }
 
-  // CHECK 2 — Missing CTA: project mentioned but no site visit suggestion
+  // CHECK 2 — MISSING_CTA (audit-only, narrowed in I27).
+  //
+  // PART 5 of the system prompt forbids pushing a visit until ALL FOUR of:
+  //   1. Buyer has seen at least 2 project disclosures (layers 1–3 done)
+  //   2. Purpose AND budget are known
+  //   3. At least 2 projects compared in narrative
+  //   4. Buyer expressed positive interest — not just browsing
+  // The previous implementation fired whenever ANY project was mentioned
+  // without a CTA phrase, which contradicts PART 5 and caused ~2/hr false
+  // positives in production Sentry. The narrowed rule approximates PART 5's
+  // gating with two necessary-but-not-sufficient signals:
+  //   (a) intent is a project-facing one (project / comparison / visit),
+  //       never intent_capture / qualification-stage chit-chat;
+  //   (b) the buyer's current message shows visit readiness, OR the response
+  //       is clearly anchored on a specific project (has a project-type
+  //       CARD block).
+  // When both are true but the response omits a visit CTA, we flag.
+  const ctaIntents = new Set<ClassifiedQuery['intent']>([
+    'comparison_query',
+    'visit_query',
+    'builder_query',
+  ])
   const mentionsProject = knownProjectNames.some(p =>
-    lower.includes(p.toLowerCase())
+    p && lower.includes(p.toLowerCase())
   )
+  // Detect project-anchored response: any CARD that references a specific
+  // project (project_card / cost_breakdown / visit_prompt / builder_trust all
+  // qualify; comparison stands alone but still signals project anchoring).
+  const projectAnchorCard = /<!--CARD:\{[^}]*"type":"(?:project_card|cost_breakdown|visit_prompt|builder_trust|comparison)"/.test(aiResponse)
+  // Detect visit-readiness signal from the buyer's own message. Covers
+  // English ("visit", "schedule", "book", "see") and common Hinglish
+  // phrasings ("dikha", "dekhne jaana"). Cheap heuristic, not a model call.
+  const visitSignal = !!buyerMessage && /(visit|schedule|book|tour|see the project|dikha|dekhne|ghar dekhna)/i.test(buyerMessage)
+  const intentIsProjectFacing = ctaIntents.has(classified.intent)
+  const preconditionsPlausible =
+    intentIsProjectFacing && (visitSignal || projectAnchorCard)
   const hasCTA = lower.includes('site visit') ||
                  lower.includes('book a visit') ||
                  lower.includes('schedule a visit') ||
-                 lower.includes('30 seconds')
-  if (mentionsProject && !hasCTA) {
-    violations.push('MISSING_CTA: project mentioned without site visit CTA')
+                 lower.includes('30 seconds') ||
+                 /<!--CARD:\{[^}]*"type":"visit_prompt"/.test(aiResponse)
+  if (preconditionsPlausible && mentionsProject && !hasCTA) {
+    violations.push('MISSING_CTA: project-anchored response without visit CTA')
   }
 
   // CHECK 3 — Contact data leak: phone number or email in response
