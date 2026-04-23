@@ -32,6 +32,9 @@ export default function FloatingChatWidget() {
   const [isStreaming, setIsStreaming] = useState(false)
   const [showPing, setShowPing] = useState(true)
   const [isError, setIsError] = useState(false)
+  // C3 (Sprint C): hide widget when a VisitBooking modal is mounted so the two
+  // CTAs don't visually stack. See docs/diagnostics/i40-deep-audit.md §H.
+  const [hiddenByModal, setHiddenByModal] = useState(false)
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -40,6 +43,18 @@ export default function FloatingChatWidget() {
   useEffect(() => {
     const timer = setTimeout(() => setShowPing(false), 3000)
     return () => clearTimeout(timer)
+  }, [])
+
+  // C3: listen for VisitBookingModal open/close CustomEvents
+  useEffect(() => {
+    const onOpen = () => setHiddenByModal(true)
+    const onClose = () => setHiddenByModal(false)
+    window.addEventListener('visit-modal-open', onOpen)
+    window.addEventListener('visit-modal-close', onClose)
+    return () => {
+      window.removeEventListener('visit-modal-open', onOpen)
+      window.removeEventListener('visit-modal-close', onClose)
+    }
   }, [])
 
   useEffect(() => {
@@ -133,6 +148,9 @@ export default function FloatingChatWidget() {
   const formatTime = (date: Date) => {
     return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
   }
+
+  // C3: hidden while a VisitBookingModal is open to avoid CTA stacking.
+  if (hiddenByModal) return null
 
   return (
     <>

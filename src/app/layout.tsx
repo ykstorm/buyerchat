@@ -5,6 +5,7 @@ import { SpeedInsights } from '@vercel/speed-insights/next'
 import './globals.css'
 import Navbar from '@/components/Navbar'
 import ChatWidgetWrapper from '@/components/ChatWidgetWrapper'
+import Providers from './providers'
 
 const playfair = Playfair_Display({
   subsets: ['latin'],
@@ -29,7 +30,7 @@ const dmSans = DM_Sans({
 })
 
 export const metadata: Metadata = {
-  title: 'Homesty.ai — Honest Property Advisor | South Bopal & Shela, Ahmedabad',
+  title: 'Homesty.ai — Honest AI Property Advisor | RERA-verified | Ahmedabad',
   description: 'South Bopal and Shela\'s first honest property advisor. ALL-IN prices, mandatory flaw disclosure, OTP-protected visits. Homesty AI earns from builders — not from you.',
   keywords: 'South Bopal property, Shela property, Ahmedabad real estate, honest property advisor, property without broker',
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'),
@@ -102,9 +103,11 @@ export default function RootLayout({
         />
       </head>
       <body className="antialiased" style={{ background: 'var(--background)' }}>
-        <Navbar />
-        {children}
-        <ChatWidgetWrapper />
+        <Providers>
+          <Navbar />
+          {children}
+          <ChatWidgetWrapper />
+        </Providers>
         <Analytics />
         <SpeedInsights />
       </body>

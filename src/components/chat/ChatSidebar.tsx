@@ -453,7 +453,12 @@ const sidebar = (
             </div>
           </div>
         ) : (
-          <Link href="/auth/signin" className="text-[11px] text-[#1B4F8A] font-medium">Sign in</Link>
+          // C1 (Sprint C): demoted from <Link> to non-clickable muted text.
+          // ChatCenter top-right pill is the single clickable sign-in for /chat.
+          // See docs/diagnostics/i40-deep-audit.md §I + §O.
+          <p style={{ color: 'var(--text-muted)', fontSize: '11px', fontStyle: 'italic' }}>
+            Sign in from the top bar to save chats
+          </p>
         )}
       </div>
     </div>

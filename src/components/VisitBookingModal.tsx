@@ -158,6 +158,18 @@ export function VisitBookingModal({ projectId, projectName, builderName, isOpen,
     }
   }, [isOpen])
 
+  // C3 (Sprint C): broadcast open/close so FloatingChatWidget can hide itself.
+  // See docs/diagnostics/i40-deep-audit.md §H.
+  React.useEffect(() => {
+    if (typeof window === "undefined") return
+    if (isOpen) {
+      window.dispatchEvent(new CustomEvent("visit-modal-open"))
+      return () => {
+        window.dispatchEvent(new CustomEvent("visit-modal-close"))
+      }
+    }
+  }, [isOpen])
+
   // Close on Escape
   React.useEffect(() => {
     const handler = (e: KeyboardEvent) => { if (e.key === "Escape") onClose() }

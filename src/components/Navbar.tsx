@@ -1,14 +1,18 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { usePathname } from "next/navigation"
 import Link from "next/link"
 import { motion, useScroll, useMotionValueEvent, AnimatePresence } from "framer-motion"
+import { useSession, signOut } from "next-auth/react"
 
 export default function Navbar() {
   const pathname = usePathname()
+  const { data: session } = useSession()
   const [isScrolled, setIsScrolled] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [isAvatarOpen, setIsAvatarOpen] = useState(false)
+  const avatarRef = useRef<HTMLDivElement>(null)
   const { scrollY } = useScroll()
 
   useMotionValueEvent(scrollY, "change", (latest) => {
@@ -24,6 +28,18 @@ export default function Navbar() {
     return () => { document.body.style.overflow = "" }
   }, [isMobileMenuOpen])
 
+  // C2 (Sprint C): close avatar dropdown on outside click
+  useEffect(() => {
+    if (!isAvatarOpen) return
+    const onDocClick = (e: MouseEvent) => {
+      if (avatarRef.current && !avatarRef.current.contains(e.target as Node)) {
+        setIsAvatarOpen(false)
+      }
+    }
+    document.addEventListener("mousedown", onDocClick)
+    return () => document.removeEventListener("mousedown", onDocClick)
+  }, [isAvatarOpen])
+
   // Hide navbar on pages that have their own navigation
   if (pathname === '/' || pathname?.startsWith('/chat') || pathname?.startsWith('/dashboard') || pathname?.startsWith('/admin') || pathname?.startsWith('/auth')) {
     return null
@@ -31,7 +47,12 @@ export default function Navbar() {
 
   const navLinks = [
     { name: "Projects", href: "/projects" },
+    { name: "Builders", href: "/builders" },
+    { name: "Compare", href: "/compare" },
   ]
+
+  // C2 (Sprint C): session-aware CTA. Avatar when authed, Sign In pill when not.
+  const userInitial = (session?.user?.name ?? session?.user?.email ?? 'U').charAt(0).toUpperCase()
 
   return (
     <>
@@ -67,14 +88,58 @@ export default function Navbar() {
             ))}
           </div>
 
-          {/* Desktop CTA */}
+          {/* Desktop CTA — C2: session-aware */}
           <div className="hidden md:block">
-            <Link
-              href="/auth/signin"
-              className="rounded-full border border-white/10 bg-white/[0.04] px-5 py-2 text-[13px] text-[#e0e0ea] transition-all duration-200 hover:bg-white/[0.08]"
-            >
-              Sign In
-            </Link>
+            {!session ? (
+              <Link
+                href="/auth/signin"
+                className="rounded-full border border-white/10 bg-white/[0.04] px-5 py-2 text-[13px] text-[#e0e0ea] transition-all duration-200 hover:bg-white/[0.08]"
+              >
+                Sign In
+              </Link>
+            ) : (
+              <div ref={avatarRef} className="relative">
+                <button
+                  type="button"
+                  onClick={() => setIsAvatarOpen(v => !v)}
+                  aria-label="Account menu"
+                  aria-haspopup="menu"
+                  aria-expanded={isAvatarOpen}
+                  className="flex h-7 w-7 items-center justify-center overflow-hidden rounded-full border border-white/10 bg-white/[0.04] text-[12px] font-semibold text-[#e0e0ea] transition-all duration-200 hover:bg-white/[0.08]"
+                >
+                  {session.user?.image ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={session.user.image} alt="" className="h-full w-full object-cover" />
+                  ) : (
+                    userInitial
+                  )}
+                </button>
+                <AnimatePresence>
+                  {isAvatarOpen && (
+                    <motion.div
+                      role="menu"
+                      initial={{ opacity: 0, y: -4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -4 }}
+                      transition={{ duration: 0.15 }}
+                      className="absolute right-0 mt-2 min-w-[160px] rounded-lg border border-white/10 bg-[#0f0f14] p-1 shadow-lg"
+                    >
+                      <button
+                        type="button"
+                        role="menuitem"
+                        onClick={() => {
+                          setIsAvatarOpen(false)
+                          signOut({ callbackUrl: '/' })
+                        }}
+                        className="block w-full rounded-md px-3 py-2 text-left text-[13px] text-[#e0e0ea] transition-colors hover:bg-white/[0.06]"
+                      >
+                        Sign Out
+                      </button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -114,13 +179,39 @@ export default function Navbar() {
                     {link.name}
                   </Link>
                 ))}
-                <Link
-                  href="/auth/signin"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="mt-4 rounded-full border border-white/10 bg-white/[0.04] py-3 text-center text-[13px] text-[#e0e0ea] transition-all duration-200 hover:bg-white/[0.08]"
-                >
-                  Sign In
-                </Link>
+                {/* C2 (Sprint C): session-aware mobile CTA */}
+                {!session ? (
+                  <Link
+                    href="/auth/signin"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="mt-4 rounded-full border border-white/10 bg-white/[0.04] py-3 text-center text-[13px] text-[#e0e0ea] transition-all duration-200 hover:bg-white/[0.08]"
+                  >
+                    Sign In
+                  </Link>
+                ) : (
+                  <div className="mt-4 flex items-center gap-3 rounded-full border border-white/10 bg-white/[0.04] px-4 py-2">
+                    <span className="flex h-7 w-7 items-center justify-center overflow-hidden rounded-full bg-white/[0.06] text-[12px] font-semibold text-[#e0e0ea]" aria-hidden="true">
+                      {session.user?.image ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={session.user.image} alt="" className="h-full w-full object-cover" />
+                      ) : (
+                        userInitial
+                      )}
+                    </span>
+                    <span className="flex-1 truncate text-[12px] text-[#8888a8]">{session.user?.name ?? session.user?.email ?? 'Signed in'}</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsMobileMenuOpen(false)
+                        signOut({ callbackUrl: '/' })
+                      }}
+                      aria-label="Sign out"
+                      className="text-[12px] text-[#e0e0ea] transition-colors hover:text-[#3de8a0]"
+                    >
+                      Sign Out
+                    </button>
+                  </div>
+                )}
               </div>
             </motion.div>
 
