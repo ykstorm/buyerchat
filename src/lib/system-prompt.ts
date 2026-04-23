@@ -38,6 +38,7 @@ Builder: ${p.builder} | Zone: ${p.zone ?? p.location} | Configs: ${p.configurati
 DECISION: ${decisionStr} | Trust: ${p.trustScore ?? '—'}/100
 Score: ${scoreBreakdown || '—'}
 Possession: ${possessionStr}
+RERA: ${p.reraNumber ?? p.rera ?? 'not in our data'}
 Price: ${p.pricePerSqft && p.pricePerSqft > 0 ? `₹${p.pricePerSqft}/sqft` : (p.priceNote ? `See price note below` : `Pricing on request`)} | Range: ${p.priceRange ?? `₹${Math.round((p.minPrice ?? 0)/100000)}L–₹${Math.round((p.maxPrice ?? 0)/100000)}L`}
 ${p.priceNote ? `Price note: ${p.priceNote}` : ''}
 Bank Approvals: ${p.bankApprovals ?? 'Check with builder'}

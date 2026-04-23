@@ -20,7 +20,11 @@ export async function GET(req: NextRequest) {
     where: {
       isActive: true,
       ...(microMarket && microMarket !== 'all' && { microMarket }),
-      ...(status && status !== 'all' && { constructionStatus: status }),
+      // I40-G: DB stores "Active" / "Active (Ongoing)" / "Ready to Move" but
+      // buyer-friendly UI pills use "Under Construction" / "Ready to Move".
+      // Map at API layer; preserves UX copy without a migration.
+      ...(status === 'Under Construction' && { constructionStatus: { startsWith: 'Active' } }),
+      ...(status === 'Ready to Move' && { constructionStatus: 'Ready to Move' }),
       ...(unitType && unitType !== 'all' && {
         unitTypes: { has: unitType }
       }),
