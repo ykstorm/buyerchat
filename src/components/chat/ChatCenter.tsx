@@ -236,6 +236,7 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
     ) ?? null
   }
   const bottomRef = useRef<HTMLDivElement>(null)
+  const scrollRafPendingRef = useRef(false)
   const [mouse, setMouse] = useState({ x: 0, y: 0 })
   const mouseRafRef = useRef<number>(0)
   const [showArtifactMenu, setShowArtifactMenu] = useState(false)
@@ -254,8 +255,15 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
   }, [showArtifactMenu])
 
   useEffect(() => {
+    // RAF-gated scroll: during streaming, `messages` mutates every animation
+    // frame. Without a gate, each change queues a fresh scrollIntoView and the
+    // smooth animation fights itself (visible "pump" on iOS Safari). The gate
+    // ensures at most one scroll is scheduled per frame.
+    if (scrollRafPendingRef.current) return
+    scrollRafPendingRef.current = true
     requestAnimationFrame(() => {
-      bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+      scrollRafPendingRef.current = false
+      bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
     })
   }, [messages, isLoading])
 
@@ -404,7 +412,7 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
               transition={{ delay: 0.55 }}
               className="text-[11px] text-[#A8A29E]"
             >
-              Homesty earns only when you buy. No builder pays for prom.
+              Homesty earns only when you buy. No builder pays for promotion.
             </m.p>
           </div>
         </div>

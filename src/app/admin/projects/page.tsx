@@ -21,6 +21,7 @@ type ProjectRow = {
   minPrice: number
   maxPrice: number
   pricePerSqft: number
+  allInPrice: number | null
   reraNumber: string
   isActive: boolean
   decisionTag: string | null
@@ -41,6 +42,7 @@ const PROJECT_LIST_SELECT = {
   minPrice: true,
   maxPrice: true,
   pricePerSqft: true,
+  allInPrice: true,
   reraNumber: true,
   isActive: true,
   decisionTag: true,
@@ -105,6 +107,7 @@ export default async function ProjectsPage({
           <div className="flex items-center gap-3 text-[11px]">
             <span style={{ color: '#34D399' }}>● {projects.filter(p => p.isActive).length} active</span>
             <span style={{ color: '#FBBF24' }}>⚠ {projects.filter(p => !p.decisionTag || !p.honestConcern).length} need scoring</span>
+            <span style={{ color: '#F59E0B' }}>₹ {projects.filter(p => p.minPrice === 0 || p.allInPrice === null).length} need pricing</span>
           </div>
         </div>
         <div className="overflow-x-auto">

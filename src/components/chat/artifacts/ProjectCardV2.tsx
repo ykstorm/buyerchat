@@ -20,8 +20,10 @@ export default function ProjectCardV2({ project }: { project: ProjectType }) {
   const [showSavedToast, setShowSavedToast] = useState(false)
   const x = useMotionValue(0)
   const y = useMotionValue(0)
-  const rotateX = useTransform(y, [-100, 100], [4, -4])
-  const rotateY = useTransform(x, [-100, 100], [-4, 4])
+  // Subtle tilt — ±1.5deg preserves the "felt" depth without the drunk-wobble
+  // that ±4deg produced on the ~320px right-panel card.
+  const rotateX = useTransform(y, [-100, 100], [1.5, -1.5])
+  const rotateY = useTransform(x, [-100, 100], [-1.5, 1.5])
   const lastMoveTs = useRef(0)
 
   useEffect(() => {

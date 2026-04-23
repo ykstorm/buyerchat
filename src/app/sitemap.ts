@@ -20,7 +20,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: base, lastModified: new Date(), changeFrequency: 'daily', priority: 1 },
     { url: `${base}/chat`, lastModified: new Date(), changeFrequency: 'daily', priority: 0.9 },
     { url: `${base}/projects`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.8 },
-    { url: `${base}/builders`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.7 },
+    // No `/builders` index route exists — only dynamic `/builders/[id]` below.
     { url: `${base}/compare`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.6 },
   ]
 
