@@ -25,6 +25,18 @@ describe('response-checker — exported patterns', () => {
   it('BUSINESS_LEAK_PATTERN matches "commission rate"', () => {
     expect(BUSINESS_LEAK_PATTERN.test('our Commission Rate is 2%')).toBe(true)
   })
+  // A1 Option Z — honest builder-side commission answer must NOT fire BUSINESS_LEAK.
+  // Per-builder rate disclosure still must fire.
+  it('BUSINESS_LEAK_PATTERN does NOT fire on canonical honest answer (English)', () => {
+    expect(BUSINESS_LEAK_PATTERN.test('Homesty AI earns from builders — not from you. Exact amount is negotiated per deal with the builder.')).toBe(false)
+  })
+  it('BUSINESS_LEAK_PATTERN does NOT fire on canonical honest answer (Hinglish)', () => {
+    expect(BUSINESS_LEAK_PATTERN.test('Builder se commission leta hai — aapko kuch nahi dena. Amount per deal builder ke saath mutually decide hota hai.')).toBe(false)
+  })
+  it('BUSINESS_LEAK_PATTERN fires on per-builder rate disclosure', () => {
+    expect(BUSINESS_LEAK_PATTERN.test('Venus Group commission rate is 2%')).toBe(true)
+    expect(BUSINESS_LEAK_PATTERN.test('Goyal & Co. partner status is premium tier')).toBe(true)
+  })
   it('MARKDOWN_PATTERN matches bold, bullets, headers', () => {
     expect(MARKDOWN_PATTERN.test('**bold**')).toBe(true)
     expect(MARKDOWN_PATTERN.test('\n- bullet')).toBe(true)

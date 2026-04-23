@@ -30,7 +30,7 @@ const dmSans = DM_Sans({
 
 export const metadata: Metadata = {
   title: 'Homesty.ai — Honest Property Advisor | South Bopal & Shela, Ahmedabad',
-  description: 'South Bopal and Shela\'s first honest property advisor. ALL-IN prices, mandatory flaw disclosure, OTP-protected visits. 1.5% commission only on close.',
+  description: 'South Bopal and Shela\'s first honest property advisor. ALL-IN prices, mandatory flaw disclosure, OTP-protected visits. Homesty AI earns from builders — not from you.',
   keywords: 'South Bopal property, Shela property, Ahmedabad real estate, honest property advisor, property without broker',
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'),
   openGraph: {

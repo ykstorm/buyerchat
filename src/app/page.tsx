@@ -15,7 +15,7 @@ function Grain() {
 
 // Marquee strip — scrolling trust signals
 function Marquee() {
-  const items = ['Honest Concern \u2014 mandatory on every project', 'ALL-IN price \u2014 no hidden charges', 'OTP visit protection \u2014 90 days valid', 'Builder Trust Score \u2014 RERA verified', '50+ projects reviewed', '1.5% commission only on close']
+  const items = ['Honest Concern \u2014 mandatory on every project', 'ALL-IN price \u2014 no hidden charges', 'OTP visit protection \u2014 90 days valid', 'Builder Trust Score \u2014 RERA verified', '50+ projects reviewed', 'Homesty AI earns from builders — not from buyers']
   return (
     <div className="relative overflow-hidden py-3 border-y" style={{ borderColor: 'var(--landing-border)', background: 'var(--landing-bg-subtle)' }}>
       <motion.div
