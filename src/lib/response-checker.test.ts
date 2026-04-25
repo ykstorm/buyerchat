@@ -373,6 +373,73 @@ describe('FABRICATED_BUILDER check (I25)', () => {
   })
 })
 
+describe('FABRICATED_PRICE check (O sprint)', () => {
+  const knownProjectNames = ['Riviera Bliss', 'The Planet']
+  const knownBuilderNames = ['Riviera Builders', 'Venus Group']
+
+  it('flags "basic rate ₹5,700/sqft"', () => {
+    const res = checkResponse(
+      'For this project, basic rate is ₹5,700/sqft including all charges.',
+      knownProjectNames,
+      cq(),
+      undefined,
+      knownBuilderNames
+    )
+    expect(res.violations.some(v => v.startsWith('FABRICATED_PRICE'))).toBe(true)
+    expect(res.violations.some(v => v.includes('per_sqft_rate'))).toBe(true)
+  })
+
+  it('does NOT fire on "Pricing on request"', () => {
+    const res = checkResponse(
+      'Pricing on request — share your contact and the builder will revert with the cost sheet.',
+      knownProjectNames,
+      cq(),
+      undefined,
+      knownBuilderNames
+    )
+    expect(res.violations.some(v => v.startsWith('FABRICATED_PRICE'))).toBe(false)
+  })
+
+  it('does NOT fire on "Still being verified" / "verify nahi kar paya"', () => {
+    const res1 = checkResponse(
+      'Pricing for Riviera Bliss is still being verified — cost sheet aane ke baad share karenge.',
+      knownProjectNames,
+      cq(),
+      undefined,
+      knownBuilderNames
+    )
+    const res2 = checkResponse(
+      'Abhi tak verify nahi kar paya hu, builder ke saath confirm karke batata hu.',
+      knownProjectNames,
+      cq(),
+      undefined,
+      knownBuilderNames
+    )
+    expect(res1.violations.some(v => v.startsWith('FABRICATED_PRICE'))).toBe(false)
+    expect(res2.violations.some(v => v.startsWith('FABRICATED_PRICE'))).toBe(false)
+  })
+
+  it('does NOT fire on numbers inside CostBreakdownCard JSON artifact', () => {
+    const text =
+      `Cost details below.\n` +
+      `<!--CARD:{"type":"cost_breakdown","projectId":"r1","data":{"basicRate":5700,"allIn":9500000,"emi":59000,"interestRate":8.75}}-->`
+    const res = checkResponse(text, knownProjectNames, cq(), undefined, knownBuilderNames)
+    expect(res.violations.some(v => v.startsWith('FABRICATED_PRICE'))).toBe(false)
+  })
+
+  it('flags EMI fabrication "₹59,000/month for 20 years at 8.75% per annum" — both EMI and interest tags', () => {
+    const res = checkResponse(
+      'Your EMI would be around ₹59,000/month for 20 years at 8.75% per annum.',
+      knownProjectNames,
+      cq(),
+      undefined,
+      knownBuilderNames
+    )
+    expect(res.violations.some(v => v.includes('FABRICATED_PRICE') && v.includes('emi_amount'))).toBe(true)
+    expect(res.violations.some(v => v.includes('FABRICATED_PRICE') && v.includes('interest_rate'))).toBe(true)
+  })
+})
+
 describe('FABRICATED_STAT check', () => {
   const knownProjectNames = ['The Planet', 'Riviera Elite']
   const knownBuilderNames = ['Venus Group', 'Riviera Builders']

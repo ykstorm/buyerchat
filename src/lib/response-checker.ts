@@ -426,6 +426,35 @@ export function checkResponse(
     }
   }
 
+  // CHECK 16 — FABRICATED_PRICE (audit-only, O sprint).
+  // PART 8.5 rule 7: never state per-sqft rates, all-in costs, EMI amounts,
+  // or interest rates in prose unless the project has pricePerSqft > 0 AND
+  // a ProjectPricing row exists in PROJECT_JSON. Numbers inside CARD JSON
+  // artifacts come from server-computed data and are exempt — strip CARD
+  // payloads before scanning prose so we only flag freeform fabrication.
+  const proseOnly = aiResponse.replace(/<!--CARD:[\s\S]*?-->/g, '')
+  const FABRICATED_PRICE_PATTERNS: Array<{ re: RegExp; label: string }> = [
+    { re: /basic\s+rate\s+(is\s+)?₹\s*[\d,]+(?:\s*\/\s*sqft|\s*\/\s*sq\.?\s*ft\.?)/gi, label: 'per_sqft_rate' },
+    { re: /all[\s-]?in\s+(cost|price|total)?\s*(comes\s+to\s+|is\s+|hoga\s+|hogi\s+)?(approximately\s+|~)?₹\s*[\d.]+\s*(L|Cr|lakh|crore)/gi, label: 'all_in_cost' },
+    { re: /EMI\s+(would\s+be\s+|is\s+|comes\s+to\s+|hogi\s+|hoga\s+)?(around\s+|approximately\s+)?₹\s*[\d,]+\s*(\/\s*month|per\s+month|pm|monthly)/gi, label: 'emi_amount' },
+    { re: /(at\s+|@\s*)[\d.]+\s*%\s*(interest|per\s+annum|p\.?a\.?|annual)/gi, label: 'interest_rate' },
+  ]
+  for (const { re, label } of FABRICATED_PRICE_PATTERNS) {
+    let pm: RegExpExecArray | null
+    while ((pm = re.exec(proseOnly)) !== null) {
+      const phrase = pm[0].length > 80 ? pm[0].slice(0, 77) + '...' : pm[0]
+      violations.push(`FABRICATED_PRICE: ${label} — "${phrase}"`)
+      try {
+        Sentry.captureMessage('[FABRICATED_PRICE] Price/EMI/interest stated without source pricing row', {
+          level: 'warning',
+          tags: { audit_violation: 'true', rule: 'FABRICATED_PRICE', pattern: label, match: phrase },
+        })
+      } catch {
+        // Sentry init may be absent in test/local env — never throw from the checker.
+      }
+    }
+  }
+
   // CHECK 15 — FABRICATED_STAT (audit-only, Sprint B Bug #2).
   // PART 8.5 rule 6: never state numerical facts about builders / projects /
   // RERA timelines unless the exact fact appears verbatim in PROJECT_JSON or
