@@ -65,6 +65,38 @@ ${data.rawText}`
       const Sentry = await import('@sentry/nextjs')
       Sentry.captureException(err)
     } catch { /* Sentry not configured */ }
+
+    // gujrera.gujarat.gov.in routinely geo-blocks non-India egress
+    // (Vercel Hyderabad/SIN-1 functions, US dev laptops, etc). Treat
+    // those failure modes as a soft "unavailable" so the admin UI can
+    // show an inline note instead of a generic 500/error toast. Other
+    // unexpected errors still surface as 500 below.
+    const msg = err instanceof Error ? err.message.toLowerCase() : ''
+    const isGeoOrTimeout =
+      msg.includes('timeout') ||
+      msg.includes('etimedout') ||
+      msg.includes('econnrefused') ||
+      msg.includes('econnreset') ||
+      msg.includes('enotfound') ||
+      msg.includes('navigation') ||
+      msg.includes('net::err') ||
+      msg.includes('blocked') ||
+      msg.includes('403') ||
+      msg.includes('502') ||
+      msg.includes('503') ||
+      msg.includes('504')
+    if (isGeoOrTimeout) {
+      return NextResponse.json(
+        {
+          ok: false,
+          reason: 'RERA portal unavailable from this region',
+          suggestion: 'Verify manually on https://gujrera.gujarat.gov.in',
+          code: 'RERA_GEO_BLOCKED',
+        },
+        { status: 200 },
+      )
+    }
+
     const detail = process.env.NODE_ENV === 'development' && err instanceof Error
       ? err.message
       : 'RERA fetch failed. Try again.'

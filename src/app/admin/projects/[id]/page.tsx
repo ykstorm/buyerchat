@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
+import { uploadAndExtractPdf } from '@/lib/admin/pdf-upload'
 
 interface ProjectForm {
   projectName: string
@@ -166,8 +167,15 @@ export default function ProjectEditPage() {
   const [error, setError] = useState<string | null>(null)
   const [step, setStep] = useState(1)
   const [reraFetching, setReraFetching] = useState(false)
+  const [reraNotice, setReraNotice] = useState<string | null>(null)
 
   useEffect(() => {
+    if (!isNew && !id) {
+      // Defensive: useParams() can briefly return null on first render —
+      // skip the fetch instead of hitting `/api/admin/projects/undefined`.
+      console.error('[ProjectEditPage] missing id, skipping fetch')
+      return
+    }
     if (!isNew) {
       fetch(`/api/admin/projects/${id}`)
         .then(r => r.json())
@@ -233,6 +241,10 @@ export default function ProjectEditPage() {
     setForm(p => ({ ...p, [field]: value }))
 
   const handleSave = async () => {
+    if (!isNew && !id) {
+      setError('Missing project id — refresh the page.')
+      return
+    }
     setSaving(true); setError(null)
     try {
       const payload = {
@@ -279,6 +291,10 @@ export default function ProjectEditPage() {
   }
 
   const handleDelete = async () => {
+    if (!id) {
+      console.error('[ProjectEditPage] missing id, cannot delete')
+      return
+    }
     if (!confirm('Delete this project? This cannot be undone.')) return
     await fetch(`/api/admin/projects/${id}`, { method: 'DELETE' })
     router.push('/admin/projects')
@@ -356,6 +372,7 @@ export default function ProjectEditPage() {
                 <button type="button" disabled={reraFetching || !form.reraNumber}
                   onClick={async () => {
                     setReraFetching(true)
+                    setReraNotice(null)
                     try {
                       const res = await fetch('/api/rera-fetch', {
                         method: 'POST',
@@ -363,6 +380,14 @@ export default function ProjectEditPage() {
                         body: JSON.stringify({ reraNumber: form.reraNumber })
                       })
                       const json = await res.json()
+                      // Graceful soft-failure for geo-blocked RERA portal —
+                      // backend returns 200 with code RERA_GEO_BLOCKED.
+                      if (json?.code === 'RERA_GEO_BLOCKED') {
+                        setReraNotice(
+                          `${json.reason ?? 'RERA portal unavailable'}. ${json.suggestion ?? ''}`,
+                        )
+                        return
+                      }
                       if (!res.ok) { alert(json.error || 'Fetch failed'); return }
                       const d = json.data ?? json
                       if (d.projectName) set('projectName', d.projectName)
@@ -383,6 +408,18 @@ export default function ProjectEditPage() {
                 <p className="font-medium text-white mb-1">Puppeteer RERA auto-scrape</p>
                 <p>Enter RERA number above and click Fetch. System will scrape gujrera.gujarat.gov.in and auto-fill: project name, legal entity, status, possession date, complaints, escrow bank.</p>
               </div>
+              {reraNotice && (
+                <div role="status"
+                  className="mt-3 rounded-lg p-3 text-[11px]"
+                  style={{
+                    background: 'rgba(186, 117, 23, 0.10)',
+                    border: '1px solid rgba(186, 117, 23, 0.30)',
+                    color: '#F5C76E',
+                  }}>
+                  <p className="font-medium mb-0.5">RERA portal unavailable</p>
+                  <p>{reraNotice}</p>
+                </div>
+              )}
               <div className="grid grid-cols-2 gap-3 mt-4">
                 <div>
                   <label className="block text-[11px] text-[#9CA3AF] mb-1">Project name *</label>
@@ -450,22 +487,22 @@ export default function ProjectEditPage() {
                     onChange={async (e) => {
                       const file = e.target.files?.[0]
                       if (!file) return
-                      const fd = new FormData()
-                      fd.append('pdf', file)
                       setReraFetching(true)
                       try {
-                        const res = await fetch('/api/pdf-extract', { method: 'POST', body: fd })
-                        const { data } = await res.json()
+                        const data = await uploadAndExtractPdf(file)
                         if (data) {
                           if (data.carpet_3bhk) set('carpetSqftMin', data.carpet_3bhk)
                           if (data.sbu_3bhk) set('sbaSqftMin', data.sbu_3bhk)
                           if (data.loading_factor) set('loadingFactor', data.loading_factor)
                           if (data.total_floors) set('availableUnits', data.total_floors * 4)
-                          if (data.amenities) set('amenities', data.amenities.split(',').map((a: string) => a.trim()))
+                          if (data.amenities) set('amenities', data.amenities.split(',').map((a: string) => a.trim()).join(', '))
                           if (data.configurations) set('configurations', data.configurations)
                           if (data.possession_date) set('possessionDate', new Date(data.possession_date).toISOString().split('T')[0])
                         }
-                      } catch {}
+                      } catch (err) {
+                        console.error('[pdf-upload]', err)
+                        setError(err instanceof Error ? err.message : 'PDF extract failed')
+                      }
                       setReraFetching(false)
                     }}
                   />

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter, useParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 
 interface ProjectForm {
   projectName: string
@@ -143,9 +143,12 @@ function ScoreInput({ label, value, max, onChange, hint, type, options }: {
 
 export default function ProjectEditPage() {
   const router = useRouter()
-  const params = useParams()
-  const id = params?.id as string
-  const isNew = id === 'new'
+  // This page is mounted at the static route `/admin/projects/new` —
+  // there is no `[id]` segment in scope so `useParams().id` would be
+  // `undefined`, which previously caused `fetch('/api/admin/projects/undefined')`
+  // → 404. We always treat this page as a new-project create flow.
+  const id: string | undefined = undefined
+  const isNew = true
 
   const [form, setForm] = useState<ProjectForm>(DEFAULT)
   const [loading, setLoading] = useState(!isNew)
@@ -153,9 +156,10 @@ export default function ProjectEditPage() {
   const [error, setError] = useState<string | null>(null)
   const [step, setStep] = useState(1)
   const [reraFetching, setReraFetching] = useState(false)
+  const [reraNotice, setReraNotice] = useState<string | null>(null)
 
   useEffect(() => {
-    if (!isNew) {
+    if (!isNew && id) {
       fetch(`/api/admin/projects/${id}`)
         .then(r => r.json())
         .then(data => {
@@ -332,6 +336,7 @@ export default function ProjectEditPage() {
                 <button type="button" disabled={reraFetching || !form.reraNumber}
                   onClick={async () => {
                     setReraFetching(true)
+                    setReraNotice(null)
                     try {
                       const res = await fetch('/api/rera-fetch', {
                         method: 'POST',
@@ -339,6 +344,10 @@ export default function ProjectEditPage() {
                         body: JSON.stringify({ reraNumber: form.reraNumber })
                       })
                       const json = await res.json()
+                      if (json?.code === 'RERA_GEO_BLOCKED') {
+                        setReraNotice(`${json.reason ?? 'RERA portal unavailable'}. ${json.suggestion ?? ''}`)
+                        return
+                      }
                       if (!res.ok) { alert(json.error || 'Fetch failed'); return }
                       const d = json.data ?? json
                       if (d.projectName) set('projectName', d.projectName)
@@ -359,6 +368,18 @@ export default function ProjectEditPage() {
                 <p className="font-medium text-white mb-1">Puppeteer RERA auto-scrape</p>
                 <p>Enter RERA number above and click Fetch. System will scrape gujrera.gujarat.gov.in and auto-fill: project name, legal entity, status, possession date, complaints, escrow bank.</p>
               </div>
+              {reraNotice && (
+                <div role="status"
+                  className="mt-3 rounded-lg p-3 text-[11px]"
+                  style={{
+                    background: 'rgba(186, 117, 23, 0.10)',
+                    border: '1px solid rgba(186, 117, 23, 0.30)',
+                    color: '#F5C76E',
+                  }}>
+                  <p className="font-medium mb-0.5">RERA portal unavailable</p>
+                  <p>{reraNotice}</p>
+                </div>
+              )}
               <div className="grid grid-cols-2 gap-3 mt-4">
                 <div>
                   <label className="block text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: '#4B5563' }}>Project name *</label>

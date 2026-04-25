@@ -35,6 +35,11 @@ export default function EditBuilderPage() {
   const grade = trust >= 85 ? 'A' : trust >= 70 ? 'B' : trust >= 55 ? 'C' : trust >= 40 ? 'D' : 'F'
 
   useEffect(() => {
+    if (!id) {
+      console.error('[EditBuilderPage] missing id, skipping fetch')
+      setLoading(false)
+      return
+    }
     fetch(`/api/admin/builders/${id}`)
       .then(r => r.json())
       .then(data => {
