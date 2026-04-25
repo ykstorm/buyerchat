@@ -23,6 +23,14 @@ const otherChargeSchema = z.object({
   amount: z.number().int().min(0).max(100_000_000),
 })
 
+// Per-BHK row (Bug B). Coerce because the form may post numeric strings.
+const bhkConfigSchema = z.object({
+  type: z.string().min(1).max(20),
+  sbaSqft: z.coerce.number().nonnegative().max(100_000),
+  carpetSqft: z.coerce.number().nonnegative().max(100_000).optional(),
+  allInTotal: z.coerce.number().nonnegative().optional(),
+})
+
 export const PricingSchema = z
   .object({
     propertyType: z.enum(['flat', 'villa']),
@@ -65,6 +73,11 @@ export const PricingSchema = z
 
     // Area (sqft for flat, sqyd for villa). Required to compute breakdown.
     areaSqftOrSqyd: z.number().int().min(1).max(100_000),
+
+    // Per-BHK configuration table (Bug B). Optional — older projects
+    // may continue with a single area. New projects should populate
+    // this so each BHK row gets its own all-in total.
+    bhkConfigs: z.array(bhkConfigSchema).max(8).optional().nullable(),
 
     // Optional metadata
     changeReason: z.string().max(200).optional().nullable(),

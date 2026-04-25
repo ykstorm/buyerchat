@@ -3,8 +3,33 @@ import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { logAdminAction } from '@/lib/audit-log'
 import { invalidateContextCache } from '@/lib/context-cache'
-import { calculateBreakdown } from '@/lib/pricing/calculator'
+import { calculateAllInForBhk, calculateBreakdown, num } from '@/lib/pricing/calculator'
 import { PricingSchema } from '@/lib/pricing/validator'
+
+/**
+ * Enrich each BHK row with a server-computed allInTotal so the value
+ * persisted in `ProjectPricing.bhkConfigs` is the source of truth (the
+ * client computes the same number for live display, but we never trust
+ * client-supplied totals). Also denormalises min/max per-flat all-in
+ * onto Project so buyer-facing cards never display a per-sqft number.
+ */
+function enrichBhkConfigs(
+  pricing: Parameters<typeof calculateAllInForBhk>[0],
+  bhkConfigs: Array<{
+    type: string
+    sbaSqft: number
+    carpetSqft?: number
+    allInTotal?: number
+  }> | null | undefined
+): Array<{ type: string; sbaSqft: number; carpetSqft?: number; allInTotal: number }> {
+  if (!Array.isArray(bhkConfigs) || bhkConfigs.length === 0) return []
+  return bhkConfigs.map((row) => ({
+    type: row.type,
+    sbaSqft: num(row.sbaSqft),
+    carpetSqft: row.carpetSqft != null ? num(row.carpetSqft) : undefined,
+    allInTotal: Math.round(calculateAllInForBhk(pricing, row.sbaSqft).allIn),
+  }))
+}
 import { Prisma } from '@prisma/client'
 
 /**
@@ -87,6 +112,7 @@ export async function POST(
     const area = d.areaSqftOrSqyd
 
     const breakdown = calculateBreakdown(d, area)
+    const enrichedBhk = enrichBhkConfigs(d, d.bhkConfigs ?? null)
     const adminEmail = gate.session!.user!.email!
 
     const pricing = await prisma.projectPricing.create({
@@ -128,6 +154,9 @@ export async function POST(
         stampRegTotal: breakdown.stampRegTotal,
         gstTotal: breakdown.gstTotal,
         grandTotalAllIn: breakdown.grandTotalAllIn,
+        bhkConfigs: enrichedBhk.length
+          ? (enrichedBhk as unknown as Prisma.InputJsonValue)
+          : undefined,
         updatedBy: adminEmail,
         pricingVersion: 1,
       },
@@ -147,15 +176,22 @@ export async function POST(
     })
 
     // Denormalize onto Project so buyer-facing chat/cards show real numbers.
-    // min  = basicCostTotal (ex-taxes, ex-govt)
-    // max  = grandTotalAllIn (what the buyer actually pays)
-    // allInPrice = grandTotalAllIn
+    // When BHK configs exist, min/max are the smallest/largest per-flat
+    // all-in totals (Bug B). Otherwise fall back to the legacy single-area
+    // breakdown so projects without BHK rows keep showing something.
+    const bhkAllIns = enrichedBhk.map((b) => b.allInTotal).filter((n) => n > 0)
+    const denormMin = bhkAllIns.length ? Math.min(...bhkAllIns) : breakdown.basicCostTotal
+    const denormMax = bhkAllIns.length ? Math.max(...bhkAllIns) : breakdown.grandTotalAllIn
+    const denormAllIn = bhkAllIns.length ? Math.max(...bhkAllIns) : breakdown.grandTotalAllIn
+    const denormPerSqft = num(d.basicRatePerSqft)
+
     await prisma.project.update({
       where: { id },
       data: {
-        minPrice: breakdown.basicCostTotal,
-        maxPrice: breakdown.grandTotalAllIn,
-        allInPrice: breakdown.grandTotalAllIn,
+        minPrice: denormMin,
+        maxPrice: denormMax,
+        allInPrice: denormAllIn,
+        ...(denormPerSqft > 0 ? { pricePerSqft: denormPerSqft } : {}),
       },
     })
 
@@ -163,11 +199,16 @@ export async function POST(
     await logAdminAction(
       'create',
       'project_pricing',
-      { id: pricing.id, projectId: id, grandTotalAllIn: breakdown.grandTotalAllIn },
+      {
+        id: pricing.id,
+        projectId: id,
+        grandTotalAllIn: breakdown.grandTotalAllIn,
+        bhkCount: enrichedBhk.length,
+      },
       adminEmail
     )
 
-    return NextResponse.json({ pricing, breakdown }, { status: 201 })
+    return NextResponse.json({ pricing, breakdown, bhkConfigs: enrichedBhk }, { status: 201 })
   } catch (err) {
     console.error('Pricing POST error:', err)
     return NextResponse.json({ error: 'Failed to create pricing' }, { status: 500 })
@@ -202,6 +243,7 @@ export async function PUT(
     const d = parsed.data
     const area = d.areaSqftOrSqyd
     const breakdown = calculateBreakdown(d, area)
+    const enrichedBhk = enrichBhkConfigs(d, d.bhkConfigs ?? null)
     const adminEmail = gate.session!.user!.email!
 
     const pricing = await prisma.projectPricing.update({
@@ -243,6 +285,9 @@ export async function PUT(
         stampRegTotal: breakdown.stampRegTotal,
         gstTotal: breakdown.gstTotal,
         grandTotalAllIn: breakdown.grandTotalAllIn,
+        bhkConfigs: enrichedBhk.length
+          ? (enrichedBhk as unknown as Prisma.InputJsonValue)
+          : Prisma.JsonNull,
         updatedBy: adminEmail,
         pricingVersion: { increment: 1 },
       },
@@ -260,12 +305,19 @@ export async function PUT(
       },
     })
 
+    const bhkAllIns = enrichedBhk.map((b) => b.allInTotal).filter((n) => n > 0)
+    const denormMin = bhkAllIns.length ? Math.min(...bhkAllIns) : breakdown.basicCostTotal
+    const denormMax = bhkAllIns.length ? Math.max(...bhkAllIns) : breakdown.grandTotalAllIn
+    const denormAllIn = bhkAllIns.length ? Math.max(...bhkAllIns) : breakdown.grandTotalAllIn
+    const denormPerSqft = num(d.basicRatePerSqft)
+
     await prisma.project.update({
       where: { id },
       data: {
-        minPrice: breakdown.basicCostTotal,
-        maxPrice: breakdown.grandTotalAllIn,
-        allInPrice: breakdown.grandTotalAllIn,
+        minPrice: denormMin,
+        maxPrice: denormMax,
+        allInPrice: denormAllIn,
+        ...(denormPerSqft > 0 ? { pricePerSqft: denormPerSqft } : {}),
       },
     })
 
@@ -278,11 +330,12 @@ export async function PUT(
         projectId: id,
         grandTotalAllIn: breakdown.grandTotalAllIn,
         version: pricing.pricingVersion,
+        bhkCount: enrichedBhk.length,
       },
       adminEmail
     )
 
-    return NextResponse.json({ pricing, breakdown })
+    return NextResponse.json({ pricing, breakdown, bhkConfigs: enrichedBhk })
   } catch (err) {
     console.error('Pricing PUT error:', err)
     return NextResponse.json({ error: 'Failed to update pricing' }, { status: 500 })

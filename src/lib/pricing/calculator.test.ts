@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest'
-import { calculateBreakdown, num, type PricingInput } from './calculator'
+import {
+  calculateAllInForBhk,
+  calculateBreakdown,
+  num,
+  type PricingInput,
+} from './calculator'
 
 describe('calculateBreakdown — flat', () => {
   // Canonical Shela 3BHK fixture — 1800 sqft SBU at ₹5000 base.
@@ -230,5 +235,115 @@ describe('calculateBreakdown — string-typed PricingInput (Bug A)', () => {
 
     const r = calculateBreakdown(empty, '' as unknown as number)
     expect(r.grandTotalAllIn).toBe(0)
+  })
+})
+
+// Bug B — per-BHK all-in calculator. Each BHK row needs its own per-flat
+// total; previously the form had no flat size and showed a per-sqft "₹4,725"
+// number that read as gibberish to buyers.
+describe('calculateAllInForBhk — Bug B', () => {
+  // Canonical fixture: 1100 sqft 2BHK at ₹4000/sqft.
+  const baseInput: PricingInput = {
+    propertyType: 'flat',
+    basicRatePerSqft: 4000,
+    plcRatePerSqft: 100,
+    floorRisePerSqft: 50,
+    floorRiseFrom: 1,
+    unitFloorNo: 1, // equal to threshold → no floor rise
+    audaGebAecCharge: 100000,
+    developmentFixed: 150000,
+    carParkingAmount: 300000,
+    carParkingCount: 1,
+    clubMembership: 100000,
+    legalCharges: 25000,
+    otherCharges: [],
+    saleDeedAmount: 0, // fall back to basic+plc+floorRise
+    gstPercent: 5,
+    stampDutyPercent: 4.9,
+    registrationPercent: 1.0,
+  }
+
+  it('canonical 1100 sqft @ ₹4000/sqft returns finite allIn within sane range', () => {
+    const r = calculateAllInForBhk(baseInput, 1100)
+    expect(Number.isFinite(r.allIn)).toBe(true)
+    // basic = 4_400_000, plc = 110_000, floorRise = 0
+    expect(r.basic).toBe(4_400_000)
+    expect(r.plc).toBe(110_000)
+    expect(r.floorRise).toBe(0)
+    // saleDeed fallback = 4_510_000 → gst 5% = 225_500, stampReg 5.9% = 266_090
+    expect(r.gst).toBeCloseTo(225_500, 0)
+    expect(r.stampReg).toBeCloseTo(266_090, 0)
+    // Sane range: between ₹40 L and ₹2 Cr for a 1100-sqft 2BHK
+    expect(r.allIn).toBeGreaterThan(4_000_000)
+    expect(r.allIn).toBeLessThan(20_000_000)
+  })
+
+  it('sbaSqft = 0 returns all zeros', () => {
+    const r = calculateAllInForBhk(baseInput, 0)
+    expect(r).toEqual({
+      basic: 0,
+      plc: 0,
+      floorRise: 0,
+      charges: 0,
+      gst: 0,
+      stampReg: 0,
+      allIn: 0,
+    })
+    // Also for negatives / non-numeric.
+    expect(calculateAllInForBhk(baseInput, -10).allIn).toBe(0)
+    expect(calculateAllInForBhk(baseInput, 'abc').allIn).toBe(0)
+    expect(calculateAllInForBhk(baseInput, null).allIn).toBe(0)
+  })
+
+  it('floor rise applies only when unitFloorNo > floorRiseFrom', () => {
+    const below = calculateAllInForBhk(
+      { ...baseInput, floorRiseFrom: 5, unitFloorNo: 3 },
+      1000
+    )
+    expect(below.floorRise).toBe(0)
+
+    const above = calculateAllInForBhk(
+      { ...baseInput, floorRiseFrom: 5, unitFloorNo: 9 },
+      1000
+    )
+    // floorRise = 50 * 1000 = 50_000 (rate * sqft, charged once when floor exceeds threshold)
+    expect(above.floorRise).toBe(50_000)
+    expect(above.allIn).toBeGreaterThan(below.allIn)
+
+    // Equal floor → no rise (strict >)
+    const equal = calculateAllInForBhk(
+      { ...baseInput, floorRiseFrom: 5, unitFloorNo: 5 },
+      1000
+    )
+    expect(equal.floorRise).toBe(0)
+  })
+
+  it('saleDeedAmount overrides computed sale-deed for GST/stamp basis', () => {
+    const declared = 3_000_000 // ₹30 L declared, well below computed BSP
+    const r = calculateAllInForBhk(
+      { ...baseInput, saleDeedAmount: declared },
+      1100
+    )
+    // GST is 5% of declared, NOT of basic+plc.
+    expect(r.gst).toBeCloseTo(declared * 0.05, 0)
+    expect(r.stampReg).toBeCloseTo(declared * 0.059, 0)
+  })
+
+  it('otherCharges with mixed string and number amounts sums correctly via num()', () => {
+    const mixed: PricingInput = {
+      ...baseInput,
+      otherCharges: [
+        { label: 'GEB', amount: '25000' as unknown as number },
+        { label: 'Maint', amount: 15000 },
+        { label: 'Legal', amount: 'bogus' as unknown as number }, // ignored
+        { label: 'Empty', amount: '' as unknown as number }, // ignored
+      ],
+    }
+    const r = calculateAllInForBhk(mixed, 1000)
+    const baseline = calculateAllInForBhk(baseInput, 1000)
+    // Charges grew by exactly 25000 + 15000 = 40000 over the baseline.
+    expect(r.charges - baseline.charges).toBe(40_000)
+    // No NaN propagation — fundamental Bug-A guarantee.
+    expect(Number.isFinite(r.allIn)).toBe(true)
   })
 })

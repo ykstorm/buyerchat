@@ -174,3 +174,73 @@ export function calculateBreakdown(input: PricingInput, sqftOrSqyd: number): Bre
     grandTotalAllIn,
   }
 }
+
+/**
+ * Per-BHK all-in calculator (Bug B).
+ *
+ * The Step-3 form has rate/sqft inputs but, prior to this fix, no
+ * per-flat size — so the displayed "total" was per-sqft, which buyers
+ * read as "₹4,725" and lost trust. This function consumes the same
+ * `PricingInput` plus a single BHK's SBU sqft and returns the per-flat
+ * all-in number that should be shown on the buyer-facing card.
+ *
+ * Field-name parity with the existing `PricingInput` interface:
+ *   audaGebAecCharge   (NOT audaGebAec)
+ *   floorRiseFrom / unitFloorNo are the threshold + actual floor
+ *
+ * `num()` is applied at every read so this is safe against string-typed
+ * form state (same defense as `calculateBreakdown` after Bug A).
+ */
+export function calculateAllInForBhk(
+  pricing: PricingInput,
+  sbaSqftRaw: unknown
+): {
+  basic: number
+  plc: number
+  floorRise: number
+  charges: number
+  gst: number
+  stampReg: number
+  allIn: number
+} {
+  const sbaSqft = num(sbaSqftRaw)
+  if (sbaSqft <= 0) {
+    return { basic: 0, plc: 0, floorRise: 0, charges: 0, gst: 0, stampReg: 0, allIn: 0 }
+  }
+
+  const basic = num(pricing.basicRatePerSqft) * sbaSqft
+  const plc = num(pricing.plcRatePerSqft) * sbaSqft
+
+  // Floor rise only applies when the unit's floor exceeds the threshold.
+  const unitFloorNo = num(pricing.unitFloorNo)
+  const floorRiseFrom = num(pricing.floorRiseFrom)
+  const floorRise =
+    unitFloorNo > floorRiseFrom ? num(pricing.floorRisePerSqft) * sbaSqft : 0
+
+  // Sum of operator-defined "other charges" rows. Strings tolerated.
+  const otherChargesSum = (Array.isArray(pricing.otherCharges) ? pricing.otherCharges : []).reduce(
+    (s, c) => s + num((c as { amount?: unknown })?.amount),
+    0
+  )
+
+  const charges =
+    num(pricing.audaGebAecCharge) +
+    num(pricing.developmentFixed) +
+    num(pricing.carParkingAmount) * num(pricing.carParkingCount) +
+    num(pricing.clubMembership) +
+    num(pricing.legalCharges) +
+    otherChargesSum
+
+  // Operator may declare a saleDeed lower than the computed BSP
+  // (common stamp-duty optimisation). When unset / zero, fall back to
+  // BSP + PLC + floor-rise so the buyer card never shows ₹0 GST.
+  const saleDeed = num(pricing.saleDeedAmount) || basic + plc + floorRise
+
+  const gst = saleDeed * (num(pricing.gstPercent) / 100)
+  const stampReg =
+    saleDeed *
+    ((num(pricing.stampDutyPercent) + num(pricing.registrationPercent)) / 100)
+
+  const allIn = basic + plc + floorRise + charges + gst + stampReg
+  return { basic, plc, floorRise, charges, gst, stampReg, allIn }
+}

@@ -3,7 +3,22 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import LiveCostBreakup from './LiveCostBreakup'
-import { calculateBreakdown, num, type PricingInput, type Breakdown } from '@/lib/pricing/calculator'
+import {
+  calculateAllInForBhk,
+  calculateBreakdown,
+  num,
+  type Breakdown,
+  type PricingInput,
+} from '@/lib/pricing/calculator'
+
+// Per-BHK row carried in form state. `sbaSqft` / `carpetSqft` are kept
+// as strings so partially-typed inputs ("14") don't snap to 0 on every
+// keystroke — `num()` converts at the calculator boundary.
+export interface BhkConfigFormRow {
+  type: string
+  sbaSqft: string
+  carpetSqft: string
+}
 
 // Shape that matches the Prisma row + area field that lives only in the form
 export interface PricingFormValues {
@@ -40,6 +55,8 @@ export interface PricingFormValues {
   stampDutyPercent: number
   registrationPercent: number
 
+  bhkConfigs: BhkConfigFormRow[]
+
   changeReason: string
 }
 
@@ -71,6 +88,7 @@ interface ExistingPricing {
   stampDutyPercent: number
   registrationPercent: number
   pricingVersion?: number
+  bhkConfigs?: unknown
 }
 
 interface Props {
@@ -108,6 +126,11 @@ const DEFAULTS: PricingFormValues = {
   gstPercent: 5.0,
   stampDutyPercent: 4.9,
   registrationPercent: 1.0,
+  bhkConfigs: [
+    { type: '2BHK', sbaSqft: '', carpetSqft: '' },
+    { type: '3BHK', sbaSqft: '', carpetSqft: '' },
+    { type: '4BHK', sbaSqft: '', carpetSqft: '' },
+  ],
   changeReason: '',
 }
 
@@ -121,8 +144,25 @@ function buildInitial(
   const oc = Array.isArray(pricing.otherCharges)
     ? (pricing.otherCharges as Array<{ label: string; amount: number }>)
     : []
+  const bhkRaw = Array.isArray(pricing.bhkConfigs)
+    ? (pricing.bhkConfigs as Array<{
+        type?: unknown
+        sbaSqft?: unknown
+        carpetSqft?: unknown
+      }>)
+    : []
+  const bhkConfigs: BhkConfigFormRow[] =
+    bhkRaw.length > 0
+      ? bhkRaw.map((r) => ({
+          type: String(r?.type ?? ''),
+          sbaSqft: r?.sbaSqft != null && r.sbaSqft !== '' ? String(r.sbaSqft) : '',
+          carpetSqft:
+            r?.carpetSqft != null && r.carpetSqft !== '' ? String(r.carpetSqft) : '',
+        }))
+      : DEFAULTS.bhkConfigs
   return {
     ...DEFAULTS,
+    bhkConfigs,
     propertyType: pricing.propertyType === 'villa' ? 'villa' : 'flat',
     areaSqftOrSqyd: sbaSqftMin ?? 0,
     basicRatePerSqft: pricing.basicRatePerSqft,
@@ -194,6 +234,15 @@ function toPricingInput(v: PricingFormValues): PricingInput {
     stampDutyPercent: num(v.stampDutyPercent),
     registrationPercent: num(v.registrationPercent),
   }
+}
+
+// Compact INR formatter for inline cells (per-row All-In). Matches the
+// style used in `LiveCostBreakup.tsx` so the two displays stay coherent.
+function formatINRShort(n: number): string {
+  if (!Number.isFinite(n) || n <= 0) return '—'
+  if (n >= 10000000) return `₹${(n / 10000000).toFixed(2)} Cr`
+  if (n >= 100000) return `₹${(n / 100000).toFixed(2)} L`
+  return `₹${Math.round(n).toLocaleString('en-IN')}`
 }
 
 // ---- small field primitives -------------------------------------------------
@@ -301,11 +350,19 @@ export default function PricingStep3Form({
   const [breakdown, setBreakdown] = useState<Breakdown>(() =>
     calculateBreakdown(toPricingInput(initial), num(initial.areaSqftOrSqyd))
   )
+  // Per-BHK live all-in totals, keyed by row index. Recomputed on the
+  // same debounce cadence as the main breakdown.
+  const [bhkAllIns, setBhkAllIns] = useState<number[]>(() =>
+    initial.bhkConfigs.map(
+      (r) => calculateAllInForBhk(toPricingInput(initial), r.sbaSqft).allIn
+    )
+  )
   const [dirty, setDirty] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const bhkDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Debounced recompute (300ms) so every keystroke doesn't hammer calc.
   useEffect(() => {
@@ -315,6 +372,19 @@ export default function PricingStep3Form({
     }, 300)
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current)
+    }
+  }, [form])
+
+  // Per-BHK debounce — slightly tighter (200ms) so the per-row total
+  // tracks the operator's latest sqft input without feeling laggy.
+  useEffect(() => {
+    if (bhkDebounceRef.current) clearTimeout(bhkDebounceRef.current)
+    bhkDebounceRef.current = setTimeout(() => {
+      const input = toPricingInput(form)
+      setBhkAllIns(form.bhkConfigs.map((r) => calculateAllInForBhk(input, r.sbaSqft).allIn))
+    }, 200)
+    return () => {
+      if (bhkDebounceRef.current) clearTimeout(bhkDebounceRef.current)
     }
   }, [form])
 
@@ -354,12 +424,22 @@ export default function PricingStep3Form({
     setError(null)
     setSuccess(false)
     try {
+      // Strip empty BHK rows (no type AND no sqft) and coerce sqft to numbers.
+      const cleanedBhk = form.bhkConfigs
+        .filter((r) => (r.type && r.type.trim()) || num(r.sbaSqft) > 0)
+        .map((r) => ({
+          type: r.type.trim(),
+          sbaSqft: num(r.sbaSqft),
+          carpetSqft: num(r.carpetSqft),
+        }))
+
       const payload = {
         ...form,
         // Strip empty "other charges" rows the user added but never filled in.
         otherCharges: form.otherCharges.filter(
           (r) => r.label && r.label.trim() && Number(r.amount) > 0
         ),
+        bhkConfigs: cleanedBhk.length ? cleanedBhk : undefined,
       }
       const url = `/api/admin/projects/${projectId}/pricing`
       const method = isNew ? 'POST' : 'PUT'
@@ -412,6 +492,30 @@ export default function PricingStep3Form({
     const next = [...form.otherCharges]
     next.splice(i, 1)
     set('otherCharges', next)
+  }
+
+  // ---- BHK config row manipulators ----------------------------------------
+  const addBhkRow = () => {
+    if (form.bhkConfigs.length >= 8) return
+    set('bhkConfigs', [...form.bhkConfigs, { type: '', sbaSqft: '', carpetSqft: '' }])
+  }
+
+  const updateBhkRow = (i: number, key: keyof BhkConfigFormRow, value: string) => {
+    const next = [...form.bhkConfigs]
+    next[i] = { ...next[i], [key]: value }
+    set('bhkConfigs', next)
+  }
+
+  const removeBhkRow = (i: number) => {
+    const row = form.bhkConfigs[i]
+    const hasData = !!(row?.type || row?.sbaSqft || row?.carpetSqft)
+    if (hasData && typeof window !== 'undefined') {
+      const ok = window.confirm(`Remove ${row?.type || `row ${i + 1}`}?`)
+      if (!ok) return
+    }
+    const next = [...form.bhkConfigs]
+    next.splice(i, 1)
+    set('bhkConfigs', next)
   }
 
   return (
@@ -556,6 +660,129 @@ export default function PricingStep3Form({
             </div>
           )}
         </Section>
+
+        {/* Section 1b — BHK Configurations (Bug B) ------------------------ */}
+        {form.propertyType === 'flat' && (
+          <Section id="sec-bhk" title="1b. BHK Configurations" defaultOpen>
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-[11px] text-[#9CA3AF]">
+                Per-flat sizes drive the buyer-facing all-in totals.
+              </p>
+              <button
+                type="button"
+                aria-label="Add BHK row"
+                onClick={addBhkRow}
+                disabled={form.bhkConfigs.length >= 8}
+                data-cs="bhk-add-row"
+                className="text-[10px] px-2 py-1 rounded-lg disabled:opacity-40"
+                style={{
+                  background: 'rgba(96,165,250,0.12)',
+                  color: '#60A5FA',
+                  border: '1px solid rgba(96,165,250,0.25)',
+                }}
+              >
+                + Add type
+              </button>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-[11px]" aria-label="BHK configurations">
+                <thead>
+                  <tr className="text-left text-[#9CA3AF]">
+                    <th className="font-medium pb-2 pr-2">BHK Type</th>
+                    <th className="font-medium pb-2 pr-2">SBU sqft</th>
+                    <th className="font-medium pb-2 pr-2">Carpet sqft</th>
+                    <th className="font-medium pb-2 pr-2 text-right">All-in Total</th>
+                    <th className="pb-2 w-6"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {form.bhkConfigs.map((row, i) => {
+                    const allIn = bhkAllIns[i] ?? 0
+                    return (
+                      <tr key={i} className="align-middle">
+                        <td className="py-1 pr-2">
+                          <input
+                            type="text"
+                            aria-label={`BHK row ${i + 1} type`}
+                            placeholder="2BHK"
+                            value={row.type}
+                            onChange={(e) => updateBhkRow(i, 'type', e.target.value)}
+                            data-cs={`bhk-type-${i}`}
+                            className="w-full px-2 py-1.5 rounded-lg text-white outline-none"
+                            style={{
+                              background: 'rgba(255,255,255,0.05)',
+                              border: '1px solid rgba(255,255,255,0.08)',
+                            }}
+                          />
+                        </td>
+                        <td className="py-1 pr-2">
+                          <input
+                            type="number"
+                            aria-label={`BHK row ${i + 1} SBU sqft`}
+                            placeholder="1450"
+                            value={row.sbaSqft}
+                            onChange={(e) => updateBhkRow(i, 'sbaSqft', e.target.value)}
+                            data-cs={`bhk-sba-${i}`}
+                            min={0}
+                            max={100000}
+                            className="w-full px-2 py-1.5 rounded-lg font-mono text-white outline-none"
+                            style={{
+                              background: 'rgba(255,255,255,0.05)',
+                              border: '1px solid rgba(255,255,255,0.08)',
+                            }}
+                          />
+                        </td>
+                        <td className="py-1 pr-2">
+                          <input
+                            type="number"
+                            aria-label={`BHK row ${i + 1} carpet sqft`}
+                            placeholder="950"
+                            value={row.carpetSqft}
+                            onChange={(e) => updateBhkRow(i, 'carpetSqft', e.target.value)}
+                            data-cs={`bhk-carpet-${i}`}
+                            min={0}
+                            max={100000}
+                            className="w-full px-2 py-1.5 rounded-lg font-mono text-white outline-none"
+                            style={{
+                              background: 'rgba(255,255,255,0.05)',
+                              border: '1px solid rgba(255,255,255,0.08)',
+                            }}
+                          />
+                        </td>
+                        <td
+                          className="py-1 pr-2 text-right font-mono"
+                          data-cs={`bhk-allin-${i}`}
+                          aria-label={`BHK row ${i + 1} all-in total`}
+                        >
+                          <span style={{ color: allIn > 0 ? '#34D399' : '#6B7280' }}>
+                            {allIn > 0 ? formatINRShort(allIn) : '—'}
+                          </span>
+                        </td>
+                        <td className="py-1 text-right">
+                          <button
+                            type="button"
+                            aria-label={`Remove BHK row ${i + 1}`}
+                            onClick={() => removeBhkRow(i)}
+                            className="text-[#F87171] text-[14px]"
+                          >
+                            ×
+                          </button>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                  {form.bhkConfigs.length === 0 && (
+                    <tr>
+                      <td colSpan={5} className="py-2 text-[#6B7280] italic">
+                        No BHK rows. Add at least one to drive per-flat totals.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </Section>
+        )}
 
         {/* Section 2 — Dev & Govt ----------------------------------------- */}
         <Section id="sec-dev" title="2. Development & Govt Charges">
@@ -847,7 +1074,16 @@ export default function PricingStep3Form({
       {/* Sidebar (col 3) */}
       <div className="lg:col-span-1">
         <div className="lg:sticky lg:top-16">
-          <LiveCostBreakup breakdown={breakdown} dirty={dirty} affectedBuyers={0} />
+          <LiveCostBreakup
+            breakdown={breakdown}
+            dirty={dirty}
+            affectedBuyers={0}
+            bhkRows={form.bhkConfigs.map((r, i) => ({
+              type: r.type || `Row ${i + 1}`,
+              sbaSqft: num(r.sbaSqft),
+              allIn: bhkAllIns[i] ?? 0,
+            }))}
+          />
         </div>
       </div>
     </div>

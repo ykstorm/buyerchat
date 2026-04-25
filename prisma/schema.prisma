@@ -390,6 +390,14 @@ model ProjectPricing {
   gstTotal          Int?
   grandTotalAllIn   Int?
 
+  // Per-BHK configuration table (Bug B) — drives per-flat all-in totals.
+  // Shape: [
+  //   { type: "2BHK", sbaSqft: number, carpetSqft: number, allInTotal: number },
+  //   { type: "3BHK", sbaSqft: 1450, carpetSqft: 950, allInTotal: number },
+  //   ...
+  // ]
+  bhkConfigs        Json?
+
   // Metadata
   lastUpdated       DateTime @updatedAt
   updatedBy         String?

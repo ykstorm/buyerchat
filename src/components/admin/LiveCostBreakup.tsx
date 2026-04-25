@@ -2,10 +2,23 @@
 
 import { num, type Breakdown } from '@/lib/pricing/calculator'
 
+export interface BhkBreakupRow {
+  type: string
+  sbaSqft: number
+  allIn: number
+}
+
 interface Props {
   breakdown: Breakdown
   dirty?: boolean
   affectedBuyers?: number
+  /**
+   * Optional per-BHK rows (Bug B). When at least one row has sbaSqft > 0,
+   * the widget renders a "By BHK type" section with per-flat all-in totals
+   * instead of relying solely on the per-sqft grand total — which buyers
+   * would otherwise see as "₹4,725" and lose trust over.
+   */
+  bhkRows?: BhkBreakupRow[]
 }
 
 function formatINR(value: unknown): string {
@@ -34,7 +47,14 @@ const ROWS: Array<{ key: keyof Breakdown; label: string }> = [
  * Live cost breakup widget — pure presentation. Parent recomputes the
  * breakdown on form change and re-passes it here.
  */
-export default function LiveCostBreakup({ breakdown, dirty, affectedBuyers }: Props) {
+export default function LiveCostBreakup({
+  breakdown,
+  dirty,
+  affectedBuyers,
+  bhkRows,
+}: Props) {
+  const liveBhk = (bhkRows ?? []).filter((r) => num(r.sbaSqft) > 0)
+  const showBhk = liveBhk.length > 0
   return (
     <aside
       aria-label="Live cost breakup"
@@ -73,17 +93,46 @@ export default function LiveCostBreakup({ breakdown, dirty, affectedBuyers }: Pr
           </div>
         ))}
 
-        <div
-          className="flex justify-between pt-2 mt-2"
-          style={{ borderTop: '1px solid rgba(52,211,153,0.25)' }}
-        >
-          <span className="font-semibold" style={{ color: '#34D399' }}>
-            GRAND TOTAL (All-in)
-          </span>
-          <span className="font-mono font-bold" style={{ color: '#34D399' }}>
-            {formatINR(breakdown.grandTotalAllIn)}
-          </span>
-        </div>
+        {showBhk ? (
+          <div
+            className="pt-2 mt-2"
+            style={{ borderTop: '1px solid rgba(52,211,153,0.25)' }}
+          >
+            <p
+              className="text-[10px] font-semibold uppercase tracking-wider mb-1.5"
+              style={{ color: '#34D399' }}
+            >
+              By BHK type (all-in)
+            </p>
+            {liveBhk.map((r, i) => (
+              <div
+                key={`${r.type}-${i}`}
+                className="flex justify-between"
+                data-cs={`bhk-allin-row-${i}`}
+              >
+                <span className="text-[#9CA3AF]">
+                  {r.type || `Row ${i + 1}`}{' '}
+                  <span className="text-[#6B7280]">({r.sbaSqft} sqft)</span>
+                </span>
+                <span className="font-mono font-semibold" style={{ color: '#34D399' }}>
+                  {formatINR(r.allIn)}
+                </span>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div
+            className="flex justify-between pt-2 mt-2"
+            style={{ borderTop: '1px solid rgba(52,211,153,0.25)' }}
+          >
+            <span className="font-semibold" style={{ color: '#34D399' }}>
+              GRAND TOTAL (All-in)
+            </span>
+            <span className="font-mono font-bold" style={{ color: '#34D399' }}>
+              {formatINR(breakdown.grandTotalAllIn)}
+            </span>
+          </div>
+        )}
       </div>
 
       {typeof affectedBuyers === 'number' && affectedBuyers >= 0 && (
