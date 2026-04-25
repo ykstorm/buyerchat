@@ -483,5 +483,34 @@ export function checkResponse(
     }
   }
 
+  // CHECK 17 — FAKE_VISIT_CLAIM (audit-only, P1-S1).
+  // PART 8.5 rule 9: never claim a visit is booked/confirmed/scheduled in
+  // prose unless a VISIT_CONFIRMATION artifact with an HST-XXXX token has
+  // been emitted in the SAME response. Pre-OTP/verify, only soft phrasing
+  // ("visit start karte hain", "slot check karte hain") is allowed.
+  //
+  // Text-only inspection: artifacts ship inline as HTML comments in the
+  // streamed text, so the marker `<!--CARD:{"type":"visit_confirmation"...`
+  // with `"token":"HST-...` is sufficient evidence the artifact was emitted.
+  // No signature change to checkResponse() needed.
+  const FAKE_VISIT_CLAIM_PATTERN = /(visit|slot)\s+(book(?:ed)?|confirm(?:ed)?|scheduled|locked|done)/i
+  const claimMatch = aiResponse.match(FAKE_VISIT_CLAIM_PATTERN)
+  if (claimMatch) {
+    const visitConfirmationMarker = /<!--CARD:\{[^}]*"type":\s*"visit_confirmation"[^}]*"token":\s*"HST-/i
+    const hasVisitConfirmation = visitConfirmationMarker.test(aiResponse)
+    if (!hasVisitConfirmation) {
+      const phrase = claimMatch[0].length > 80 ? claimMatch[0].slice(0, 77) + '...' : claimMatch[0]
+      violations.push(`FAKE_VISIT_CLAIM: "${phrase}" (no visit_confirmation artifact with HST- token in response)`)
+      try {
+        Sentry.captureMessage('[FAKE_VISIT_CLAIM] Visit-confirmation language without visit_confirmation artifact', {
+          level: 'warning',
+          tags: { audit_violation: 'true', rule: 'FAKE_VISIT_CLAIM', match: phrase },
+        })
+      } catch {
+        // Sentry init may be absent in test/local env — never throw from the checker.
+      }
+    }
+  }
+
   return { passed: violations.length === 0, violations }
 }

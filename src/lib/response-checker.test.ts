@@ -488,3 +488,31 @@ describe('FABRICATED_STAT check', () => {
     expect(res.violations.some(v => v.startsWith('FABRICATED_STAT'))).toBe(false)
   })
 })
+
+describe('FAKE_VISIT_CLAIM check (P1-S1)', () => {
+  it('banned phrase + visit_confirmation artifact in text → ok', () => {
+    const text =
+      `Visit booked for tomorrow at 11am — see you then.\n` +
+      `<!--CARD:{"type":"visit_confirmation","projectId":"a","token":"HST-1234"}-->`
+    const res = checkResponse(text, [], cq())
+    expect(res.violations.some(v => v.startsWith('FAKE_VISIT_CLAIM'))).toBe(false)
+  })
+
+  it('banned phrase alone in text → violated', () => {
+    const res = checkResponse(
+      'Visit confirmed for tomorrow at 11am.',
+      [],
+      cq()
+    )
+    expect(res.violations.some(v => v.startsWith('FAKE_VISIT_CLAIM'))).toBe(true)
+  })
+
+  it('no claim phrase → ok regardless of artifact', () => {
+    const res = checkResponse(
+      'Visit start karte hain — slot check karte hain aur OTP ke baad confirm hoga.',
+      [],
+      cq()
+    )
+    expect(res.violations.some(v => v.startsWith('FAKE_VISIT_CLAIM'))).toBe(false)
+  })
+})
