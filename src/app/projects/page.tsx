@@ -230,8 +230,8 @@ export default function ProjectsPage() {
             </p>
           </motion.div>
 
-          {/* Filters */}
-          <div className="sticky top-[64px] z-30 py-3 -mx-6 px-6" style={{ background: 'var(--landing-bg)', borderBottom: '1px solid var(--landing-border)' }}>
+          {/* Filters — sticky offset matches shared Navbar height (Option 2 shells) */}
+          <div className="sticky top-[73px] z-30 py-3 -mx-6 px-6" style={{ background: 'var(--landing-bg)', borderBottom: '1px solid var(--landing-border)' }}>
             <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide">
               {pill('All Areas', area === 'all', () => setArea('all'))}
               {pill('South Bopal', area === 'South Bopal', () => setArea('South Bopal'))}

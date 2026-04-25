@@ -167,31 +167,11 @@ export default function DashboardPage() {
         />
       </div>
 
-      {/* Top bar */}
-      <div
-        className="sticky top-0 z-20 backdrop-blur-md px-5 py-3 flex items-center gap-3"
-        style={{
-          background: 'color-mix(in srgb, var(--bg-base) 85%, transparent)',
-          borderBottom: '1px solid var(--border-subtle)',
-        }}
-      >
-        <Link
-          href="/chat"
-          className="flex items-center gap-1.5 transition-colors"
-          style={{ color: 'var(--text-muted)' }}
-        >
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-            <path d="M10 12L6 8L10 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-          <span className="text-[13px]">Chat</span>
-        </Link>
-        <div className="flex-1" />
-        <span className="text-[13px] font-medium tracking-tight" style={{ color: 'var(--text-primary)' }}>
-          Dashboard
-        </span>
-      </div>
+      {/* Top bar removed — shared Navbar (Option 2 contextual shells) now provides
+          brand + global nav across `/dashboard`. See docs/diagnostics/dashboard-revamp-audit.md
+          §4 wireframe + §5 recommendation. The pt-[88px] below clears the fixed Navbar. */}
 
-      <div className="relative z-10 max-w-xl mx-auto px-5 pt-8">
+      <div className="relative z-10 max-w-xl mx-auto px-5 pt-[88px]">
 
         {/* Heading with gold accent — Cormorant Garamond */}
         <motion.div
