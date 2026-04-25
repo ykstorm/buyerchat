@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { calculateBreakdown, type PricingInput } from './calculator'
+import { calculateBreakdown, num, type PricingInput } from './calculator'
 
 describe('calculateBreakdown — flat', () => {
   // Canonical Shela 3BHK fixture — 1800 sqft SBU at ₹5000 base.
@@ -143,5 +143,92 @@ describe('calculateBreakdown — defensive', () => {
       1000
     )
     expect(r.basicCostTotal).toBe(5_000_000)
+  })
+})
+
+// Bug A — string-concatenation guard. Form state from controlled inputs
+// can leak in as strings ("4200"), and `"4200" + "210" = "4200210"` would
+// blow up the all-in total to ₹4,20,00,21,00,00,000 in the UI.
+describe('num() — coercion helper', () => {
+  it('num() casts strings, undefined, null', () => {
+    expect(num('4200')).toBe(4200)
+    expect(num(undefined)).toBe(0)
+    expect(num(null)).toBe(0)
+    expect(num('')).toBe(0)
+    expect(num('abc')).toBe(0)
+    expect(num(4200)).toBe(4200)
+  })
+})
+
+describe('calculateBreakdown — string-typed PricingInput (Bug A)', () => {
+  it('calculateGrandTotal accepts string-typed PricingInput', () => {
+    // Every numeric field as a string, simulating raw form state leaking
+    // into the calculator without coercion.
+    const input = {
+      propertyType: 'flat',
+      basicRatePerSqft: '4200',
+      plcRatePerSqft: '210',
+      floorRisePerSqft: '50',
+      floorRiseFrom: '1',
+      unitFloorNo: '5',
+      audaGebAecCharge: '150000',
+      developmentFixed: '200000',
+      infrastructure: '100000',
+      societyMaintDeposit: '60000',
+      advanceRunningMaint: '24000',
+      townshipDeposit: '0',
+      townshipAdvance: '0',
+      carParkingAmount: '350000',
+      carParkingCount: '1',
+      clubMembership: '150000',
+      legalCharges: '50000',
+      otherCharges: [{ label: 'GEB', amount: '25000' as unknown as number }],
+      saleDeedAmount: '9000000',
+      gstPercent: '5',
+      stampDutyPercent: '4.9',
+      registrationPercent: '1.0',
+    } as unknown as PricingInput
+
+    const r = calculateBreakdown(input, '1800' as unknown as number)
+
+    expect(Number.isFinite(r.grandTotalAllIn)).toBe(true)
+    expect(Number.isNaN(r.grandTotalAllIn)).toBe(false)
+    // String-concat would yield a number > 1e15. Real arithmetic stays
+    // well below ₹100 Cr (1e9) for this fixture.
+    expect(r.grandTotalAllIn).toBeLessThan(1e15)
+    expect(r.grandTotalAllIn).toBeGreaterThan(0)
+    // Sanity: matches the canonical numeric fixture.
+    // (4200 + 210 + 50*4) * 1800 = 4610 * 1800 = 8,298,000 basic
+    expect(r.basicCostTotal).toBe(8_298_000)
+  })
+
+  it('calculateGrandTotal returns 0 for empty inputs', () => {
+    const empty = {
+      propertyType: 'flat',
+      basicRatePerSqft: '',
+      plcRatePerSqft: undefined,
+      floorRisePerSqft: '',
+      floorRiseFrom: '',
+      unitFloorNo: '',
+      audaGebAecCharge: '',
+      developmentFixed: undefined,
+      infrastructure: '',
+      societyMaintDeposit: undefined,
+      advanceRunningMaint: '',
+      townshipDeposit: '',
+      townshipAdvance: '',
+      carParkingAmount: '',
+      carParkingCount: '',
+      clubMembership: '',
+      legalCharges: '',
+      otherCharges: [],
+      saleDeedAmount: '',
+      gstPercent: '',
+      stampDutyPercent: undefined,
+      registrationPercent: '',
+    } as unknown as PricingInput
+
+    const r = calculateBreakdown(empty, '' as unknown as number)
+    expect(r.grandTotalAllIn).toBe(0)
   })
 })

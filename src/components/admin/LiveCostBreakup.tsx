@@ -1,6 +1,6 @@
 'use client'
 
-import type { Breakdown } from '@/lib/pricing/calculator'
+import { num, type Breakdown } from '@/lib/pricing/calculator'
 
 interface Props {
   breakdown: Breakdown
@@ -8,7 +8,12 @@ interface Props {
   affectedBuyers?: number
 }
 
-function formatINR(n: number): string {
+function formatINR(value: unknown): string {
+  // Coerce at the render boundary: if a stringified number ever leaks
+  // into the Breakdown (e.g. "4200210273"), num() turns it into a real
+  // number so downstream comparisons (>= 1e7) behave correctly and
+  // .toLocaleString() doesn't render gibberish.
+  const n = num(value)
   if (!n || n <= 0) return '—'
   if (n >= 10000000) return `₹${(n / 10000000).toFixed(2)} Cr`
   if (n >= 100000) return `₹${(n / 100000).toFixed(2)} L`

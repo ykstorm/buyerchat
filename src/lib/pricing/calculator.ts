@@ -68,9 +68,25 @@ export interface Breakdown {
   grandTotalAllIn: number
 }
 
-const n = (v: number | null | undefined): number => {
-  const x = typeof v === 'number' ? v : Number(v)
-  return Number.isFinite(x) && x > 0 ? x : 0
+/**
+ * Tolerant numeric coercion for values that may arrive from controlled
+ * form inputs as strings (e.g. "4200"), or as null/undefined/empty/"abc".
+ *
+ * Returns a finite number, or 0 for any unparseable / non-positive value.
+ * Exported because the form components and tests use it at the calculator
+ * boundary to defeat the classic "string + string = concatenation" bug.
+ */
+export const num = (v: unknown): number => {
+  if (v === null || v === undefined || v === '') return 0
+  const n = typeof v === 'string' ? parseFloat(v) : Number(v)
+  return Number.isFinite(n) ? n : 0
+}
+
+// Internal helper: same as num() but clamps negatives to 0 (calculator never
+// wants negative line-items — a -100 PLC is treated as missing, not a credit).
+const n = (v: unknown): number => {
+  const x = num(v)
+  return x > 0 ? x : 0
 }
 
 /**

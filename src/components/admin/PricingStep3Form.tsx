@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import LiveCostBreakup from './LiveCostBreakup'
-import { calculateBreakdown, type PricingInput, type Breakdown } from '@/lib/pricing/calculator'
+import { calculateBreakdown, num, type PricingInput, type Breakdown } from '@/lib/pricing/calculator'
 
 // Shape that matches the Prisma row + area field that lives only in the form
 export interface PricingFormValues {
@@ -153,33 +153,46 @@ function buildInitial(
   }
 }
 
+/**
+ * Convert form values into PricingInput at the calculator boundary.
+ *
+ * Controlled-input form state is "should be" `number | null`, but in
+ * practice strings can leak in (e.g. when state is rehydrated from a
+ * server response, when a parent passes a stringified payload, or when
+ * a row in `otherCharges` is freshly added with `Number('')` → 0/NaN).
+ * Wrapping every numeric field with `num()` here means the calculator
+ * sees real numbers, defeating the "4200" + "210" string-concat bug.
+ */
 function toPricingInput(v: PricingFormValues): PricingInput {
   return {
     propertyType: v.propertyType,
-    basicRatePerSqft: v.basicRatePerSqft,
-    plcRatePerSqft: v.plcRatePerSqft,
-    floorRisePerSqft: v.floorRisePerSqft,
-    floorRiseFrom: v.floorRiseFrom,
-    unitFloorNo: v.unitFloorNo,
-    landRatePerSqyd: v.landRatePerSqyd,
-    consRatePerSqyd: v.consRatePerSqyd,
-    plcRatePerSqyd: v.plcRatePerSqyd,
-    audaGebAecCharge: v.audaGebAecCharge,
-    developmentFixed: v.developmentFixed,
-    infrastructure: v.infrastructure,
-    societyMaintDeposit: v.societyMaintDeposit,
-    advanceRunningMaint: v.advanceRunningMaint,
-    townshipDeposit: v.townshipDeposit,
-    townshipAdvance: v.townshipAdvance,
-    carParkingAmount: v.carParkingAmount,
-    carParkingCount: v.carParkingCount,
-    clubMembership: v.clubMembership,
-    legalCharges: v.legalCharges,
-    otherCharges: v.otherCharges,
-    saleDeedAmount: v.saleDeedAmount,
-    gstPercent: v.gstPercent,
-    stampDutyPercent: v.stampDutyPercent,
-    registrationPercent: v.registrationPercent,
+    basicRatePerSqft: num(v.basicRatePerSqft),
+    plcRatePerSqft: num(v.plcRatePerSqft),
+    floorRisePerSqft: num(v.floorRisePerSqft),
+    floorRiseFrom: num(v.floorRiseFrom),
+    unitFloorNo: num(v.unitFloorNo),
+    landRatePerSqyd: num(v.landRatePerSqyd),
+    consRatePerSqyd: num(v.consRatePerSqyd),
+    plcRatePerSqyd: num(v.plcRatePerSqyd),
+    audaGebAecCharge: num(v.audaGebAecCharge),
+    developmentFixed: num(v.developmentFixed),
+    infrastructure: num(v.infrastructure),
+    societyMaintDeposit: num(v.societyMaintDeposit),
+    advanceRunningMaint: num(v.advanceRunningMaint),
+    townshipDeposit: num(v.townshipDeposit),
+    townshipAdvance: num(v.townshipAdvance),
+    carParkingAmount: num(v.carParkingAmount),
+    carParkingCount: num(v.carParkingCount),
+    clubMembership: num(v.clubMembership),
+    legalCharges: num(v.legalCharges),
+    otherCharges: (v.otherCharges ?? []).map((row) => ({
+      label: String(row?.label ?? ''),
+      amount: num(row?.amount),
+    })),
+    saleDeedAmount: num(v.saleDeedAmount),
+    gstPercent: num(v.gstPercent),
+    stampDutyPercent: num(v.stampDutyPercent),
+    registrationPercent: num(v.registrationPercent),
   }
 }
 
@@ -286,7 +299,7 @@ export default function PricingStep3Form({
 
   const [form, setForm] = useState<PricingFormValues>(initial)
   const [breakdown, setBreakdown] = useState<Breakdown>(() =>
-    calculateBreakdown(toPricingInput(initial), initial.areaSqftOrSqyd)
+    calculateBreakdown(toPricingInput(initial), num(initial.areaSqftOrSqyd))
   )
   const [dirty, setDirty] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -298,7 +311,7 @@ export default function PricingStep3Form({
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current)
     debounceRef.current = setTimeout(() => {
-      setBreakdown(calculateBreakdown(toPricingInput(form), form.areaSqftOrSqyd))
+      setBreakdown(calculateBreakdown(toPricingInput(form), num(form.areaSqftOrSqyd)))
     }, 300)
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current)
