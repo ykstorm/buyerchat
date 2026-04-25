@@ -105,7 +105,7 @@ export default function Navbar() {
               className="font-serif text-lg font-bold"
               style={{ color: 'var(--text-primary)' }}
             >
-              Homesty
+              Homesty.ai
             </span>
           </Link>
 
