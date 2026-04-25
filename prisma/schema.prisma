@@ -216,6 +216,7 @@ qualificationDone Boolean  @default(false)
 projectsDisclosed String[]
 lastMessageAt     DateTime @updatedAt
 customName        String?
+systemPromptVersion String @default("v3")
 messages          ChatMessageLog[]
 deals             Deal[]
 

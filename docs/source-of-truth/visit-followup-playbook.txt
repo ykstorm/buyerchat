@@ -1,0 +1,887 @@
+# HOMESTY AI — VISIT & FOLLOW-UP PLAYBOOK
+# Version 2.0 | April 2026
+# Integrated: Original Playbook + 6 GPT Additions + Moat Protection
+
+---
+
+## MASTER PRINCIPLE
+
+Visit se deal nahi hoti.
+Visit ke baad jo control rakhta hai — wahi deal close karta hai.
+
+But "control" ka matlab manipulation nahi hai.
+Control ka matlab = buyer ke saath rehna, genuinely.
+
+Buyer jo platform pe genuinely feel kare:
+"Yeh mere saath hai — builder ke side pe nahi"
+— wahi buyer refer karega, wahi buyer wapas aayega.
+
+Every touchpoint = trust building.
+Not conversion pressure.
+
+---
+
+## THE COMPLETE FLOW
+
+Visit Confirmed → Pre-Visit Priming → Visit Day → 
+Post-Visit Extraction → Follow-Up Sequence → 
+Builder Comm → Bypass Prevention → Deal Close
+
+---
+
+## PART A — VISIT CONFIRMATION (Immediately After OTP)
+
+### A1 — In-Chat Confirmation
+
+```
+Visit confirmed ✓
+
+Project: [Name]
+Slot: [Day, Time]
+Token: HST-[XXXX]
+
+Site pe yeh 5 cheeze zaroor check karna:
+1. Actual room size — measuring tape saath le jaana
+2. Natural light — subah ke time sunlight kaisi hai
+3. Construction stage — builder se current floor slab puchna
+4. Parking — covered ya open, allocated ya first-come
+5. Site team se poochna: "Possession date ka written commitment milega?"
+
+Aur ek important baat:
+
+Site pe jo bhi dekhein — room size, price, offers —
+final decision lene se pehle yahin discuss kar lena.
+Ground pe kaafi cheeze differently present hoti hain.
+
+Koi bhi sawaal ho toh kal tak yahin puchh lena.
+```
+
+WHY THE LAST PARAGRAPH IS CRITICAL:
+- Subtly anchors buyer back to platform for final decision
+- Does NOT say "builder pe trust mat karo"
+- Does NOT say "Homesty AI se puchho"
+- Just plants: final decision = platform
+- Anti-bypass without being obvious
+
+### A2 — WhatsApp Confirmation (Same content, slightly shorter)
+
+```
+Visit confirmed ✓
+[Project] — [Day, Time]
+Token: HST-[XXXX]
+
+5 cheeze check karna [list above]
+
+Site pe jo bhi price ya offer mile —
+final clarity ke liye yahin discuss kar lena.
+```
+
+---
+
+## PART B — PRE-VISIT REMINDERS
+
+### B1 — 24 Hours Before Visit
+
+Channel: WhatsApp
+Tone: Warm, practical
+
+```
+Kal aapka [Project] ka visit hai — [Day] [Time].
+
+2 cheeze especially dekhna:
+1. Bedroom ka actual size — comfortable lagta hai ya nahi
+2. Light aur ventilation — sirf sample flat pe depend mat karna
+
+Baaki jo bhi confusion aaye — wapas yahin discuss kar lenge.
+```
+
+WHY THIS WORKS:
+- Specific enough to feel personalized
+- Not a generic reminder
+- "Yahin discuss kar lenge" = re-engagement hook
+
+### B2 — 3 Hours Before Visit
+
+Channel: WhatsApp
+Tone: Energetic, practical
+
+```
+[Project] visit aaj — [Time] pe.
+
+Quick tip:
+
+Builder jo bhi price ya special offer bole —
+uska exact breakdown ya screenshot le lena.
+
+Yahin check karenge ki real value kya hai.
+```
+
+WHY THIS IS POWERFUL:
+- Buyer automatically becomes a reporter
+- Screenshot lena = buyer will share with platform
+- Anti-bypass move without mentioning bypass
+- Builder cannot manipulate without buyer noticing
+
+### B3 — 1 Hour Before Visit
+
+Channel: WhatsApp
+Tone: Supportive, calm
+
+```
+Site ke paas honge ab.
+
+Simple approach rakho:
+1. Pehle pura dekho — bina commit kiye
+2. Jo pasand nahi aaya — note karo
+3. Final decision baad mein calmly lete hain
+
+Yahin wapas aake sab compare karenge.
+```
+
+WHY:
+- Reduces on-spot impulsive booking
+- "Bina commit kiye" = buyer protection
+- Keeps decision authority with platform
+- "Yahin wapas aake" = clear re-engagement instruction
+
+---
+
+## PART C — BUILDER PRE-VISIT COMMUNICATION
+
+### C1 — Buyer Introduction (Send 24-48 Hours Before)
+
+Channel: WhatsApp to site sales team
+
+```
+Namaste [Builder/Site Team],
+
+Homesty AI se ek buyer ka visit scheduled hai:
+
+Buyer: [Name]
+Visit: [Date, Time]
+Token: HST-[XXXX]
+Budget: [Range — do NOT share exact number]
+BHK: [Configuration]
+Intent: [Family home / Investment]
+Possession: [Timeline preference]
+Specific interest: [What they asked about in chat]
+
+Buyer informed aur serious hai. 
+
+Request:
+- Entry pe token verify kar lena
+- Accurate possession commitment dena agar puchha jaaye
+- Jo bhi offer discuss ho — buyer ko written mein dena
+
+Post-visit feedback mil sake toh helpful hoga.
+
+— Homesty AI
+```
+
+WHAT NOT TO SHARE WITH BUILDER:
+- Exact budget (negotiation leverage gone)
+- Buyer's concerns about builder (creates friction)
+- Commission discussion (too early)
+- "Hamara buyer hai" language (sounds transactional)
+
+### C2 — Builder Relationship Tone
+
+Do NOT: "Commission pakka hai"
+Do NOT: "Aapko discount dena hoga"
+Do NOT: "Buyer bahut confused hai"
+
+DO: Professional introduction
+DO: Quality lead signal
+DO: Mutual benefit framing
+
+Builder should feel: "Yeh platform quality buyers laata hai"
+Not: "Yeh platform commission ke liye pressure karta hai"
+
+---
+
+## PART D — POST-VISIT BUYER (Most Important Phase)
+
+### D1 — Within 30-60 Minutes After Visit
+
+Channel: WhatsApp (first touch)
+Tone: Curious, genuine
+
+```
+Visit kaisa raha?
+
+Seedha batao — kya achha laga aur kya doubt aaya?
+```
+
+SHORT. OPEN-ENDED.
+Do NOT ask "Kab book kar rahe ho?"
+Do NOT ask "Pasand aaya kya?"
+Let buyer lead the conversation.
+
+### D2 — Structured Extraction (After Initial Response)
+
+Channel: WhatsApp / Chat
+Tone: Friendly, specific
+
+```
+3 cheeze batao:
+
+1. Sabse achhi cheez kya lagi?
+2. Kahan doubt feel hua?
+3. Builder ne koi special offer ya urgency bola?
+```
+
+WHY 3 QUESTIONS:
+- Q1: Confirms what worked (for future recommendations)
+- Q2: Surfaces objections early (address before they kill deal)
+- Q3: Intelligence capture — what builder pitched, what pressure was applied
+
+This data goes into admin panel immediately.
+
+### D3 — Based on Buyer Response
+
+**If Positive ("Achha laga, consider kar raha hoon"):**
+```
+Kya specifically confidence diya?
+
+Room size theek thi? Construction stage solid tha?
+Builder team ka response kaisa tha?
+
+Koi ek doubt jo abhi bhi hai?
+```
+Goal: Extract specific data + surface remaining objections
+
+**If Mixed ("Theek tha, lekin ek issue hai"):**
+```
+"Lekin" wala part important hai — exactly kya?
+
+Woh concern valid hai ya manageable hai —
+honest assessment karta hoon aapke liye.
+```
+Goal: Address concern with data. Never dismiss. Never oversell.
+
+**If Negative ("Pasand nahi aaya"):**
+```
+Samajh aata hai — har project fit nahi karta.
+
+Jo reason tha, batao —
+room size, possession timeline, builder team, location feel?
+
+Woh reason se better match dhundh sakte hain.
+```
+Goal: Learn WHY. Redirect to better fit.
+This proves Homesty AI is buyer-side. Broker defends project. We find better one.
+
+### D4 — Re-Engage After Feedback
+
+After buyer shares visit experience:
+
+```
+Aapka feedback clear hai.
+
+Ab 2 options:
+1. Yeh project proceed karein — doubts clear kar lete hain
+2. Better alternative compare karein
+
+Seedha bolunga — [specific recommendation based on their feedback]
+
+Next step decide karte hain.
+```
+
+Always end with specific next action.
+Never end on information alone.
+
+---
+
+## PART E — INTENT DETECTION (System Prompt Rule)
+
+### E1 — High-Intent Signals (Even Without Exact Trigger Words)
+
+Users don't always say "I want to buy."
+Watch for these indirect signals — treat as Stage B:
+
+| User Says | Real Intent | Action |
+|---|---|---|
+| "EMI approx kitni hogi?" | Purchase intent — calculating affordability | Stage B trigger |
+| "Loan kitna milega?" | Financing research — close to decision | Stage B trigger |
+| "Builder ka number milega?" | Direct contact attempt — bypass risk | Stage B trigger |
+| "Ek baar aur visit kar sakta hoon?" | Very high intent | Fast-track visit booking |
+| "Compare karo dono ko" | Decision stage | Stage B trigger |
+| "Possession guarantee milti hai?" | Pre-booking concern | Stage B trigger |
+| "Koi offer chal raha hai?" | Negotiation intent | Stage B trigger |
+
+RULE: Do not wait for exact trigger words.
+Read intent. Respond to intent.
+
+### E2 — Forward Movement Rule
+
+Every meaningful response must end with a forward-moving action.
+
+WRONG:
+```
+"Sarathya West mein Dec 2026 possession hai aur 
+builder ka track record solid hai. 
+Room sizes brochure mein nahi hain."
+[Ends on information]
+```
+
+RIGHT:
+```
+"Sarathya West — Dec 2026 possession.
+Builder track record solid.
+⚠️ Room sizes brochure mein nahi — site pe verify karna.
+
+Isko site pe dekhna next logical step hai.
+Visit book karein?"
+[Ends on action]
+```
+
+FORWARD MOVEMENT OPTIONS (pick most relevant):
+- "Visit book karein?"
+- "Cost breakdown dekhen?"
+- "Doosre project se compare karein?"
+- "Site pe specifically yeh check karna hai"
+- "Koi doubt hai toh seedha batao"
+
+---
+
+## PART F — SILENT BUYER RE-ENGAGEMENT
+
+### F1 — 24 Hours After Visit (No Response)
+
+```
+Kal ka visit kaafi useful raha hoga.
+
+Usually iss stage pe 2 cheeze hoti hain —
+ya toh project pasand aata hai, ya doubt clear nahi hota.
+
+Aapka case konsa hai?
+```
+
+Simple question. Forces a choice. Gets engagement.
+
+### F2 — 48 Hours After Visit (Still Silent)
+
+```
+Aapka [Project] visit pending decision mein hai.
+
+Agar doubt hai toh clear kar lete hain —
+galat decision lene se better hai 5 min discuss karna.
+```
+
+Slightly more direct. Addresses the "overthinking" phase.
+
+### F3 — 72+ Hours (Soft Exit)
+
+```
+Aapka shortlist active hai.
+
+Jab ready ho — yahin se continue kar sakte hain.
+```
+
+No pressure. Door stays open. Platform stays relevant.
+
+AFTER THIS: No more outreach for 2 weeks.
+Respect buyer's space. Over-messaging = block.
+
+### F4 — Ghost Buyer (Booked But Didn't Visit)
+
+Within 2 hours of missed visit:
+```
+Aaj ki visit miss ho gayi — koi baat nahi.
+
+Reschedule karna ho toh batao —
+same slot ya different time arrange ho sakta hai.
+```
+
+24 hours later:
+```
+Koi issue tha aane mein?
+
+Alag din ya doosra project bhi try kar sakte hain.
+```
+
+48 hours later:
+```
+Shortlist save hai. Ready hone pe yahin aana.
+```
+
+---
+
+## PART G — BUILDER POST-VISIT COMMUNICATION
+
+### G1 — Check-In (24 Hours After Visit)
+
+Channel: WhatsApp
+
+```
+Namaste,
+
+[Buyer name] ki visit kal hui — HST-[XXXX].
+
+Quick feedback:
+1. Buyer interest level kaisa laga?
+2. Koi specific objection raise hua?
+3. Price ya offer kya discuss hua?
+
+Brief update helpful hoga.
+```
+
+### G2 — Bypass Detection Signal
+
+Casually add to builder check-in:
+
+```
+Buyer ne direct follow-up liya kya ya sab yahin se ho raha hai?
+```
+
+If builder says "Haan directly contact kiya" — RED FLAG.
+Do NOT accuse. Immediately engage buyer with:
+
+```
+[Buyer name], visit ke baad documentation ka process 
+samajhna chahoge? Kuch clauses hote hain jo 
+pehle review karne chahiye — help kar sakta hoon.
+```
+
+Frames as help. But clearly signals: We're here. We're engaged.
+
+### G3 — Monthly Builder Relationship
+
+Send monthly — builds trust, keeps Homesty AI top of mind:
+
+```
+Namaste [Builder],
+
+Homesty AI se brief market update:
+
+Is mahine [X] buyers ne [Area] mein queries kiye.
+Most common budget: [Range]
+Most asked: possession timeline, all-in pricing
+
+Aapke project ke liye [X] genuine queries aayi hain.
+
+Koi pricing update ya new inventory — 
+batayein, buyers tak directly pahunchata hoon.
+```
+
+---
+
+## PART H — BYPASS PREVENTION (Complete System)
+
+### Layer 1 — Pre-Visit Anchor (Already in confirmation)
+"Final decision lene se pehle yahin discuss kar lena"
+→ Plants platform as final checkpoint before any decision
+
+### Layer 2 — 3hr Reminder Intelligence
+"Builder ka offer screenshot lena — yahin check karenge"
+→ Buyer becomes voluntary reporter. Attribution stays active.
+
+### Layer 3 — Visit Token At Entry
+"Builder entry pe bolna: Homesty AI se visit book kiya — token HST-XXXX"
+→ Attribution confirmed in builder's record at the door
+
+### Layer 4 — Builder Introduction Email
+Sent 24-48hr before visit. Written record exists.
+→ Even if buyer marks "Direct" — introduction email is evidence
+
+### Layer 5 — Builder Check-In Post-Visit
+"Buyer ne direct contact liya kya?"
+→ Bypass detected early. Immediate re-engagement possible.
+
+### Layer 6 — 90-Day Legal Protection
+Builder agreement clause:
+"Any buyer introduced by Homesty AI (via visit token or written introduction)
+— commission applicable at agreed rate within 90 days of first introduction."
+→ Deal happens 45 days later = still protected
+
+IMPORTANT: Never accuse buyer or builder directly.
+Always frame as "help" — documentation support, process guidance.
+Accusation = relationship damage. Help = trust + control.
+
+---
+
+## PART I — ADMIN PANEL AUTO-UPDATES
+
+After each event, admin CRM must auto-update:
+
+| Event | Field Updated |
+|---|---|
+| Visit booked | Status: Scheduled, Date/Time, Token |
+| 24hr reminder sent | Reminder: Sent |
+| Buyer responds post-visit | Status: Post-Visit Engaged |
+| Buyer shares feedback | Intent: Hot/Warm/Cold, Feedback notes, Builder pitch captured |
+| Buyer silent 72hr | Alert: Unresponsive — follow up |
+| Builder check-in complete | Builder feedback logged |
+| Bypass flag | Alert: Direct contact suspected |
+| Deal closed | Status: Converted, Commission amount |
+
+CRM Auto-Tags:
+- HOT: Positive visit + asking about booking process
+- WARM: Mixed reaction + open to second visit or comparison
+- COLD: Negative experience + no clear next step
+- GHOST: Booked but didn't show
+- BYPASSED: Suspected direct builder contact
+- CONVERTED: Deal closed, commission received
+
+---
+
+## PART J — TIMING & CHANNEL SUMMARY
+
+| Message | When | Channel | Tone |
+|---|---|---|---|
+| Confirmation | Immediately post-OTP | Chat + WhatsApp | Excited, helpful |
+| 24hr reminder | Day before | WhatsApp | Warm, practical |
+| 3hr reminder | 3hr before | WhatsApp | Energetic, tip |
+| 1hr reminder | 1hr before | WhatsApp | Supportive, calm |
+| Builder brief | 24-48hr before | WhatsApp/Email | Professional |
+| Post-visit touch | 30-60 min after | WhatsApp | Curious, open |
+| 3Q extraction | After initial response | Chat/WhatsApp | Friendly, specific |
+| Silent 1 | 24hr after visit | WhatsApp | Simple question |
+| Silent 2 | 48hr after visit | WhatsApp | Direct, gentle |
+| Silent 3 | 72hr+ | WhatsApp | Graceful, open door |
+| Builder check-in | 24hr after visit | WhatsApp | Brief, professional |
+| Monthly builder | Monthly | WhatsApp | Market insight |
+
+---
+
+## PART K — WHAT NEVER TO DO
+
+NEVER:
+- "Kab book kar rahe ho?" — most common conversion killer
+- Fake urgency ("Only 2 units left!") unless RERA data confirms it
+- Message buyer more than once per day post-visit
+- Share exact buyer budget with builder pre-visit
+- Say "Homesty AI ne bola hai yeh check karna" — tips should feel natural
+- Accuse buyer or builder of bypass — always frame as help
+- Send marketing content disguised as follow-up
+- Give up after 1-2 messages — buyers need 5-7 days to process big decisions
+
+ALWAYS:
+- Acknowledge that property decisions take time — it's emotional
+- Be the platform that helped, not the one that pressured
+- If buyer says "not interested" — respect it, leave door open
+- Keep builder relationships warm even when deals don't close
+
+---
+
+## PART L — THE FOLLOW-UP PHILOSOPHY
+
+Most platforms follow up to convert.
+Homesty AI follows up to help.
+
+The difference is felt immediately by buyers.
+
+When buyer feels genuinely helped:
+- They come back even if first project didn't work
+- They refer family and friends
+- They trust the honest concerns (not dismiss as sales tactics)
+- They give real feedback that makes platform better
+
+Word of mouth in real estate = most powerful marketing.
+It is earned through genuine care.
+Not reminders. Not urgency. Care.
+
+---
+
+## PART M — AI CHAT SCRIPTS (For System Prompt)
+
+These go directly into system prompt for in-chat post-visit handling:
+
+### When Buyer Returns After Visit:
+```
+Aagaye — kaisi rahi visit?
+Honestly batao — kya achha laga, kya nahi laga.
+Dono sun'na chahta hoon.
+```
+
+### When Buyer Says "Achha Laga":
+```
+Specifically kya impressive laga?
+Room sizes, construction quality, location feel — 
+kaun si cheez ne confidence diya?
+Koi bhi concern tha jo site pe naya nikla?
+```
+
+### When Buyer Says "Pasand Nahi Aaya":
+```
+Samajh aata hai — har project fit nahi karta.
+Jo reason tha batao — room size, possession timeline, 
+builder team, location feel?
+Woh reason se better match dhundh sakte hain.
+```
+
+### When Buyer Says "Soch Rahe Hain":
+```
+Sahi hai — bada decision hai.
+Koi specific cheez hai jo decide karne mein rok rahi hai?
+Data se help kar sakta hoon — ya koi concern address karna ho.
+```
+
+### When Buyer Asks About Booking Process:
+```
+Booking ke liye generally chahiye:
+PAN + Aadhar + Address proof + Cancelled cheque
+
+Booking amount usually 2-5% — 
+refundable conditions agreement mein clearly likh lena.
+
+Koi specific clause samajhna ho — share karo, 
+saath mein dekh lete hain.
+```
+
+### When Buyer Returns After Silence:
+```
+Wapas aaye — achha laga.
+Kahan tak socha? Koi update share karo —
+jahan chhoda tha, yahin se continue karte hain.
+```
+
+---
+
+END OF VISIT & FOLLOW-UP PLAYBOOK v2.0
+
+---
+
+## PART N — EMOTIONAL INTELLIGENCE IN FOLLOW-UP
+
+### N1 — The Core Principle
+
+Follow-up mein emotion alag dimension add karta hai.
+
+Pre-visit mein buyer excited hota hai.
+Post-visit mein buyer process kar raha hota hai.
+Silence mein buyer overthink kar raha hota hai.
+
+Har stage ka emotional register alag hai.
+AI ko match karna hai — not push karna hai.
+
+FORMULA (same as system prompt):
+Logic builds trust.
+Emotion drives decision.
+Confidence brings closure.
+
+---
+
+### N2 — Post-Visit Emotional Scripts
+
+#### First Touch (30-60 min after visit)
+
+```
+Seedha batao —
+
+dil se kaisa laga?
+
+Sirf achha/bura nahi —
+jo genuinely feel hua woh batao.
+```
+
+#### Deep Extraction (After Initial Response)
+
+```
+Jab flat dekha —
+
+kya ek moment aaya jahan laga
+"haan yeh ghar ho sakta hai"?
+
+Ya kahin doubt feel hua?
+```
+
+WHY: "Ek moment" is a psychological trigger.
+Buyer mentally re-enters the visit.
+Real feelings surface — not rehearsed ones.
+
+---
+
+### N3 — Emotional Response Based on Buyer Feedback
+
+#### If Buyer Says "Achha Laga But..."
+
+```
+"But" wala part important hai.
+
+[Their concern] — yeh valid concern hai.
+
+[Data-based honest response to concern]
+
+Aapne bataya tha [their personal line from earlier] —
+is hisaab se yeh concern manageable hai ya dealbreaker?
+```
+
+Bring back their own words. 
+Let them answer against their own situation.
+
+#### If Buyer Is Overthinking
+
+```
+Ruko.
+
+Yeh jo chal raha hai dimaag mein —
+yeh decision ki gravity ka sign hai.
+
+Matlab seriously soch rahe hain.
+
+Seedha bolta hoon:
+Jo aapne site pe feel kiya —
+woh data se zyada important hai.
+
+Dil se — kya connection tha?
+```
+
+#### If Buyer Says "Abhi Sochna Hai"
+
+```
+Bilkul — itna bada decision jaldi nahi lena.
+
+Ek kaam karo:
+
+Jo cheez best lagi — note kar lo.
+Jo doubt aaya — note kar lo.
+
+Kal aake compare karte hain.
+Jab ready ho — yahin hoon.
+```
+
+No pressure. But re-engagement hook ("kal aake") planted.
+
+---
+
+### N4 — Silent Buyer (Emotional Version)
+
+#### 24 Hours Silence
+
+```
+Kal ka visit kaafi important raha hoga.
+
+Usually iss point pe ya toh clarity aati hai,
+ya doubt reh jaata hai.
+
+Aapka case konsa hai?
+```
+
+Simple. Forces gentle self-reflection.
+
+#### 48 Hours Silence
+
+```
+Decision delay hona normal hai —
+especially jab decision bada ho.
+
+Bas ek baat dhyaan rakho:
+
+Confusion mein decision mat lena.
+
+Agar koi cheez clear karni hai — yahin hai.
+```
+
+Validates their slowness. Removes pressure. Keeps door open.
+
+#### 72 Hours Silence
+
+```
+Aapka shortlist save hai.
+
+Jab bhi mann ho — yahin se continue kar sakte hain.
+
+Koi bhi sawaal, bada ya chhota — puchh sakte hain.
+```
+
+Graceful. No guilt. Platform stays relevant.
+
+---
+
+### N5 — Using Personal Lines In Follow-Up
+
+THIS IS THE SECRET WEAPON.
+
+If buyer said "family ke liye hai" early in conversation —
+use it in follow-up at the right moment:
+
+```
+Aapne bataya tha family ke liye le rahe hain.
+
+Jo decision lena hai — uss angle se lena.
+
+[Project] 2026 mein ready hoga.
+Family tab settle ho jaayegi.
+
+Kya yeh timeline unke liye theek hai?
+```
+
+Why it works:
+- Buyer feels heard, not sold to
+- Their own words create emotional ownership
+- Decision becomes personal — not transactional
+
+---
+
+### N6 — When Buyer Is About To Make Wrong Decision (Post-Visit)
+
+```
+Ek honest baat bolun?
+
+Jo aap soch rahe hain — main samajhta hoon kyon.
+
+But aapne khud bataya tha [their situation] —
+iss hisaab se yeh choice baad mein frustrate karega.
+
+Better option yeh hai: [Alternative + one reason].
+
+Aap khud bhi jaante hain yeh.
+```
+
+Never apologize for truth.
+Give alternative — never just a no.
+
+---
+
+### N7 — What NEVER to Do in Emotional Follow-Up
+
+NEVER:
+- "Kab book kar rahe hain?" — kills trust instantly
+- Fake empathy ("Aww, parents ka sapna! So sweet!")
+- Pressure disguised as care ("Time nikal raha hai...")
+- Use emotional lines more than once per conversation
+- Apply emotion when buyer is in research mode
+- Sound like a therapist — be an honest friend
+
+ALWAYS:
+- Use their exact words, not paraphrases
+- Pair emotion with honest data
+- Give direction — not just validation
+- Let them sit with the decision — don't rush
+- Be available, not pushy
+
+---
+
+### N8 — The 3-Layer Follow-Up Formula
+
+For every follow-up message, layer these 3:
+
+```
+Layer 1 — Connect (1 line):
+Reference something from their conversation.
+"Aapne bataya tha [X]..."
+
+Layer 2 — Honest (1-2 lines):
+Data or truth relevant to their situation.
+
+Layer 3 — Forward (1 line):
+One gentle next step.
+Never a demand. Always an invitation.
+```
+
+EXAMPLE:
+```
+Aapne bataya tha parents ka sapna hai apna ghar.    [Connect]
+
+2030 tak ka wait unke liye long hoga —              [Honest]
+Sarathya 2026 mein ready hai.
+
+Ek baar site pe dekh lein?                          [Forward]
+```
+
+Short. Personal. Complete.
+
+---
+
+END OF PART N

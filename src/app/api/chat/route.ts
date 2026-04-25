@@ -4,6 +4,7 @@ import { streamText } from 'ai'
 import { rateLimit } from '@/lib/rate-limit'
 import { buildContextPayload, buildLocationGuardList } from '@/lib/context-builder'
 import { buildSystemPrompt } from '@/lib/system-prompt'
+import { SYSTEM_PROMPT_V2_LEGACY } from '@/lib/system-prompt-v2-archive'
 import { retrieveChunks } from '@/lib/rag/retriever'
 import { classifyIntent } from '@/lib/intent-classifier'
 import { buildDecisionCard } from '@/lib/decision-engine/decision-card-builder'
@@ -237,9 +238,18 @@ if (hasInjection) {
   // context; a per-delta test would miss patterns that straddle deltas.
   let streamBuffer = ''
 
+  // Resolve system prompt version. Env override (SYSTEM_PROMPT_VERSION) wins
+  // over the per-session field. Default is v3 — the 14-PART Mama spec with
+  // Emotional Decision Engine. v2 is the legacy 18-PART body, kept for A/B
+  // and replay of historical sessions.
+  const envPromptVersion = process.env.SYSTEM_PROMPT_VERSION?.trim()
+  const sessionPromptVersion = (chatSession as { systemPromptVersion?: string }).systemPromptVersion
+  const resolvedPromptVersion = envPromptVersion || sessionPromptVersion || 'v3'
+  const promptBuilder = resolvedPromptVersion === 'v2' ? SYSTEM_PROMPT_V2_LEGACY : buildSystemPrompt
+
   const result = streamText({
     model: openai('gpt-4o'),
-    system: buildSystemPrompt({ ...context, locationGuardList }, decisionCard, finalMemory, retrieved, persona),
+    system: promptBuilder({ ...context, locationGuardList }, decisionCard, finalMemory, retrieved, persona),
     messages: cappedMessages,
     temperature: 0.3,
     maxOutputTokens: 500,
