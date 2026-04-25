@@ -489,6 +489,35 @@ describe('FABRICATED_STAT check', () => {
   })
 })
 
+describe('Commission Option Z (P1-S3)', () => {
+  // ae656d3 shipped Option Z: builder-side payment model with no fixed rate.
+  // Canonical answers MUST pass checkResponse() without firing BUSINESS_LEAK,
+  // while per-builder rate disclosure MUST still fire it. These regressions
+  // protect the "honest AI" positioning end-to-end (not just the regex).
+  const HINGLISH = 'Builder se commission leta hai — aapko kuch nahi dena. Amount per deal builder ke saath mutually decide hota hai.'
+  const ENGLISH = 'Homesty AI earns from builders — not from you. Exact amount is negotiated per deal with the builder.'
+
+  it('canonical Hinglish commission response does NOT trigger BUSINESS_LEAK', () => {
+    const res = checkResponse(HINGLISH, [], cq(), 'aap ka commission kya hai? builder ko kya dena hai mujhe?')
+    expect(res.violations.some(v => v.startsWith('BUSINESS_LEAK'))).toBe(false)
+  })
+
+  it('canonical English commission response does NOT trigger BUSINESS_LEAK', () => {
+    const res = checkResponse(ENGLISH, [], cq(), 'what is your commission?')
+    expect(res.violations.some(v => v.startsWith('BUSINESS_LEAK'))).toBe(false)
+  })
+
+  it('builder-specific rate disclosure DOES trigger BUSINESS_LEAK', () => {
+    const res = checkResponse(
+      'Goyal & Co. pays us 1.8% commission rate on every deal closed.',
+      [],
+      cq(),
+      'kitna commission lete ho?'
+    )
+    expect(res.violations.some(v => v.startsWith('BUSINESS_LEAK'))).toBe(true)
+  })
+})
+
 describe('FAKE_VISIT_CLAIM check (P1-S1)', () => {
   it('banned phrase + visit_confirmation artifact in text → ok', () => {
     const text =
