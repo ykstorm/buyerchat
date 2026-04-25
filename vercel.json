@@ -4,5 +4,11 @@
   "installCommand": "npm ci",
   "env": {
     "NEXT_PUBLIC_APP_URL": "https://www.homesty.ai"
-  }
+  },
+  "crons": [
+    {
+      "path": "/api/cron/visit-followups",
+      "schedule": "*/15 * * * *"
+    }
+  ]
 }

@@ -187,10 +187,41 @@ model SiteVisit {
   buyerPhone          String?
   buyerEmail          String?
 
+  // Visit follow-up scheduler (Agent 8) — playbook PARTS B, D, F.
+  // Each timestamp is set when the corresponding follow-up message is fired,
+  // making computeFollowupsDue idempotent. postVisit72Closed is a boolean
+  // because it has no time window — it is a one-shot graceful-exit flag.
+  followupT24Sent     DateTime?
+  followupT3Sent      DateTime?
+  followupT1Sent      DateTime?
+  postVisitT1Sent     DateTime?
+  postVisitT24Sent    DateTime?
+  postVisitT48Sent    DateTime?
+  postVisit72Closed   Boolean   @default(false)
+
   @@index([userId])
   @@index([projectId])
   @@index([visitCompleted])
   @@index([expiresAt])
+  @@index([visitScheduledDate])
+}
+
+// CRMEvent — append-only audit log for every CRM-side touchpoint
+// (follow-ups, junk flags, bypass alerts). Consumed by /admin/buyers
+// detail timeline and the founder dashboard alerting layer.
+model CRMEvent {
+  id          String   @id @default(cuid())
+  sessionId   String?
+  buyerId     String?
+  visitId     String?
+  kind        String   // 'followup_t24' | 'followup_t3' | 'followup_t1' | 'post_visit_t1' | 'post_visit_t24' | 'post_visit_t48' | 'post_visit_t72_close' | 'junk_marked' | 'junk_unmarked'
+  payload     Json?
+  channel     String   // 'whatsapp' | 'in_app' | 'email'
+  createdAt   DateTime @default(now())
+
+  @@index([sessionId, createdAt])
+  @@index([buyerId, createdAt])
+  @@index([visitId, createdAt])
 }
 
 
