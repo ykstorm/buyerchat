@@ -16,6 +16,7 @@ import {
   chunkForBuilder,
   chunkForLocality,
   chunkForInfra,
+  chunkForLocationData,
   type SourceType,
 } from '@/lib/rag/embed-writer'
 import { getEncoding } from 'js-tiktoken'
@@ -172,6 +173,29 @@ async function backfillInfra(totals: { rows: number; tokens: number }) {
   }
 }
 
+async function backfillLocationData(totals: { rows: number; tokens: number }) {
+  let cursor: string | undefined
+  let done = false
+  while (!done) {
+    const rows = await prisma.locationData.findMany({
+      take: BATCH,
+      ...(cursor ? { skip: 1, cursor: { id: cursor } } : {}),
+      orderBy: { id: 'asc' },
+      select: {
+        id: true,
+        category: true,
+        name: true,
+        microMarket: true,
+        notes: true,
+      },
+    })
+    if (rows.length === 0) break
+    await processBatch('location_data', rows, chunkForLocationData, (r) => r.id, totals)
+    cursor = rows[rows.length - 1].id
+    if (rows.length < BATCH) done = true
+  }
+}
+
 async function main() {
   console.log(isDry ? '[backfill] DRY RUN — no OpenAI calls will be made' : '[backfill] LIVE RUN')
 
@@ -188,6 +212,9 @@ async function main() {
 
   console.log('[backfill] Processing infrastructure...')
   await backfillInfra(totals)
+
+  console.log('[backfill] Processing location_data...')
+  await backfillLocationData(totals)
 
   if (isDry) {
     const costUsd = (totals.tokens / 1_000_000) * 0.02

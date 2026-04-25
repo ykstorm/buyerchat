@@ -310,6 +310,33 @@ model Embedding {
   @@index([sourceType, sourceId])
 }
 
+// Operator-curated amenity inventory for Bopal/Shela/South Bopal.
+// Source of truth for PART 11 GUARD_LIST — retriever grounds amenity
+// responses to rows in this table to block hallucinations like
+// "Auda Garden" / "CIMS Hospital" / "Bopal Lake Park" that surfaced
+// in Sentry (JS-NEXTJS-K) when the model free-associated around a
+// category keyword. Populated via scripts/seed-location-data.mjs.
+//
+// category values (canonical, enforced by seed + context-builder):
+//   'park' | 'hospital' | 'atm' | 'bank' | 'school' | 'mall' |
+//   'club'  | 'temple'   | 'transport'
+//
+// microMarket mirrors Project.microMarket ('Bopal' | 'SBopal' | 'Shela').
+model LocationData {
+  id          String   @id @default(cuid())
+  category    String
+  name        String
+  microMarket String
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([category, name, microMarket])
+  @@index([category])
+  @@index([microMarket])
+  @@index([category, microMarket])
+}
+
 model ProjectPricing {
   id                String   @id @default(cuid())
   projectId         String   @unique

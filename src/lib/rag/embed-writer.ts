@@ -3,7 +3,7 @@ import { getEncoding } from 'js-tiktoken'
 import { prisma } from '@/lib/prisma'
 import type { BuilderAIContext } from '@/lib/types/builder-ai-context'
 
-export type SourceType = 'project' | 'builder' | 'locality' | 'infra' | 'faq'
+export type SourceType = 'project' | 'builder' | 'locality' | 'infra' | 'faq' | 'location_data'
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
 const enc = getEncoding('cl100k_base')
@@ -93,6 +93,27 @@ export function chunkForInfra(i: {
     `Infrastructure: ${i.name} (type: ${i.type}). ` +
     `Estimated price impact: ${i.priceImpactPct}%. Source: ${i.sourceUrl}.`
   )
+}
+
+// LocationData chunk — deliberately repeats the category keyword and
+// microMarket name in natural phrasing so embeddings match buyer queries
+// like "parks near bopal" / "ATMs in shela" without needing a keyword
+// boost at retrieval time. See context-builder.ts for the GUARD_LIST
+// consumer side.
+export function chunkForLocationData(l: {
+  category: string
+  name: string
+  microMarket: string
+  notes: string | null
+}): string {
+  const cat = l.category.toLowerCase()
+  const areaLabel =
+    l.microMarket === 'SBopal' ? 'South Bopal' :
+    l.microMarket === 'Shela'  ? 'Shela' :
+    l.microMarket === 'Bopal'  ? 'Bopal' :
+    l.microMarket
+  const base = `${cat} in ${areaLabel}: ${l.name}. Located in ${areaLabel} (${l.microMarket}).`
+  return l.notes ? `${base} ${l.notes}.` : base
 }
 
 // ── Core upsert ──────────────────────────────────────────────────────────────
@@ -195,6 +216,19 @@ export async function embedBuilder(builderName: string): Promise<void> {
   }
   const content = chunkForBuilder(ctx)
   await upsertEmbedding('builder', builder.builderName, content)
+}
+
+export async function embedLocationData(id: string): Promise<void> {
+  const row = await prisma.locationData.findUnique({
+    where: { id },
+    select: { id: true, category: true, name: true, microMarket: true, notes: true },
+  })
+  if (!row) {
+    console.error(`[embed-writer] embedLocationData: row ${id} not found`)
+    return
+  }
+  const content = chunkForLocationData(row)
+  await upsertEmbedding('location_data', row.id, content)
 }
 
 export async function embedLocality(localityId: string): Promise<void> {

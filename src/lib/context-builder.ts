@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma'
 import { getCachedContext, setCachedContext, invalidateContextCache } from '@/lib/context-cache'
 import { computeUrgencySignals } from '@/lib/urgency-signals'
+import { detectAmenityCategories } from '@/lib/rag/retriever'
 // BuilderAIContext type enforces sensitive field exclusion at compile time (see types/builder-ai-context.ts)
 
 // I25 completeness filter — keep only projects with enough critical data for
@@ -29,6 +30,99 @@ export function projectCompleteness(p: CompletenessInput): number {
   ]
   const present = fields.filter(Boolean).length
   return present / fields.length
+}
+
+// Canonical category → display label (singular→plural handled by the
+// prompt writer since it pluralises cleanly in the GUARD_LIST header).
+const CATEGORY_LABEL: Record<string, string> = {
+  park:      'parks',
+  hospital:  'hospitals',
+  atm:       'ATMs',
+  bank:      'banks',
+  school:    'schools / colleges / universities',
+  mall:      'malls / shopping',
+  club:      'clubs / gyms',
+  temple:    'temples',
+  transport: 'transport stations',
+}
+
+// Detect which Bopal-corridor microMarket(s) the buyer is asking about.
+// Falls back to all three when ambiguous so we don't silently return empty.
+export function detectMicroMarkets(query: string): string[] {
+  const q = query.toLowerCase()
+  const markets: string[] = []
+  if (/\b(shela)\b/.test(q)) markets.push('Shela')
+  if (/\b(south\s*bopal|s[-.\s]*bopal|sbopal|southbopal)\b/.test(q)) markets.push('SBopal')
+  if (/\bbopal\b/.test(q) && !markets.includes('SBopal')) markets.push('Bopal')
+  if (markets.length === 0) return ['SBopal', 'Shela', 'Bopal']
+  return markets
+}
+
+// Builds the GUARD_LIST block injected into PART 11 of the system prompt.
+// Returns empty string when the buyer's query contains no amenity-category
+// keyword — the generic flow stays unchanged.
+//
+// When a category IS detected, we always emit a block (even if the lookup
+// returned zero rows) so the model sees an explicit "no data" instruction
+// rather than free-associating a plausible name.
+export async function buildLocationGuardList(query: string): Promise<string> {
+  const categories = detectAmenityCategories(query)
+  if (categories.length === 0) return ''
+
+  const microMarkets = detectMicroMarkets(query)
+  const microMarketLabel = microMarkets.length === 3
+    ? 'Bopal / South Bopal / Shela'
+    : microMarkets.map(m => m === 'SBopal' ? 'South Bopal' : m).join(' / ')
+
+  let rows: { category: string; name: string; microMarket: string; notes: string | null }[] = []
+  try {
+    rows = await prisma.locationData.findMany({
+      where: {
+        category: { in: categories },
+        microMarket: { in: microMarkets },
+      },
+      select: { category: true, name: true, microMarket: true, notes: true },
+      orderBy: [{ category: 'asc' }, { name: 'asc' }],
+    })
+  } catch (err) {
+    // Table missing / migration unapplied — fail open so chat keeps working.
+    console.error('[buildLocationGuardList] query failed:', err)
+    return ''
+  }
+
+  // De-duplicate by (category, name) since the seed duplicates across
+  // microMarkets and the buyer does not care about that.
+  const seen = new Set<string>()
+  const grouped: Record<string, { name: string; notes: string | null }[]> = {}
+  for (const r of rows) {
+    const key = `${r.category}::${r.name.toLowerCase()}`
+    if (seen.has(key)) continue
+    seen.add(key)
+    grouped[r.category] ??= []
+    grouped[r.category].push({ name: r.name, notes: r.notes })
+  }
+
+  const lines: string[] = []
+  lines.push('RETRIEVED AMENITIES (ground-truth, operator-verified):')
+  for (const cat of categories) {
+    const label = CATEGORY_LABEL[cat] ?? cat
+    const list = grouped[cat] ?? []
+    lines.push(`- ${label} in ${microMarketLabel}:`)
+    if (list.length === 0) {
+      lines.push(`    (no verified names in our data)`)
+    } else {
+      for (const row of list) {
+        lines.push(`    - ${row.name}${row.notes ? ` — ${row.notes}` : ''}`)
+      }
+    }
+  }
+  lines.push('')
+  lines.push('CRITICAL: You may ONLY name amenities from this list.')
+  lines.push('- Do NOT invent simpler/shorter names (e.g., never shorten "AUDA Sky City" to "Auda Garden").')
+  lines.push('- Do NOT add names from your training data even if they seem plausible (e.g., no "CIMS Hospital", no "Bopal Lake Park").')
+  lines.push(`- If a sub-list is empty, say: "Specific <category> names for this area aren't in my current data — Google Maps or local search will give the current list."`)
+
+  return lines.join('\n')
 }
 
 export async function buildContextPayload() {

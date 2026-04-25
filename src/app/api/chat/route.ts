@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { openai } from '@ai-sdk/openai'
 import { streamText } from 'ai'
 import { rateLimit } from '@/lib/rate-limit'
-import { buildContextPayload } from '@/lib/context-builder'
+import { buildContextPayload, buildLocationGuardList } from '@/lib/context-builder'
 import { buildSystemPrompt } from '@/lib/system-prompt'
 import { retrieveChunks } from '@/lib/rag/retriever'
 import { classifyIntent } from '@/lib/intent-classifier'
@@ -134,6 +134,16 @@ if (hasInjection) {
     console.log(`[RAG] Retrieved ${retrieved.length} chunks`)
   }
 
+  // Amenity GUARD_LIST — runs a scoped LocationData lookup when the buyer's
+  // query contains a category keyword (park/hospital/atm/bank/school/mall/
+  // club/temple/transport). Returns empty string otherwise. Injected into
+  // PART 11 of the system prompt to block hallucinated amenity names
+  // (Sentry JS-NEXTJS-K — "Auda Garden", "CIMS Hospital", "Bopal Lake Park").
+  const locationGuardList = await buildLocationGuardList(sanitizedMsg).catch((err) => {
+    console.error('[GUARD_LIST] build failed:', err)
+    return ''
+  })
+
   const isComparison = /compare|vs|versus|which is better|which one/i.test(sanitizedMsg)
   let decisionCard = null
   if (isComparison && context.projects.length >= 2) {
@@ -229,7 +239,7 @@ if (hasInjection) {
 
   const result = streamText({
     model: openai('gpt-4o'),
-    system: buildSystemPrompt(context, decisionCard, finalMemory, retrieved, persona),
+    system: buildSystemPrompt({ ...context, locationGuardList }, decisionCard, finalMemory, retrieved, persona),
     messages: cappedMessages,
     temperature: 0.3,
     maxOutputTokens: 500,

@@ -10,6 +10,11 @@ export function buildSystemPrompt(ctx: {
   infrastructure: unknown[]
   dataAsOf: string
   locationIntelligence?: string
+  // Query-specific amenity GUARD_LIST block (from context-builder
+  // buildLocationGuardList). When the buyer's message contains an amenity
+  // category keyword, this rendered block lists the only names the model
+  // is allowed to surface for that category. Empty string otherwise.
+  locationGuardList?: string
 }, decisionCard?: unknown, buyerMemory?: string | null, retrievedChunks?: RetrievedChunk[], persona: Persona = 'unknown'): string {
 
   const projects = ctx.projects as any[]
@@ -338,6 +343,22 @@ These are absolute. No exceptions. No interpretation flexibility.
    English variant: "I don't have that specific data in my records —
    verify directly with the builder or on the RERA portal."
 
+7. [RESERVED — do not author here; maintained separately.]
+
+8. NEVER name specific amenities (schools, hospitals, ATMs, banks,
+   parks, malls, clubs, temples, metro/BRTS stations) unless they
+   appear verbatim in the GUARD_LIST supplied in PART 11. Specifically,
+   NEVER:
+   - Shorten retrieved names (e.g., "AUDA Sky City" → "Auda Garden").
+   - Add plausible-sounding alternatives (e.g., adding "CIMS" when
+     only Krishna Shalby was retrieved).
+   - Make up names from general knowledge (e.g., "Bopal Lake Park").
+   If GUARD_LIST is empty for a category, say honestly:
+   "Specific <category> names for this area aren't in my current data.
+   Google Maps or local search will give the current list."
+   This rule closes the Sentry JS-NEXTJS-K hallucination class
+   (invented amenity names surfaced to live buyers).
+
 VIOLATION OF THESE RULES IS A PRODUCT-LEVEL FAILURE, not a stylistic miss. The product is positioned
 as "the honest AI." Fabricating bookings, OTPs, builder names, or PII access destroys that
 positioning instantly. When in doubt, say "verify nahi kar paya" — that is the honest answer.
@@ -370,7 +391,7 @@ PART 11 — VERIFIED PROJECT DATA (use only this)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Data as of: ${ctx.dataAsOf}
 
-PROJECTS:
+${ctx.locationGuardList ? `${ctx.locationGuardList}\n\n` : ''}PROJECTS:
 ${projectList}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
