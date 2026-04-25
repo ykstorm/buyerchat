@@ -649,57 +649,17 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
         )}
       </AnimatePresence>
 
-      {/* Top-right user chip — visible confirmation of logged-in state.
-          Gate on userId (canonical signed-in signal from auth.ts) — NOT
-          userName. Google accounts without display names have userId set
-          but userName null; gating on userName caused the chip to show
-          "Sign in" pill alongside the sidebar's "Sign out" for those
-          users. Sidebar footer uses userId as its guard, so matching
-          here eliminates the duplicate-signin drift.
-          Display priority: userImage > userName initial > '?' initial. */}
-      <div
-        className="absolute top-3 right-3 z-40 flex items-center"
-        aria-hidden={false}
-      >
-        {userId ? (
-          userImage ? (
-            <img
-              src={userImage}
-              alt={userName ?? 'Signed-in user'}
-              aria-label={userName ?? 'Signed-in user'}
-              title={userName ?? 'Signed in'}
-              width={28}
-              height={28}
-              className="w-7 h-7 rounded-full shadow-sm"
-              style={{ border: '1px solid var(--border)', background: 'var(--bg-surface)' }}
-            />
-          ) : (
-            <div
-              aria-label={userName ?? 'Signed-in user'}
-              title={userName ?? 'Signed in'}
-              role="img"
-              className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-semibold shadow-sm"
-              style={{ background: 'var(--bg-subtle)', color: 'var(--text-primary)', border: '1px solid var(--border)' }}
-            >
-              {userName?.trim().charAt(0).toUpperCase() ?? '?'}
-            </div>
-          )
-        ) : (
-          <button
-            type="button"
-            aria-label="Sign in with Google"
-            onClick={() => onMessageAction?.({ id: 'topbar-signin', role: 'assistant', content: '', action: { kind: 'signin', label: 'Sign in' } })}
-            className="px-3 py-1 rounded-full text-[11px] font-medium shadow-sm transition-opacity hover:opacity-90"
-            style={{ background: 'var(--bg-surface)', color: 'var(--text-secondary)', border: '1px solid var(--border)' }}
-          >
-            Sign in
-          </button>
-        )}
-      </div>
+      {/* Top-right user chip removed — Navbar (when present) and the sidebar
+          footer are the canonical sign-in/sign-out surfaces. Eliminating the
+          chat-surface pill kills the duplicate-signin CTA for anonymous users
+          on /chat (and the redundant avatar for signed-in users). The
+          sidebar footer prose ("Sign in from the top bar to save chats") and
+          the in-stream signin action (e.g. 401 recovery via onMessageAction)
+          remain untouched. */}
 
-      {/* Artifact history button — top right of chat (shifted left to clear the avatar chip) */}
+      {/* Artifact history button — top right of chat */}
       {artifactHistory && artifactHistory.length > 0 && messages.length > 0 && !showArtifact && (
-        <div className="lg:hidden absolute top-3 right-14 z-40">
+        <div className="lg:hidden absolute top-3 right-3 z-40">
           <div className="relative" ref={artifactMenuRef}>
             <button
               type="button"
