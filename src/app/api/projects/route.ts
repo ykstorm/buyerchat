@@ -15,16 +15,46 @@ export async function GET(req: NextRequest) {
   const status = searchParams.get('status')
   const sort = searchParams.get('sort') ?? 'newest'
   try {
-  
+
+  const now = new Date()
+
+  // I40-G + filter-fallback: DB stores "Active" / "Active (Ongoing)" but
+  // some rows have unset/legacy constructionStatus values. Buyer-friendly UI
+  // pills are "Under Construction" / "Ready to Move". Derive from BOTH
+  // constructionStatus and possessionDate so the filter never empties out
+  // when the constructionStatus column drifts.
+  //   - Under Construction: constructionStatus startsWith "Active"
+  //                         OR possessionDate is in the future
+  //                         (and not explicitly "Ready to Move")
+  //   - Ready to Move:      constructionStatus = "Ready to Move"
+  //                         OR possessionDate <= now
+  const statusFilter =
+    status === 'Under Construction'
+      ? {
+          AND: [
+            {
+              OR: [
+                { constructionStatus: { startsWith: 'Active' } },
+                { possessionDate: { gt: now } },
+              ],
+            },
+            { NOT: { constructionStatus: 'Ready to Move' } },
+          ],
+        }
+      : status === 'Ready to Move'
+      ? {
+          OR: [
+            { constructionStatus: 'Ready to Move' },
+            { possessionDate: { lte: now } },
+          ],
+        }
+      : {}
+
   const projects = await prisma.project.findMany({
     where: {
       isActive: true,
       ...(microMarket && microMarket !== 'all' && { microMarket }),
-      // I40-G: DB stores "Active" / "Active (Ongoing)" / "Ready to Move" but
-      // buyer-friendly UI pills use "Under Construction" / "Ready to Move".
-      // Map at API layer; preserves UX copy without a migration.
-      ...(status === 'Under Construction' && { constructionStatus: { startsWith: 'Active' } }),
-      ...(status === 'Ready to Move' && { constructionStatus: 'Ready to Move' }),
+      ...statusFilter,
       ...(unitType && unitType !== 'all' && {
         unitTypes: { has: unitType }
       }),
