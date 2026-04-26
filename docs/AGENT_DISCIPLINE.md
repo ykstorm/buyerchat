@@ -1,0 +1,243 @@
+# Agent Discipline Checklist (READ FIRST, EVERY TIME)
+
+Before declaring an agent task complete, you MUST walk through every
+section below that applies. If a section applies and you skipped it,
+the work is NOT done — verify or report.
+
+This document exists because past agents shipped "working" code that
+failed in production due to adjacent config gaps. Each rule below maps
+to a real production incident. Do not delete rules even if they seem
+obvious.
+
+---
+
+## 1. EXTERNAL DOMAIN CHECK (the CSP rule)
+
+**Triggered when:** Your code makes a network request to a hostname
+not already in the codebase.
+
+**Do this:**
+- [ ] grep for the new hostname in `next.config.ts`,
+      `next.config.mjs`, `next.config.js`, `src/middleware.ts`
+- [ ] If a Content-Security-Policy `connect-src` directive exists,
+      verify the new hostname is allowlisted. Add it if not.
+- [ ] If you add an `<img>` tag to a new domain, check `img-src`.
+- [ ] If embedding `<iframe>`, check `frame-src`.
+- [ ] If loading scripts from new CDN, check `script-src`.
+- [ ] Same check for `media-src`, `font-src`, `style-src` if relevant.
+
+**Past incident:** Cloudinary direct upload shipped without
+`api.cloudinary.com` in `connect-src` → browser blocked all PDF
+uploads in prod. Console showed:
+> "Connecting to api.cloudinary.com violates CSP directive"
+
+**Verification command:**
+```bash
+grep -rn "connect-src\|Content-Security-Policy" \
+  next.config.* src/middleware.* 2>/dev/null
+```
+
+---
+
+## 2. ENVIRONMENT VARIABLE CHECK
+
+**Triggered when:** Your code reads `process.env.SOMETHING`.
+
+**Do this:**
+- [ ] Is `SOMETHING` already in `.env`, `.env.local`, `.env.example`?
+- [ ] If new: add to `.env.example` with placeholder value + comment
+      explaining purpose
+- [ ] If client-side: must be prefixed `NEXT_PUBLIC_`
+- [ ] Add to `docs/ENV.md` (create if missing) with: name, scope
+      (server/client), purpose, default, when to change
+- [ ] Tell the user explicitly: "Add `SOMETHING=value` to Vercel
+      env vars in production, preview, AND development"
+
+**Past incident:** `VERIFY_METHOD` env var introduced for swappable
+phone verification. Default 'none' was correct, but if it was missing
+from Vercel, the type cast would silently fall back. Required explicit
+documentation to prevent late-May DLT swap from breaking.
+
+---
+
+## 3. DATABASE TRANSACTION COMPATIBILITY (the Neon HTTP rule)
+
+**Triggered when:** Your code uses `prisma.$transaction(...)`,
+`SET LOCAL`, advisory locks, or session-scoped Postgres features.
+
+**Do this:**
+- [ ] Check the Prisma adapter in `src/lib/prisma.ts`. If using Neon's
+      HTTP adapter (most common in Vercel deploys), `$transaction`
+      with interactive callbacks throws "Transactions are not supported
+      in HTTP mode."
+- [ ] If you need a transaction: use Prisma's array-form
+      `prisma.$transaction([...])` (atomic batch, no callback) OR
+      restructure to not need one.
+- [ ] If you need `SET LOCAL` (e.g., `ivfflat.probes`): you cannot
+      use it with HTTP adapter. Document the workaround.
+
+**Past incident:** RAG retriever wrapped vector query in
+`$transaction` to set `ivfflat.probes`. Every retrieval silently
+returned empty in prod for hours. Took manual debug + log inspection
+to find.
+
+**Verification:**
+```bash
+grep -n "\\\$transaction" src/lib/your-new-file.ts
+```
+
+---
+
+## 4. DUPLICATE-SURFACE CHECK (the pricing form rule)
+
+**Triggered when:** You modify a form, page, or UI surface that the
+operator/user interacts with.
+
+**Do this:**
+- [ ] grep the codebase for OTHER files containing similar field
+      names. Example: if editing `PricingStep3Form.tsx` with
+      `basicRate`, also grep `basicRate|BASE PRICE` across
+      `src/app/admin/` and `src/components/admin/`.
+- [ ] If you find another file with overlapping fields → STOP.
+      Report to user: "There appear to be N pricing surfaces — should
+      I sync changes to all, or consolidate to one?"
+- [ ] DO NOT silently update only the surface you were pointed at.
+      Operators land on different paths and will see stale UI.
+
+**Past incident:** BHK Configurations table added to
+`PricingStep3Form.tsx` only. `/admin/projects/new` had its own inline
+pricing form, `/admin/projects/[id]` had inline pricing fields plus an
+"Open pricing editor →" link. Operator never saw the new BHK table
+because the link path she took bypassed the modified component.
+
+**Verification:**
+```bash
+grep -rn "<distinctive-field-name>" src/app/admin src/components/admin
+```
+
+---
+
+## 5. CLIENT/SERVER COMPONENT BOUNDARY (the projectId rule)
+
+**Triggered when:** You write `useParams()`, `useRouter()`,
+`'use client'`, or pass props from a `[id]` route to a child component.
+
+**Do this:**
+- [ ] If a route has `[id]` segment: extract id in the SERVER component
+      (`page.tsx`) via `await params` and pass as a typed prop to
+      client children. Do NOT rely on `useParams()` in deeply nested
+      client components.
+- [ ] If your client component fetches `/api/.../${id}/...`: add a
+      runtime guard `if (!id) { console.error(...); return }` AND
+      a TypeScript-level non-null prop type.
+
+**Past incident:** `PricingStep3Form` read `useParams().id` from a
+nested client component. On `/admin/projects/new` (no `[id]` segment),
+id was undefined, fetches went to `/api/admin/projects/undefined` →
+404 every save attempt.
+
+---
+
+## 6. STREAMING / TIMEOUT BOUNDARIES (the 600ms rule)
+
+**Triggered when:** Your code uses `Promise.race` with `setTimeout`,
+streaming responses, or any time budget against external APIs.
+
+**Do this:**
+- [ ] If timing out a Promise: ensure the timeout is LONGER than the
+      sum of all sequential awaits inside, including cold-start latency
+      (cold OpenAI ~2-3s, cold Neon vector ~1-9s, Anthropic streaming
+      first token ~500ms-2s).
+- [ ] Test the cold path explicitly. Warm latency is misleading.
+- [ ] Distinguish "I want to abort the slow query" (use AbortSignal)
+      from "I want to give up if no result yet" (use Promise.race).
+
+**Past incident:** RAG retriever had outer 600ms `Promise.race` that
+fired BEFORE the OpenAI embedding call (~2.1s cold) ever completed.
+Every retrieval returned empty. Was masked by silent fallback.
+
+---
+
+## 7. SCHEMA WRITE PROVENANCE (the Insider Note rule)
+
+**Triggered when:** Your code writes to a buyer-facing or
+operator-trust field (`Project.analystNote`, `Project.honestConcern`,
+`Builder.trustScore`, RERA fields, pricing fields).
+
+**Do this:**
+- [ ] Never write to these fields from an AI-generated response
+      pipeline.
+- [ ] If you must: route through `src/lib/project-content-source.ts`
+      and force `source = 'operator' | 'imported'` only. AI-generated
+      writes must be blocked + Sentry-warned.
+- [ ] If adding a new buyer-trust field: add `<field>Source`,
+      `<field>Author`, `<field>VerifiedAt` columns with backfill
+      'unknown' default.
+
+**Past incident:** Vishwanath Sarathya's Insider Note contained
+"ET Industry Leader 2023" + "34 years Gujarat experience". Source
+unknown — possibly AI-generated and persisted via an unaudited write
+path. Trust risk: appears authoritative, may be fabricated.
+
+---
+
+## 8. RESPONSE-CHECKER COVERAGE
+
+**Triggered when:** You add a new fabrication category, banned phrase,
+or content rule to the AI's PART 8.5 of system-prompt.
+
+**Do this:**
+- [ ] Every PART 8.5 rule must have a corresponding regex check in
+      `src/lib/response-checker.ts`.
+- [ ] Every check needs at least 3 unit tests: one positive
+      (violation triggers), one negative (similar but legal text
+      doesn't fire), one edge case.
+- [ ] Wire into the `onFinish` audit dispatch loop, NOT the `onChunk`
+      stream path (audit only — never block tokens).
+- [ ] Tag with rule name in Sentry capture for traceability.
+
+---
+
+## 9. LINT/BUILD/TEST GATES BEFORE COMMIT
+
+Before declaring a commit ready, in order:
+
+- [ ] `npm run build` — must pass clean. /chat bundle should not jump
+      more than 5 kB without explicit reason.
+- [ ] `npm test` — all tests pass. Test count never decreases.
+- [ ] `npm run lint` — no NEW errors in files you touched.
+      Pre-existing errors in untouched files are out of scope.
+- [ ] `git status` — only committed files are ones you intended.
+- [ ] Throwaway debug scripts (`scripts/_*.ts`, `scripts/debug-*.ts`)
+      MUST be deleted before commit.
+- [ ] Migrations must be applied to Neon if they exist
+      (`npx prisma migrate deploy`) — uncommitted schema drift is a
+      production hazard.
+
+---
+
+## 10. REPORT-BACK FORMAT
+
+After every agent run, the report must include:
+
+- Commit SHA(s)
+- Files changed (counts and names)
+- Test count before / after
+- Bundle size before / after for any user-facing route touched
+- Any deferred work or known-but-unfixed issues
+- Any external services added (with proof of CSP / env /
+  documentation updates)
+- Any schema migrations created (with proof of `migrate deploy`)
+
+If any item above was skipped, the report MUST say so explicitly.
+Silent skipping is the cause of every production incident this
+document was created to prevent.
+
+---
+
+## ESCAPE HATCH
+
+If a task is too small to warrant the full checklist (e.g., typo fix,
+single-line copy edit), state that explicitly in your report:
+"Skipped checklist sections 1-7, applies only to ≥1-line code
+changes touching network/data/UI." Items 8, 9, 10 still apply.

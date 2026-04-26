@@ -1,3 +1,25 @@
+# Project: Homesty.ai — Agent Onboarding
+
+EVERY agent invocation MUST first read `docs/AGENT_DISCIPLINE.md` and
+apply the relevant sections to the work being done. This is
+non-negotiable — past production incidents trace back to skipping
+these checks.
+
+If you are working on:
+- External API integration → sections 1, 2, 9, 10
+- Database / Prisma changes → sections 3, 7, 9, 10
+- UI form / admin surface → sections 4, 5, 9, 10
+- AI prompt / response logic → sections 7, 8, 9, 10
+- Config / infra / CSP / cron → sections 1, 2, 9, 10
+
+When in doubt, read all 10. The checklist is short.
+
+After completing work, your report MUST conclude with a section
+"Discipline checklist applied:" listing which sections you walked
+through. If you skipped any that applied, state why.
+
+---
+
 # CLAUDE.md
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
