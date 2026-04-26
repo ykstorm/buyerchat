@@ -64,9 +64,12 @@ export default function Navbar() {
   if (HIDE_PREFIXES.some(prefix => pathname?.startsWith(prefix))) return null
 
   // Public links — `Dashboard` is gated to authenticated users (Q audit fix #2).
+  // `/builders` index removed 2026-04-27 (P2-CRITICAL-7 Bug #4): only the
+  // dynamic `/builders/[id]` route exists, so the index link 404'd in prod.
+  // Builder profiles are reachable via project detail page; bringing back the
+  // top-level Builders directory is a Phase 3 task.
   const navLinks: Array<{ name: string; href: string; authOnly?: boolean }> = [
     { name: "Projects", href: "/projects" },
-    { name: "Builders", href: "/builders" },
     { name: "Compare", href: "/compare" },
     { name: "Dashboard", href: "/dashboard", authOnly: true },
   ]
