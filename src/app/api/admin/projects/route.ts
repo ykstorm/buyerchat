@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
+import * as Sentry from '@sentry/nextjs'
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth'
 import { sanitizeAdminInput } from '@/lib/sanitize'
@@ -7,15 +8,20 @@ import { logAdminAction } from '@/lib/audit-log'
 import { invalidateContextCache } from '@/lib/context-cache'
 import { invalidateAdminCache } from '@/lib/admin-cache'
 import { embedProject } from '@/lib/rag/embed-writer'
+import {
+  findPricingViolation,
+  PRICING_LOCKED_RESPONSE,
+} from '@/lib/pricing-lockdown'
 
+// Pricing fields are intentionally NOT in this schema — they are written
+// only by /api/admin/projects/[id]/pricing. A new project is created with
+// pricing zero-valued; the operator is then redirected to the canonical
+// pricing form. See docs/diagnostics/pricing-surface-diagnosis.md.
 const ProjectCreateSchema = z.object({
   projectName: z.string().min(1).max(200),
   builderName: z.string().min(1).max(200),
   microMarket: z.string().min(1).max(200),
   constructionStatus: z.string().min(1).max(100),
-  minPrice: z.number().min(0).max(5_000_000_000),
-  maxPrice: z.number().min(0).max(5_000_000_000),
-  pricePerSqft: z.number().min(0).max(100_000),
   availableUnits: z.number().min(0).max(10_000),
   possessionDate: z.string().min(1),
   reraNumber: z.string().min(1).max(100),
@@ -54,20 +60,33 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
     const body = await req.json()
+    // Lockdown: pricing fields must come via the canonical pricing route.
+    // A legacy form attempting to write them here gets a 400, with a Sentry
+    // breadcrumb so we can spot any client still sending them after deploy.
+    const violation = findPricingViolation(body)
+    if (violation) {
+      Sentry.captureMessage(
+        `Blocked pricing write to non-canonical endpoint (POST /api/admin/projects, field=${violation})`,
+        'warning',
+      )
+      return NextResponse.json(PRICING_LOCKED_RESPONSE, { status: 400 })
+    }
     const parsed = ProjectCreateSchema.safeParse(body)
     if (!parsed.success) {
       return NextResponse.json({ error: 'Invalid input', details: parsed.error.flatten() }, { status: 400 })
     }
     const d = parsed.data
+    // Pricing zero-valued at create time. Operator is redirected client-side
+    // to /admin/projects/[id]/pricing immediately after this returns 201.
     const project = await prisma.project.create({
       data: {
         projectName: sanitizeAdminInput(d.projectName),
         builderName: sanitizeAdminInput(d.builderName),
         microMarket: sanitizeAdminInput(d.microMarket),
         constructionStatus: sanitizeAdminInput(d.constructionStatus),
-        minPrice: d.minPrice,
-        maxPrice: d.maxPrice,
-        pricePerSqft: d.pricePerSqft,
+        minPrice: 0,
+        maxPrice: 0,
+        pricePerSqft: 0,
         availableUnits: d.availableUnits,
         possessionDate: new Date(d.possessionDate),
         reraNumber: d.reraNumber,

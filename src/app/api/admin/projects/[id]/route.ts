@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
+import * as Sentry from '@sentry/nextjs'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { sanitizeAdminInput } from '@/lib/sanitize'
@@ -9,6 +10,7 @@ import { logAdminAction } from '@/lib/audit-log'
 import { computeGrade } from '@/lib/grade'
 import { embedProject } from '@/lib/rag/embed-writer'
 import { writeProjectContent } from '@/lib/project-content-source'
+import { findPricingViolation, PRICING_LOCKED_RESPONSE } from '@/lib/pricing-lockdown'
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -38,14 +40,23 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     const { id } = await params
     const body = await req.json()
 
+    // Lockdown: pricing fields must come via /api/admin/projects/[id]/pricing.
+    const violation = findPricingViolation(body)
+    if (violation) {
+      Sentry.captureMessage(
+        `Blocked pricing write to non-canonical endpoint (PUT /api/admin/projects/[id], field=${violation})`,
+        'warning',
+      )
+      return NextResponse.json(PRICING_LOCKED_RESPONSE, { status: 400 })
+    }
+
     const ProjectUpdateSchema = z.object({
       projectName: z.string().min(1).max(200).optional(),
       builderName: z.string().min(1).max(200).optional(),
       microMarket: z.string().optional(),
       constructionStatus: z.string().optional(),
-      minPrice: z.number().min(0).max(5000000000).optional(),
-      maxPrice: z.number().min(0).max(5000000000).optional(),
-      pricePerSqft: z.number().min(0).max(100000).optional(),
+      // Pricing fields are intentionally NOT in this schema. The lockdown
+      // above rejects them with 400 PRICING_LOCKED before we reach here.
       availableUnits: z.number().min(0).max(10000).optional(),
       locationScore: z.number().min(0).max(100).optional(),
       amenitiesScore: z.number().min(0).max(100).optional(),
@@ -77,13 +88,8 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         ...(d.builderName !== undefined && { builderName: sanitizeAdminInput(d.builderName) }),
         ...(d.microMarket !== undefined && { microMarket: sanitizeAdminInput(d.microMarket) }),
         ...(d.constructionStatus !== undefined && { constructionStatus: sanitizeAdminInput(d.constructionStatus) }),
-        ...(d.minPrice !== undefined && { minPrice: d.minPrice }),
-        ...(d.maxPrice !== undefined && { maxPrice: d.maxPrice }),
-        ...(d.pricePerSqft !== undefined && { pricePerSqft: d.pricePerSqft }),
-        ...(d.pricePerSqftType !== undefined && { pricePerSqftType: d.pricePerSqftType }),
-        ...(d.loadingFactor !== undefined && { loadingFactor: Number(d.loadingFactor) || 1.37 }),
-        ...(d.charges !== undefined && { charges: d.charges }),
-        ...(d.allInPrice !== undefined && { allInPrice: d.allInPrice ? Number(d.allInPrice) : null }),
+        // Pricing fields removed — lockdown above ensures they never reach
+        // this update. Pricing is only written via /api/admin/projects/[id]/pricing.
         ...(d.availableUnits !== undefined && { availableUnits: d.availableUnits }),
         ...(d.possessionDate !== undefined && { possessionDate: new Date(d.possessionDate) }),
         ...(d.reraNumber !== undefined && { reraNumber: d.reraNumber }),

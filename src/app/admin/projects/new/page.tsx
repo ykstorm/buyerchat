@@ -222,12 +222,20 @@ export default function ProjectEditPage() {
   const handleSave = async () => {
     setSaving(true); setError(null)
     try {
+      // Pricing fields are stripped before send — the API rejects them with
+      // 400 PRICING_LOCKED. The operator is redirected to the canonical
+      // /admin/projects/<id>/pricing surface immediately after a successful
+      // create. See docs/MASTER_FIX_LIST.md A1.
+      const {
+        minPrice: _mp, maxPrice: _xp, pricePerSqft: _pps,
+        loadingFactor: _lf, charges: _ch, allInPrice: _aip,
+        sbaSqftMin: _sba, carpetSqftMin: _car,
+        ...rest
+      } = form as unknown as Record<string, unknown>
+      void _mp; void _xp; void _pps; void _lf; void _ch; void _aip; void _sba; void _car
       const payload = {
-        ...form,
-        minPrice: Number(form.minPrice),
-        maxPrice: Number(form.maxPrice),
-        pricePerSqft: Number(form.pricePerSqft),
-        availableUnits: Number(form.availableUnits),
+        ...rest,
+        availableUnits: Number((form as unknown as Record<string, unknown>).availableUnits),
         possessionDate: new Date(form.possessionDate).toISOString(),
         unitTypes: form.unitTypes.split(',').map(s => s.trim()).filter(Boolean),
         amenities: form.amenities.split(',').map(s => s.trim()).filter(Boolean),
@@ -256,6 +264,16 @@ export default function ProjectEditPage() {
         } catch { /* response not JSON */ }
         setError(serverMsg)
         return
+      }
+      // On create, hand the operator straight to the canonical pricing form.
+      if (isNew) {
+        try {
+          const created = await res.clone().json()
+          if (created?.id) {
+            router.push(`/admin/projects/${created.id}/pricing`)
+            return
+          }
+        } catch { /* fall through */ }
       }
       router.push('/admin/projects')
     } catch (err) {
