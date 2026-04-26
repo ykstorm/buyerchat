@@ -5,10 +5,14 @@
 
 ## Last updated
 
-2026-04-27 03:45 IST — Vercel deploy unblocked + production live
+2026-04-27 05:25 IST — P2-CRITICAL-7: 6 live prod bugs fixed (Bugs 1-6)
 
 ## What just shipped (most recent first)
 
+- `8f4e453` — fix(compare): accept ?ids=a,b,c URL preselect — future Compare CTAs / shareable links work
+- `85d2aac` — fix(ui): floating chat only on /projects/[id] — was cluttering listing/profile/compare pages
+- `b03cd63` — fix(nav): remove /builders index link — only /builders/[id] dynamic route exists
+- `706feb3` — fix(prompt): ban OTP fabrication + zero-bullets rule + visit-booking holding message (Bugs 1+2+3, 153/153 tests)
 - `d4d43d1` — fix(cron): escape slash-star in JSDoc (was closing comment, broke webpack parse)
 - `022988c` — fix(infra): drop _comment from vercel.json (Vercel schema rejected unknown crons[] keys)
 - `3bdc517` — fix(infra): cron schedule daily — Hobby plan blocks every-15-min (root cause of 7 missed deploys)
@@ -29,7 +33,9 @@ stay local.
 
 ## What's queued (priority order)
 
-1. **P2-WAVE2-A1** — Stage B Hard Capture (single agent, foreground, 1-2 hr). Spec in operator-provided prompt; Option 1 (phone-only, no verify) decision is locked. `VERIFY_METHOD=none` default.
+0. **Bug 7 (deferred)** — Dashboard already wires saved projects + visit requests from DB; the "How it works / Contact dead links" reported in smoke test live on the **landing page** (`src/app/page.tsx`), not dashboard. If those landing-page links are dead, that's a separate (smaller) sweep.
+1. **Re-test Bug 1 in production** — Mama smoke test on homesty.ai/chat: book a visit (give name + 10-digit phone). Expect the holding message verbatim, NO "OTP bheja hai", NO loop. If model still fabricates OTP, the fix didn't take and we need stream-level abort.
+2. **P2-WAVE2-A1** — Stage B Hard Capture (single agent, foreground, 1-2 hr). Spec in operator-provided prompt; Option 1 (phone-only, no verify) decision is locked. `VERIFY_METHOD=none` default.
 2. **P2-WAVE2-A2** — In-chat visit booking 4-step flow (sequential after A1, ~1 day).
 3. **P2-WAVE2-A3** — Stage-aware follow-up buttons (sequential after A2, 4 hr).
 4. **P2-WAVE2-B** — parallel: lead scoring + junk mark, A1b/A1c pricing UI strip, navbar/floating-button cleanup.
@@ -49,7 +55,7 @@ stay local.
 
 ## Verification state (last `npm run verify` baseline)
 
-- Tests: **148/148** passing
+- Tests: **153/153** passing (+5 OTP/PART7/PART9 invariants from P2-CRITICAL-7)
 - Build: **clean**, /chat 300 kB, / 268 kB shared
 - Lint: clean on touched files (pre-existing warnings on untouched files OK per discipline §9)
 - Schema: `prisma validate` passes
