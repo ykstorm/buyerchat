@@ -5,11 +5,14 @@
 
 ## Last updated
 
-2026-04-26 23:00 IST — META-2 sprint completion
+2026-04-27 03:45 IST — Vercel deploy unblocked + production live
 
 ## What just shipped (most recent first)
 
-- `<META-2 SHA>` — productivity infra: `npm run verify`, session handoff doc, report verdict format, confidence rules, two-phase prompt template, demo script
+- `d4d43d1` — fix(cron): escape slash-star in JSDoc (was closing comment, broke webpack parse)
+- `022988c` — fix(infra): drop _comment from vercel.json (Vercel schema rejected unknown crons[] keys)
+- `3bdc517` — fix(infra): cron schedule daily — Hobby plan blocks every-15-min (root cause of 7 missed deploys)
+- `bae7ebc` — META-2: productivity infra (npm run verify, session handoff, verdict format, lint scope fix)
 - `853a145` — INFRA-1: agent perm allowlist, pre-commit schema guard, GitHub Actions CI
 - `129d220` — Pricing API lockdown (POST/PUT reject pricing fields, redirect to canonical)
 - `6be0fda` — NextAuth maxAge 12h + Sentry PII scrub + capture state-probe lockdown
@@ -59,9 +62,7 @@ stay local.
 
 ## Latest production deployment
 
-- Vercel auto-deploys on push to `main`. Last push was `853a145` followed by META-2.
-- Operator reported "can't find any new deployments." Likely causes:
-  1. Vercel project not linked to GitHub repo `ykstorm/buyerchat` (most likely)
-  2. Auto-deploy disabled in Vercel project settings
-  3. Build failing on Vercel side (different from CI; check Vercel dashboard logs)
-- **Action required next session:** verify Vercel↔GitHub integration. If broken, re-link via `vercel link` + push to trigger.
+- **dpl_2rFv9mjmt3QqmZQtSHCJxepCFAoa** at `https://buyerchat-gmqjtj78j-ykstorms-projects.vercel.app`, aliased to `homesty.ai` + `www.homesty.ai`. Built from commit `d4d43d1`. Status: ● Ready (manually deployed via `npx vercel deploy --prod`).
+- **Root cause of 7 missed auto-deploys identified and fixed:** `vercel.json` cron expression was every-15-min, which Hobby plan rejects. Vercel was failing the deploy at the validation step before reaching the build phase, so no logs surfaced unless you explicitly ran `vercel deploy`. The webhook itself was never broken.
+- **Future pushes should auto-deploy normally** since `vercel.json` is now schema-valid and the cron is daily-frequency. If a future push doesn't deploy within ~3 min, run `npx vercel ls` to inspect.
+- **When upgrading to Vercel Pro:** revert the cron in `vercel.json` and the docblock in `src/app/api/cron/visit-followups/route.ts:1-22` back to every-15-min for tighter T-24/T-3/T-1 followup precision. Comment in the route file documents this.
