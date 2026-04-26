@@ -4,9 +4,12 @@
  * Schedule: daily at 09:00 UTC / 14:30 IST (`0 9 * * *` in vercel.json
  *           crons). Hobby plan caps crons at daily frequency. Every push
  *           since commit 0a30f93 silently failed deploy because the prior
- *           `*/15 * * * *` exceeded the Hobby quota — fix landed in
- *           commit 3bdc517 + this docblock. When the project upgrades to
- *           Pro, restore '*/15 * * * *' for tighter T-24/T-3/T-1 precision.
+ *           every-15-minutes schedule exceeded the Hobby quota — fix
+ *           landed in commit 3bdc517 + this docblock. When the project
+ *           upgrades to Pro, restore the every-15-min schedule (cron
+ *           expression "asterisk-slash-15 asterisk asterisk asterisk
+ *           asterisk", spelled out here because the literal slash-star
+ *           closes JSDoc) for tighter T-24/T-3/T-1 precision.
  *           The 7-stage followup scheduler is idempotent, so daily firing
  *           still progresses every visit by one stage per day; only the
  *           time-of-day precision suffers, not whether the followup fires.
