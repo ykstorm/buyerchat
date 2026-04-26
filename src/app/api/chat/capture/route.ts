@@ -36,15 +36,22 @@ function clientIp(req: NextRequest): string {
 export async function POST(req: NextRequest) {
   try {
     const ip = clientIp(req)
-    const ok = await rateLimit(`capture:${ip}`, 8, 60_000)
-    if (!ok) return NextResponse.json({ error: 'Rate limited' }, { status: 429 })
-
+    // Rate-limit per (sessionId, ip). Scoping to sessionId stops a single
+    // attacker from burning the whole IP budget probing many sessions; the
+    // ip half stops one session being used as a global capture funnel.
+    // The body is parsed first so we can include sessionId in the key.
     const body = await req.json().catch(() => null)
     const parsed = PostSchema.safeParse(body)
     if (!parsed.success) {
+      // Apply a coarse IP-only limit on malformed input so an attacker
+      // can't probe schema shape for free.
+      await rateLimit(`capture:bad:${ip}`, 30, 60_000)
       return NextResponse.json({ error: 'Invalid input' }, { status: 400 })
     }
     const { sessionId, name, phone } = parsed.data
+
+    const ok = await rateLimit(`capture:${sessionId}:${ip}`, 4, 60_000)
+    if (!ok) return NextResponse.json({ error: 'Rate limited' }, { status: 429 })
 
     if (TEST_PATTERNS.has(phone)) {
       return NextResponse.json({ error: 'Invalid phone' }, { status: 400 })
@@ -58,8 +65,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Session not found' }, { status: 404 })
     }
     // Idempotent: don't overwrite a verified capture (Stage B) with soft data.
+    // Don't distinguish the response — return the same shape regardless of
+    // prior state so a probe can't infer session capture status without auth.
     if (existing.captureStage === 'verified') {
-      return NextResponse.json({ ok: true, alreadyVerified: true })
+      return NextResponse.json({ ok: true })
     }
 
     await prisma.chatSession.update({
@@ -82,15 +91,16 @@ export async function POST(req: NextRequest) {
 export async function PATCH(req: NextRequest) {
   try {
     const ip = clientIp(req)
-    const ok = await rateLimit(`capture:${ip}`, 8, 60_000)
-    if (!ok) return NextResponse.json({ error: 'Rate limited' }, { status: 429 })
-
     const body = await req.json().catch(() => null)
     const parsed = PatchSchema.safeParse(body)
     if (!parsed.success) {
+      await rateLimit(`capture:bad:${ip}`, 30, 60_000)
       return NextResponse.json({ error: 'Invalid input' }, { status: 400 })
     }
     const { sessionId } = parsed.data
+
+    const ok = await rateLimit(`capture:${sessionId}:${ip}`, 4, 60_000)
+    if (!ok) return NextResponse.json({ error: 'Rate limited' }, { status: 429 })
 
     const existing = await prisma.chatSession.findUnique({
       where: { id: sessionId },
@@ -99,9 +109,10 @@ export async function PATCH(req: NextRequest) {
     if (!existing) {
       return NextResponse.json({ error: 'Session not found' }, { status: 404 })
     }
-    // Don't downgrade a soft/verified capture to skipped.
+    // Don't downgrade a soft/verified capture to skipped. Keep response shape
+    // identical to "newly skipped" so capture-state can't be probed.
     if (existing.captureStage === 'soft' || existing.captureStage === 'verified') {
-      return NextResponse.json({ ok: true, alreadyCaptured: true })
+      return NextResponse.json({ ok: true })
     }
 
     await prisma.chatSession.update({

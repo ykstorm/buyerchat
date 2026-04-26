@@ -3,17 +3,14 @@
 // https://docs.sentry.io/platforms/javascript/guides/nextjs/
 
 import * as Sentry from "@sentry/nextjs";
+import { redactSentryEvent } from "@/lib/sentry-redact";
 
 Sentry.init({
   dsn: process.env.SENTRY_DSN,
-
-  // Define how likely traces are sampled. Adjust this value in production, or use tracesSampler for greater control.
   tracesSampleRate: 0.1,
-
-  // Enable logs to be sent to Sentry
   enableLogs: true,
-
-  // Enable sending user PII (Personally Identifiable Information)
-  // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#sendDefaultPii
   sendDefaultPii: false,
+  // Defense-in-depth on top of sendDefaultPii: scrub buyer-typed phone +
+  // email out of breadcrumbs, exception messages, and request bodies.
+  beforeSend: redactSentryEvent,
 });

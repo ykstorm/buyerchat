@@ -18,7 +18,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
     }),
   ],
-  session: { strategy: 'jwt' },
+  // 12h session lifetime. Default is 30d, which is too long if the
+  // operator's Google account is ever compromised — bound the blast
+  // radius. Refresh on each request keeps active users signed in
+  // without forcing daily re-auth. See docs/MASTER_FIX_LIST.md B1.
+  session: { strategy: 'jwt', maxAge: 12 * 60 * 60, updateAge: 60 * 60 },
   callbacks: {
     async signIn({ user, account }) {
       if (account?.provider === 'google' && user.email) {
