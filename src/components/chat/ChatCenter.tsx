@@ -215,12 +215,12 @@ type Props = {
 }
 
 const STARTERS = [
-  'Best 3BHK options under ₹85L in Shela?',
-  'Strong options under ₹90L — family use',
+  '3BHK family ke liye, 85L budget',
+  'Strong options under ₹90L',
   'Honest opinion on Riviera projects',
   'Compare two projects for me',
-  'Which builder is most reliable?',
-  "I'm confused — help me decide",
+  'Builder kaunsa reliable hai?',
+  'Pehli baar le raha hoon — help',
 ]
 
 export default function ChatCenter({ messages, input, handleInputChange, handleSubmit, isLoading, append, loadingSession, artifact, builders = [], showArtifact, onToggleArtifact, canGoBack, canGoForward, onArtifactBack, onArtifactForward, artifactCurrent, artifactTotal, artifactHistory, onSelectArtifact, compareToast, buyerStage, onMessageAction, userId, userName, userImage }: Props) {
@@ -376,8 +376,8 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
               className="text-[14px] mb-10 leading-relaxed"
               style={{ color: 'var(--text-secondary)' }}
             >
-              Tell me your budget, timeline, and what matters to you.<br />
-              I&apos;ll do the rest.
+              Budget, timeline, aur kya important hai — bata dein.<br />
+              Honest analysis Homesty AI karega.
             </m.p>
 
             {/* Starter cards */}
