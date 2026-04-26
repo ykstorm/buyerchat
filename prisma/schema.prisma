@@ -262,6 +262,12 @@ projectsDisclosed String[]
 lastMessageAt     DateTime @updatedAt
 customName        String?
 systemPromptVersion String @default("v3")
+// Stage A soft capture (Agent 4) — only /api/chat/capture writes here.
+// captureStage: 'soft' | 'verified' | 'skipped' | NULL (not yet asked).
+capturedPhone     String?
+capturedName      String?
+captureStage      String?
+capturedAt        DateTime?
 messages          ChatMessageLog[]
 deals             Deal[]
 
@@ -269,6 +275,7 @@ deals             Deal[]
   @@index([buyerStage])
   @@index([lastMessageAt])
   @@index([createdAt])
+  @@index([captureStage])
 }
 
 model SavedProject {

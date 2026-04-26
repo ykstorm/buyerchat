@@ -7,6 +7,7 @@ import dynamic from 'next/dynamic'
 import { LazyMotion, domAnimation } from 'framer-motion'
 import ChatCenter, { type Message } from '@/components/chat/ChatCenter'
 import ChatRightPanel from '@/components/chat/ChatRightPanel'
+import StageACapture from '@/components/chat/StageACapture'
 import type { ProjectType, ArtifactType, Artifact } from '@/lib/types/chat'
 import type { BuilderAIContext } from '@/lib/types/builder-ai-context'
 
@@ -44,6 +45,13 @@ export default function ChatClient({
   const [artifactHistory, setArtifactHistory] = useState<Artifact[]>([])
   const [artifactIndex, setArtifactIndex] = useState(-1)
   const [buyerStage, setBuyerStage] = useState<string | null>(null)
+  // Stage A soft capture: render the capture card after the first project
+  // artifact has been pushed and only while captureStage is null/undefined.
+  // captureSubmitted hides it immediately on POST/PATCH success so the
+  // buyer never sees a flash of the form on the next render. The /api/chat-
+  // sessions/[id] GET refresh keeps signed-in users in sync after reload.
+  const [captureStage, setCaptureStage] = useState<string | null>(null)
+  const [captureSubmitted, setCaptureSubmitted] = useState(false)
   const artifactHistoryRef = useRef<Artifact[]>([])
   const artifactIndexRef = useRef<number>(-1)
   const sessionLoadingRef = useRef(false)
@@ -411,7 +419,10 @@ export default function ChatClient({
       if (sessionId) {
         fetch(`/api/chat-sessions/${sessionId}`)
           .then(r => r.json())
-          .then(d => { if (d.buyerStage) setBuyerStage(d.buyerStage) })
+          .then(d => {
+            if (d.buyerStage) setBuyerStage(d.buyerStage)
+            if (d.captureStage) setCaptureStage(d.captureStage)
+          })
           .catch(() => {})
       }
     }
@@ -484,6 +495,8 @@ export default function ChatClient({
     artifactHistoryRef.current = []
     artifactIndexRef.current = -1
     setShowArtifact(true)
+    setCaptureStage(null)
+    setCaptureSubmitted(false)
     router.replace('/chat')
   }, [router])
 
@@ -621,6 +634,19 @@ export default function ChatClient({
           setCurrentArtifact(selected)
           setShowArtifact(true)
         }}
+        captureCard={
+          sessionId &&
+          !captureSubmitted &&
+          captureStage !== 'soft' &&
+          captureStage !== 'verified' &&
+          captureStage !== 'skipped' &&
+          artifactHistory.length >= 1 ? (
+            <StageACapture
+              sessionId={sessionId}
+              onComplete={() => setCaptureSubmitted(true)}
+            />
+          ) : null
+        }
       />
 
       <ChatRightPanel

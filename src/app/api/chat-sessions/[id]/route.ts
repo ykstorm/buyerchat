@@ -57,7 +57,9 @@ export async function GET(
 
     const chatSession = await prisma.chatSession.findFirst({
       where: { id, userId: session.user.id },
-      include: {
+      select: {
+        buyerStage: true,
+        captureStage: true,
         messages: {
           orderBy: { createdAt: 'asc' },
           select: { role: true, content: true },
@@ -69,7 +71,11 @@ export async function GET(
       return NextResponse.json({ error: 'Not found' }, { status: 404 })
     }
 
-    return NextResponse.json({ messages: chatSession.messages })
+    return NextResponse.json({
+      messages: chatSession.messages,
+      buyerStage: chatSession.buyerStage,
+      captureStage: chatSession.captureStage,
+    })
   } catch (err) {
     console.error('chat-sessions/[id] GET error:', err)
     return NextResponse.json({ error: 'Failed to fetch session' }, { status: 500 })

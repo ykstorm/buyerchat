@@ -212,6 +212,7 @@ type Props = {
   userId?: string | null
   userName?: string | null
   userImage?: string | null
+  captureCard?: React.ReactNode
 }
 
 const STARTERS = [
@@ -223,7 +224,7 @@ const STARTERS = [
   'Pehli baar le raha hoon — help',
 ]
 
-export default function ChatCenter({ messages, input, handleInputChange, handleSubmit, isLoading, append, loadingSession, artifact, builders = [], showArtifact, onToggleArtifact, canGoBack, canGoForward, onArtifactBack, onArtifactForward, artifactCurrent, artifactTotal, artifactHistory, onSelectArtifact, compareToast, buyerStage, onMessageAction, userId, userName, userImage }: Props) {
+export default function ChatCenter({ messages, input, handleInputChange, handleSubmit, isLoading, append, loadingSession, artifact, builders = [], showArtifact, onToggleArtifact, canGoBack, canGoForward, onArtifactBack, onArtifactForward, artifactCurrent, artifactTotal, artifactHistory, onSelectArtifact, compareToast, buyerStage, onMessageAction, userId, userName, userImage, captureCard }: Props) {
   const resolveBuilder = (a: Artifact | null): BuilderAIContext | null => {
     if (!a || a.type !== 'builder_trust') return null
     if (a.builder) return a.builder
@@ -482,6 +483,7 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
               </div>
             </div>
           )}
+          {captureCard}
           <div ref={bottomRef} />
         </div>
       )}
