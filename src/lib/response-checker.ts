@@ -483,6 +483,28 @@ export function checkResponse(
     }
   }
 
+  // CHECK 17a — OTP_FABRICATION (audit-only, P2-CRITICAL-7 Bug #1).
+  // PART 8.5 rule #2 (strengthened): the model has no tool to send or verify OTPs,
+  // so any phrase that simulates an OTP send/verify flow is a fabrication. Live
+  // smoke test on 2026-04-27 caught: "OTP bheja hai 9999 pe" → buyer's input
+  // rejected with "Kuch problem hui dubara try karein" → trust-destroying loop.
+  // Audit-only (per I18-final, only leak/safety justifies mid-stream abort).
+  const OTP_FABRICATION_PATTERN =
+    /\b(otp|code)\s+(bheja|sent|send|share|diya|aaya|on its way|dispatched)\b|\benter\s+(the\s+)?otp\b|\botp\s+(daalein|enter)\b|\bwrong\s+otp\b|\botp\s+(incorrect|galat)\b|\bresend\s+otp\b|\botp\s+resend\b/i
+  const otpMatch = aiResponse.match(OTP_FABRICATION_PATTERN)
+  if (otpMatch) {
+    const phrase = otpMatch[0].length > 80 ? otpMatch[0].slice(0, 77) + '...' : otpMatch[0]
+    violations.push(`OTP_FABRICATION: "${phrase}" (model has no tool to send or verify OTPs)`)
+    try {
+      Sentry.captureMessage('[OTP_FABRICATION] Model simulated OTP send/verify flow', {
+        level: 'warning',
+        tags: { audit_violation: 'true', rule: 'OTP_FABRICATION', match: phrase },
+      })
+    } catch {
+      // Sentry init may be absent in test/local env — never throw from the checker.
+    }
+  }
+
   // CHECK 17 — FAKE_VISIT_CLAIM (audit-only, P1-S1).
   // PART 8.5 rule 9: never claim a visit is booked/confirmed/scheduled in
   // prose unless a VISIT_CONFIRMATION artifact with an HST-XXXX token has

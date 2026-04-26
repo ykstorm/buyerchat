@@ -57,8 +57,23 @@ describe('v3 system prompt — PART invariants', () => {
     const prompt = buildSystemPrompt(baseCtx)
     expect(prompt).toContain('Step 1 — Micro-commitment')
     expect(prompt).toContain('Step 2 — Personalized slot')
-    expect(prompt).toContain('Step 3 — OTP verification')
+    // Step 3 changed from "OTP verification" to "HOLDING MESSAGE" on
+    // 2026-04-27 (P2-CRITICAL-7 Bug #1) after live smoke test caught the
+    // model fabricating an OTP send/verify flow it has no tool for.
+    expect(prompt).toContain('Step 3 — HOLDING MESSAGE')
     expect(prompt).toContain('Step 4 — Confirmation')
+  })
+
+  it('PART 7: bans OTP simulation in visit booking', () => {
+    const prompt = buildSystemPrompt(baseCtx)
+    // The strengthened PART 8.5 rule #2 must list specific banned phrases.
+    expect(prompt).toContain('OTP bheja hai')
+    expect(prompt).toContain('Kuch problem hui — dubara try karein')
+  })
+
+  it('PART 9 Rule 9: zero-bullets-ever rule is present', () => {
+    const prompt = buildSystemPrompt(baseCtx)
+    expect(prompt).toContain('Rule 9: ZERO BULLETS EVER')
   })
 
   it('PART 8: includes the canonical commission (Option Z) script', () => {

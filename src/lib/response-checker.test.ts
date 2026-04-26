@@ -545,3 +545,32 @@ describe('FAKE_VISIT_CLAIM check (P1-S1)', () => {
     expect(res.violations.some(v => v.startsWith('FAKE_VISIT_CLAIM'))).toBe(false)
   })
 })
+
+describe('OTP_FABRICATION check (P2-CRITICAL-7 Bug #1)', () => {
+  // Live smoke test 2026-04-27: model fabricated "OTP bheja hai 9999 pe" then
+  // looped on "Kuch problem hui — dubara try karein" when buyer entered digits.
+  // The model has NO tool to send or verify OTPs. Any phrase that simulates
+  // an OTP send/verify flow is a fabrication and must be flagged.
+  it('flags "OTP bheja hai 9999 pe"', () => {
+    const res = checkResponse('OTP bheja hai 9999 pe. Enter karein confirm karne ke liye.', [], cq())
+    expect(res.violations.some(v => v.startsWith('OTP_FABRICATION'))).toBe(true)
+  })
+
+  it('flags "Wrong OTP" / loop trap phrases', () => {
+    const res1 = checkResponse('Wrong OTP — please try again.', [], cq())
+    const res2 = checkResponse('OTP galat hai — dubara enter karein.', [], cq())
+    expect(res1.violations.some(v => v.startsWith('OTP_FABRICATION'))).toBe(true)
+    expect(res2.violations.some(v => v.startsWith('OTP_FABRICATION'))).toBe(true)
+  })
+
+  it('does NOT fire on the legal holding-message language', () => {
+    // The PART 7 Step 3 holding message must pass — it explicitly avoids OTP
+    // framing and just acknowledges the request. This is the ONLY response shape
+    // allowed when buyer types name+phone.
+    const text =
+      'Lakshyaraj ka visit request note ho gaya. Project: The Planet. Preferred slot: Sunday 11 AM.\n\n' +
+      'Homesty AI team aapko WhatsApp pe shortly confirm karega. Tab tak site pe directly koi commitment mat karein.'
+    const res = checkResponse(text, [], cq())
+    expect(res.violations.some(v => v.startsWith('OTP_FABRICATION'))).toBe(false)
+  })
+})
