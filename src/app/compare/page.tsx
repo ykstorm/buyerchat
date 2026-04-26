@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 
 interface CompareProject {
@@ -333,8 +333,22 @@ function EmptyState() {
 
 export default function ComparePage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [mounted, setMounted] = useState(false)
-  const [selectedIds, setSelectedIds] = useState<(string | null)[]>([null, null, null])
+  // Initialise from `?ids=a,b,c` (one-time on mount). Future Compare buttons
+  // and shareable links can preselect projects by appending `?ids=...` to
+  // `/compare`. Up to 3 ids respected; extras ignored.
+  const [selectedIds, setSelectedIds] = useState<(string | null)[]>(() => {
+    const raw = searchParams?.get('ids') ?? ''
+    const parsed = raw
+      .split(',')
+      .map(s => s.trim())
+      .filter(Boolean)
+      .slice(0, 3)
+    const slots: (string | null)[] = [null, null, null]
+    parsed.forEach((id, i) => { slots[i] = id })
+    return slots
+  })
   const [allProjects, setAllProjects] = useState<ProjectOption[]>([])
   const [projects, setProjects] = useState<CompareProject[]>([])
 
