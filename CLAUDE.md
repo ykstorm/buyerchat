@@ -1,9 +1,16 @@
 # Project: Homesty.ai — Agent Onboarding
 
-EVERY agent invocation MUST first read `docs/AGENT_DISCIPLINE.md` and
-apply the relevant sections to the work being done. This is
-non-negotiable — past production incidents trace back to skipping
-these checks.
+EVERY agent invocation MUST first read `docs/SESSION_HANDOFF.md`
+**then** `docs/AGENT_DISCIPLINE.md` and apply the relevant sections
+to the work being done. This is non-negotiable — past production
+incidents trace back to skipping these checks.
+
+`docs/SESSION_HANDOFF.md` carries state between sessions (what shipped,
+what's queued, open decisions, verification baseline). Update it at
+end of every sprint per discipline §13.
+
+`docs/PROMPT_TEMPLATES.md` is the two-phase sprint pattern + the
+permanent prompt header to paste at the top of every new sprint.
 
 If you are working on:
 - External API integration → sections 1, 2, 9, 10

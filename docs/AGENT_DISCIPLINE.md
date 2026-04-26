@@ -282,10 +282,87 @@ The CI workflow has no bypass; if it's red, fix it or revert.
 
 ---
 
+## 13. SESSION HANDOFF PROTOCOL
+
+At the start of every session, read `docs/SESSION_HANDOFF.md` before
+anything else. At the end of every session (or after every committed
+sprint), update it. Treat it as the source of truth between sessions.
+
+The operator should never have to re-explain context that's already
+in the file. If they're asking "what's next?" — answer from the file.
+
+The handoff doc has these sections (keep them current):
+- Last updated (timestamp)
+- What just shipped (commit SHAs, most-recent first)
+- What's in flight
+- What's queued (priority order)
+- Open decisions (operator pending)
+- Known issues / workarounds
+- Verification state (last `npm run verify` baseline)
+- Mama's last test session
+- Latest production deployment
+
+## 14. REPORT VERDICT FORMAT
+
+Every agent report MUST start with one of:
+
+```
+[OK]              — work complete, all checks passed
+[PARTIAL]         — work shipped but with caveats (list them)
+[BLOCKED]         — work could not complete, reason + needed input
+[NEEDS DECISION]  — encountered choice operator must make
+```
+
+Followed by 3-line summary maximum:
+- Line 1: What shipped (commit SHA)
+- Line 2: What broke or needs attention (or "Nothing")
+- Line 3: Next recommended action
+
+Detail (file:line, full diff stat, etc.) goes in
+`docs/diagnostics/<sprint-name>.md`, NOT in the chat report.
+
+Reports >100 lines without this format are rejected — re-format.
+
+## 15. AUTONOMOUS DECISION RULES
+
+When the prompt presents 2-3 options and asks operator to choose:
+
+If your confidence in the default option is **≥ 80%**:
+- Proceed with the default.
+- Document the decision in the commit body.
+- Flag for review in `SESSION_HANDOFF.md` "Open decisions" — decision
+  was made, operator may revert if disagreed.
+
+If confidence **< 80%**:
+- State `[NEEDS DECISION]` in report.
+- Present options with pros/cons.
+- Wait for operator input.
+
+Default for "should I run this destructive operation":
+- **Always escalate.** Never autonomous on destructive (DROP TABLE,
+  rm -rf, force-push, history-rewrite, `--no-verify` on schema-drift,
+  package-lock deletion, branch deletion).
+
+## 16. RETROSPECTIVE COMMIT (multi-day sprints only)
+
+After every multi-day sprint (≥3 commits across ≥2 sessions), the
+final commit is a 2-paragraph retrospective in
+`docs/retros/<sprint-name>.md`. Two sections:
+
+- **What worked / what surprised**
+- **What to do differently next time**
+
+Lessons compound. After 5 retros, you have a pattern library. After
+20, you have a playbook nobody else has. Skip retro for single-commit
+or single-session sprints — they're not worth the overhead.
+
+---
+
 ## ESCAPE HATCH
 
 If a task is too small to warrant the full checklist (e.g., typo fix,
 single-line copy edit), state that explicitly in your report:
 "Skipped checklist sections 1-7, applies only to ≥1-line code
 changes touching network/data/UI." Items 8, 9, 10, 11 (if any
-sub-agent was used), and 12 still apply.
+sub-agent was used), 12, 13, 14 still apply. §15 applies if any
+choice was made. §16 applies only on multi-day sprints.

@@ -14,6 +14,15 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // scripts/ contains throwaway CommonJS helpers (seed scripts, audit
+    // queries) that intentionally use require(). Lint them on demand,
+    // not on every CI run. The pre-commit hook + verify pipeline still
+    // catch real production code via src/ + tests/.
+    "scripts/**",
+    // .agent/ is vendored Claude Code skill assets (Playwright runners,
+    // PPTX generators, etc.) — not our code. Don't lint upstream files.
+    ".agent/**",
+    ".claude/**",
   ]),
   {
     rules: {
