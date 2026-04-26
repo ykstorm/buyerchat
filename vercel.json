@@ -7,7 +7,6 @@
   },
   "crons": [
     {
-      "_comment": "Daily run at 09:00 UTC (14:30 IST). Hobby plan caps crons at daily — */15 broke deploys after commit 0a30f93. Once we upgrade to Pro, switch back to '*/15 * * * *' for tighter T-24/T-3/T-1 precision. The 7-stage followup scheduler is idempotent, so daily firing still progresses every visit by one stage per day; precision loss only affects the time-of-day a buyer sees the reminder, not whether it fires.",
       "path": "/api/cron/visit-followups",
       "schedule": "0 9 * * *"
     }
