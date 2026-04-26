@@ -1,0 +1,32 @@
+#!/usr/bin/env sh
+# Pre-commit guard. Refuses commit if:
+#   1. prisma/schema.prisma is staged but no migration is staged alongside
+#   2. prisma/schema.prisma fails `prisma format` or `prisma validate`
+#   3. tests fail
+# Bypass for emergencies only with: git commit --no-verify
+# (NEVER bypass on schema-drift errors — that one's a footgun for prod.)
+
+set -e
+
+STAGED=$(git diff --cached --name-only)
+
+# --- Schema drift guard ----------------------------------------------------
+if echo "$STAGED" | grep -qE "^prisma/schema\.prisma$"; then
+  echo "[pre-commit] schema.prisma changed — validating + checking migrations"
+  npx prisma format --schema=prisma/schema.prisma >/dev/null
+  npx prisma validate --schema=prisma/schema.prisma
+
+  if ! echo "$STAGED" | grep -qE "^prisma/migrations/"; then
+    echo ""
+    echo "[pre-commit] BLOCKED: schema.prisma is staged but no migration is staged."
+    echo "[pre-commit] Run:  npx prisma migrate dev --name <description>"
+    echo "[pre-commit] Then: git add prisma/migrations/ && git commit"
+    exit 1
+  fi
+fi
+
+# --- Tests must pass -------------------------------------------------------
+echo "[pre-commit] running tests..."
+npm test --silent
+
+echo "[pre-commit] OK"

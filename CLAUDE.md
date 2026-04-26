@@ -18,6 +18,27 @@ After completing work, your report MUST conclude with a section
 "Discipline checklist applied:" listing which sections you walked
 through. If you skipped any that applied, state why.
 
+## Agent infrastructure
+
+This repo has agent-friendly infra committed at `.claude/settings.json`,
+`.husky/pre-commit`, and `.github/workflows/ci.yml`:
+
+- `.claude/settings.json` `permissions.allow` allowlists the common
+  Bash commands sub-agents need (npm, git, prisma, grep, ls, head,
+  tail, node, etc.) — sub-agents inherit these and don't hit
+  permission prompts. Extend the allowlist (and commit the diff) if a
+  new agent needs a tool.
+- `.husky/pre-commit` blocks commits that drift `prisma/schema.prisma`
+  without a matching migration, runs `prisma format` + `prisma
+  validate`, and runs the test suite. Never bypass with
+  `--no-verify` on schema-drift errors.
+- `.github/workflows/ci.yml` runs lint + build + test + prisma format
+  check on every PR and push to `main`. If CI is red, fix it; do not
+  merge around it.
+
+See sections 11 and 12 of `docs/AGENT_DISCIPLINE.md` for the full
+delegation + CI rules.
+
 ---
 
 # CLAUDE.md

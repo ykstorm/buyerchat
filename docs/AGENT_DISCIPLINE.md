@@ -235,9 +235,57 @@ document was created to prevent.
 
 ---
 
+## 11. SUB-AGENT DELEGATION RULES
+
+When firing parallel sub-agents (Task / Agent tool):
+
+- [ ] Verify worker tools (Write, Edit, Bash) are in
+      `.claude/settings.json` `permissions.allow` BEFORE firing — if
+      they aren't, the sub-agent returns "blocked" and the run is
+      wasted. The allowlist on this repo covers npm/git/prisma/grep
+      and friends; extend it (commit the diff) if a new agent needs a
+      tool.
+- [ ] Cap research-agent severity claims at **P2** unless the agent
+      cites file:line + a working exploit/repro path. Past sub-agents
+      have flagged false-positive P0/P1s ("`.env` committed",
+      "`$queryRawUnsafe` SQL injection") that did not survive
+      fact-check. Trust but verify.
+- [ ] The synthesizing agent (or operator) MUST fact-check every
+      P0/P1 claim before propagating it to fix lists or commit
+      messages.
+- [ ] Never let research-agents commit. They audit and return
+      findings; the main thread (or a dedicated code-agent with a
+      tight prompt) commits.
+- [ ] Self-contained prompts only. Sub-agents do not see the
+      conversation that spawned them — every prompt must restate
+      goal, constraints, file paths, and report format from scratch.
+
+## 12. CI GATES
+
+The pre-commit hook (`.husky/pre-commit`) and GitHub Actions
+(`.github/workflows/ci.yml`) together enforce:
+
+- Schema drift refused at commit time — if `prisma/schema.prisma`
+  is staged but no `prisma/migrations/...` is staged alongside, the
+  commit is blocked.
+- `prisma format` + `prisma validate` must pass locally and in CI.
+- `npm run lint` + `npm run build` + `npm test` must all pass on
+  every PR and every push to `main`.
+- CI fails if `prisma format` would produce a diff against the
+  committed schema (catches "I edited schema by hand and forgot to
+  run format").
+
+Bypass with `git commit --no-verify` only for genuine emergencies
+(broken hook, locked-out CI). NEVER bypass on a schema-drift error
+— that's the exact class of bug the guard was added to prevent.
+The CI workflow has no bypass; if it's red, fix it or revert.
+
+---
+
 ## ESCAPE HATCH
 
 If a task is too small to warrant the full checklist (e.g., typo fix,
 single-line copy edit), state that explicitly in your report:
 "Skipped checklist sections 1-7, applies only to ≥1-line code
-changes touching network/data/UI." Items 8, 9, 10 still apply.
+changes touching network/data/UI." Items 8, 9, 10, 11 (if any
+sub-agent was used), and 12 still apply.

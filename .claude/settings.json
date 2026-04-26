@@ -1,0 +1,53 @@
+{
+  "enabledPlugins": {
+    "claude-code-setup@claude-plugins-official": true
+  },
+  "permissions": {
+    "allow": [
+      "Bash(npm test*)",
+      "Bash(npm run build*)",
+      "Bash(npm run lint*)",
+      "Bash(npm run dev*)",
+      "Bash(npm install*)",
+      "Bash(npm i*)",
+      "Bash(npm ci*)",
+      "Bash(npx prisma*)",
+      "Bash(npx vitest*)",
+      "Bash(npx eslint*)",
+      "Bash(npx tsc*)",
+      "Bash(npx next*)",
+      "Bash(npx tsx*)",
+      "Bash(npx vercel*)",
+      "Bash(npx husky*)",
+      "Bash(git add*)",
+      "Bash(git commit*)",
+      "Bash(git push*)",
+      "Bash(git status*)",
+      "Bash(git log*)",
+      "Bash(git diff*)",
+      "Bash(git show*)",
+      "Bash(git ls-files*)",
+      "Bash(git branch*)",
+      "Bash(git checkout*)",
+      "Bash(git stash*)",
+      "Bash(grep*)",
+      "Bash(rg*)",
+      "Bash(ls*)",
+      "Bash(cat*)",
+      "Bash(head*)",
+      "Bash(tail*)",
+      "Bash(wc*)",
+      "Bash(awk*)",
+      "Bash(sed*)",
+      "Bash(find*)",
+      "Bash(mkdir -p*)",
+      "Bash(rm -f scripts/_*.ts)",
+      "Bash(rm -f scripts/debug-*.ts)",
+      "Bash(rm -rf .next/cache)",
+      "Bash(node*)",
+      "Bash(chmod*)",
+      "Bash(curl -s http://localhost:3000/*)",
+      "Bash(curl -s https://buyerchat-ten.vercel.app/*)"
+    ]
+  }
+}

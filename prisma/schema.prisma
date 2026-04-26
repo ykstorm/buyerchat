@@ -7,38 +7,38 @@ datasource db {
 }
 
 model Project {
-  id                  String         @id @default(cuid())
-  projectName         String
-  builderName         String
-  microMarket         String
-  minPrice            Float
-  maxPrice            Float
-  pricePerSqft        Float
-  pricePerSqftType    String   @default("SBU")
-  loadingFactor       Float    @default(1.37)
-  charges             Json     @default("[]")
-  allInPrice          Float?
-  availableUnits      Int
-  possessionDate      DateTime
-  reraNumber          String         @unique
-  amenities           String[]
-  latitude            Float
-  longitude           Float
-  constructionStatus  String
-  priceNote           String?
-  unitTypes           String[]
-  isActive            Boolean        @default(true)
-  locationScore       Float          @default(50)
-  amenitiesScore      Float          @default(50)
-  sopPlanning         Float          @default(0)
-  sopGrowth           Float          @default(0)
-  sopTotal            Float          @default(0)
-  infrastructureScore Float          @default(50)
-  demandScore         Float          @default(50)
-  builderGradeScore   Float          @default(50)
-  decisionTag         String?
-  honestConcern       String?
-  analystNote         String?
+  id                      String           @id @default(cuid())
+  projectName             String
+  builderName             String
+  microMarket             String
+  minPrice                Float
+  maxPrice                Float
+  pricePerSqft            Float
+  pricePerSqftType        String           @default("SBU")
+  loadingFactor           Float            @default(1.37)
+  charges                 Json             @default("[]")
+  allInPrice              Float?
+  availableUnits          Int
+  possessionDate          DateTime
+  reraNumber              String           @unique
+  amenities               String[]
+  latitude                Float
+  longitude               Float
+  constructionStatus      String
+  priceNote               String?
+  unitTypes               String[]
+  isActive                Boolean          @default(true)
+  locationScore           Float            @default(50)
+  amenitiesScore          Float            @default(50)
+  sopPlanning             Float            @default(0)
+  sopGrowth               Float            @default(0)
+  sopTotal                Float            @default(0)
+  infrastructureScore     Float            @default(50)
+  demandScore             Float            @default(50)
+  builderGradeScore       Float            @default(50)
+  decisionTag             String?
+  honestConcern           String?
+  analystNote             String?
   // Source tracking for buyer-facing free-text fields. Required after Agent 10
   // surfaced fabricated stats in Project.analystNote (e.g. Vishwanath Sarathya
   // had unverified "ET Industry Leader 2023" / "34 years Gujarat experience"
@@ -53,20 +53,20 @@ model Project {
   honestConcernSource     String?
   honestConcernAuthor     String?
   honestConcernVerifiedAt DateTime?
-  possessionFlag      String?
-  configurations      String?
-  bankApprovals       String?
-  carpetSqftMin       Int?
-  sbaSqftMin          Int?
-  createdAt           DateTime       @default(now())
-  updatedAt           DateTime       @updatedAt
-  builder             Builder        @relation(fields: [builderName], references: [builderName], onDelete: Restrict)
-  priceHistory        PriceHistory[]
-  siteVisits          SiteVisit[]
-  deals               Deal[]
-  savedBy             SavedProject[]
-  pricing             ProjectPricing?
-  pricingHistory      PricingHistory[]
+  possessionFlag          String?
+  configurations          String?
+  bankApprovals           String?
+  carpetSqftMin           Int?
+  sbaSqftMin              Int?
+  createdAt               DateTime         @default(now())
+  updatedAt               DateTime         @updatedAt
+  builder                 Builder          @relation(fields: [builderName], references: [builderName], onDelete: Restrict)
+  priceHistory            PriceHistory[]
+  siteVisits              SiteVisit[]
+  deals                   Deal[]
+  savedBy                 SavedProject[]
+  pricing                 ProjectPricing?
+  pricingHistory          PricingHistory[]
 
   @@index([microMarket])
   @@index([isActive])
@@ -93,7 +93,7 @@ model Builder {
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
   projects            Project[]
-  agreementSigned   Boolean @default(false)
+  agreementSigned     Boolean   @default(false)
 }
 
 model User {
@@ -184,18 +184,18 @@ model BuyerDemand {
 }
 
 model SiteVisit {
-  id                 String   @id @default(cuid())
-  visitToken         String   @unique
-  userId             String
-  projectId          String
-  otpVerified        Boolean  @default(false)
-  visitScheduledDate DateTime
-  visitCompleted     Boolean  @default(false)
-  createdAt          DateTime @default(now())
-  expiresAt          DateTime?
-  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  project            Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  builderAcknowledged Boolean  @default(false)
+  id                  String    @id @default(cuid())
+  visitToken          String    @unique
+  userId              String
+  projectId           String
+  otpVerified         Boolean   @default(false)
+  visitScheduledDate  DateTime
+  visitCompleted      Boolean   @default(false)
+  createdAt           DateTime  @default(now())
+  expiresAt           DateTime?
+  user                User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project             Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  builderAcknowledged Boolean   @default(false)
   leadRegisteredAt    DateTime?
   buyerName           String?
   buyerPhone          String?
@@ -205,13 +205,13 @@ model SiteVisit {
   // Each timestamp is set when the corresponding follow-up message is fired,
   // making computeFollowupsDue idempotent. postVisit72Closed is a boolean
   // because it has no time window — it is a one-shot graceful-exit flag.
-  followupT24Sent     DateTime?
-  followupT3Sent      DateTime?
-  followupT1Sent      DateTime?
-  postVisitT1Sent     DateTime?
-  postVisitT24Sent    DateTime?
-  postVisitT48Sent    DateTime?
-  postVisit72Closed   Boolean   @default(false)
+  followupT24Sent   DateTime?
+  followupT3Sent    DateTime?
+  followupT1Sent    DateTime?
+  postVisitT1Sent   DateTime?
+  postVisitT24Sent  DateTime?
+  postVisitT48Sent  DateTime?
+  postVisit72Closed Boolean   @default(false)
 
   @@index([userId])
   @@index([projectId])
@@ -224,52 +224,51 @@ model SiteVisit {
 // (follow-ups, junk flags, bypass alerts). Consumed by /admin/buyers
 // detail timeline and the founder dashboard alerting layer.
 model CRMEvent {
-  id          String   @id @default(cuid())
-  sessionId   String?
-  buyerId     String?
-  visitId     String?
-  kind        String   // 'followup_t24' | 'followup_t3' | 'followup_t1' | 'post_visit_t1' | 'post_visit_t24' | 'post_visit_t48' | 'post_visit_t72_close' | 'junk_marked' | 'junk_unmarked'
-  payload     Json?
-  channel     String   // 'whatsapp' | 'in_app' | 'email'
-  createdAt   DateTime @default(now())
+  id        String   @id @default(cuid())
+  sessionId String?
+  buyerId   String?
+  visitId   String?
+  kind      String // 'followup_t24' | 'followup_t3' | 'followup_t1' | 'post_visit_t1' | 'post_visit_t24' | 'post_visit_t48' | 'post_visit_t72_close' | 'junk_marked' | 'junk_unmarked'
+  payload   Json?
+  channel   String // 'whatsapp' | 'in_app' | 'email'
+  createdAt DateTime @default(now())
 
   @@index([sessionId, createdAt])
   @@index([buyerId, createdAt])
   @@index([visitId, createdAt])
 }
 
-
 model ChatSession {
-  id                   String   @id @default(cuid())
-  sessionId            String   @unique
+  id                   String           @id @default(cuid())
+  sessionId            String           @unique
   userId               String?
   userMessage          String
-  aiResponse           String   @db.Text
+  aiResponse           String           @db.Text
   intent               String
-  tokensUsed           Int      @default(0)
+  tokensUsed           Int              @default(0)
   projectsMentioned    String[]
-  responsePassedChecks Boolean  @default(true)
+  responsePassedChecks Boolean          @default(true)
   violations           String[]
-  createdAt            DateTime @default(now())
-  user                 User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  buyerStage        String   @default("intent_capture")
-buyerPersona      String?
-buyerBudget       Int?
-buyerConfig       String?
-buyerPurpose      String?
-qualificationDone Boolean  @default(false)
-projectsDisclosed String[]
-lastMessageAt     DateTime @updatedAt
-customName        String?
-systemPromptVersion String @default("v3")
-// Stage A soft capture (Agent 4) — only /api/chat/capture writes here.
-// captureStage: 'soft' | 'verified' | 'skipped' | NULL (not yet asked).
-capturedPhone     String?
-capturedName      String?
-captureStage      String?
-capturedAt        DateTime?
-messages          ChatMessageLog[]
-deals             Deal[]
+  createdAt            DateTime         @default(now())
+  user                 User?            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  buyerStage           String           @default("intent_capture")
+  buyerPersona         String?
+  buyerBudget          Int?
+  buyerConfig          String?
+  buyerPurpose         String?
+  qualificationDone    Boolean          @default(false)
+  projectsDisclosed    String[]
+  lastMessageAt        DateTime         @updatedAt
+  customName           String?
+  systemPromptVersion  String           @default("v3")
+  // Stage A soft capture (Agent 4) — only /api/chat/capture writes here.
+  // captureStage: 'soft' | 'verified' | 'skipped' | NULL (not yet asked).
+  capturedPhone        String?
+  capturedName         String?
+  captureStage         String?
+  capturedAt           DateTime?
+  messages             ChatMessageLog[]
+  deals                Deal[]
 
   @@index([userId])
   @@index([buyerStage])
@@ -289,41 +288,44 @@ model SavedProject {
   @@unique([userId, projectId])
   @@index([projectId])
 }
+
 model ChatMessageLog {
-  id          String      @id @default(cuid())
-  sessionId   String
-  session     ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  role        String
-  content     String      @db.Text
-  tokensUsed  Int?
-  responseMs  Int?
-  violations  String[]
-  createdAt   DateTime    @default(now())
+  id         String      @id @default(cuid())
+  sessionId  String
+  session    ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  role       String
+  content    String      @db.Text
+  tokensUsed Int?
+  responseMs Int?
+  violations String[]
+  createdAt  DateTime    @default(now())
 
   @@index([sessionId])
 }
+
 model Deal {
-  id               String    @id @default(cuid())
-  dealNumber       String    @unique
+  id               String       @id @default(cuid())
+  dealNumber       String       @unique
   sessionId        String?
   session          ChatSession? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
   projectId        String?
-  project          Project?  @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  project          Project?     @relation(fields: [projectId], references: [id], onDelete: SetNull)
   builderBrandName String
   buyerName        String
   dealValue        Float
-  commissionRate   Float     @default(1.5)
+  commissionRate   Float        @default(1.5)
   commissionAmount Float
-  invoiceDate      DateTime  @default(now())
-  paymentStatus    String    @default("pending")
+  invoiceDate      DateTime     @default(now())
+  paymentStatus    String       @default("pending")
   paymentDate      DateTime?
-  createdAt        DateTime  @default(now())
+  createdAt        DateTime     @default(now())
 
   @@index([createdAt])
   @@index([projectId])
   @@index([sessionId])
   @@index([paymentStatus])
 }
+
 model MarketAlert {
   id          String   @id @default(cuid())
   type        String
@@ -335,13 +337,13 @@ model MarketAlert {
 }
 
 model AuditLog {
-  id         String   @id @default(cuid())
-  action     String
-  entity     String
-  entityId   String?
-  data       Json?
-  userEmail  String
-  createdAt  DateTime @default(now())
+  id        String   @id @default(cuid())
+  action    String
+  entity    String
+  entityId  String?
+  data      Json?
+  userEmail String
+  createdAt DateTime @default(now())
 
   @@index([action])
   @@index([entity])
@@ -350,14 +352,14 @@ model AuditLog {
 }
 
 model Embedding {
-  id         String   @id @default(cuid())
+  id         String                      @id @default(cuid())
   sourceType String
   sourceId   String
-  content    String   @db.Text
+  content    String                      @db.Text
   embedding  Unsupported("vector(1536)")
   tokens     Int
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  createdAt  DateTime                    @default(now())
+  updatedAt  DateTime                    @updatedAt
 
   @@unique([sourceType, sourceId])
   @@index([sourceType, sourceId])
@@ -391,47 +393,47 @@ model LocationData {
 }
 
 model ProjectPricing {
-  id                String   @id @default(cuid())
-  projectId         String   @unique
-  project           Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  id        String  @id @default(cuid())
+  projectId String  @unique
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
-  propertyType      String   // "flat" | "villa"
+  propertyType String // "flat" | "villa"
 
   // FLAT fields (nullable — only used when propertyType=="flat")
-  basicRatePerSqft  Int?
-  plcRatePerSqft    Int?
-  floorRisePerSqft  Int?
-  floorRiseFrom     Int?     @default(1)
-  unitFloorNo       Int?
+  basicRatePerSqft Int?
+  plcRatePerSqft   Int?
+  floorRisePerSqft Int?
+  floorRiseFrom    Int? @default(1)
+  unitFloorNo      Int?
 
   // VILLA fields (nullable — only used when propertyType=="villa")
-  landRatePerSqyd   Int?
-  consRatePerSqyd   Int?
-  plcRatePerSqyd    Int?
+  landRatePerSqyd Int?
+  consRatePerSqyd Int?
+  plcRatePerSqyd  Int?
 
   // Dev & Govt
-  audaGebAecCharge  Int?
-  developmentFixed  Int?
-  infrastructure    Int?
+  audaGebAecCharge Int?
+  developmentFixed Int?
+  infrastructure   Int?
 
   // Maintenance & Deposits
-  societyMaintDeposit   Int?
-  advanceRunningMaint   Int?
-  townshipDeposit       Int?
-  townshipAdvance       Int?
+  societyMaintDeposit Int?
+  advanceRunningMaint Int?
+  townshipDeposit     Int?
+  townshipAdvance     Int?
 
   // Fixed Charges
-  carParkingAmount  Int?
-  carParkingCount   Int?     @default(1)
-  clubMembership    Int?
-  legalCharges      Int?
-  otherCharges      Json?    // [{ label: string, amount: number }]
+  carParkingAmount Int?
+  carParkingCount  Int?  @default(1)
+  clubMembership   Int?
+  legalCharges     Int?
+  otherCharges     Json? // [{ label: string, amount: number }]
 
   // Tax & Stamp
   saleDeedAmount      Int?
-  gstPercent          Float  @default(5.0)
-  stampDutyPercent    Float  @default(4.9)
-  registrationPercent Float  @default(1.0)
+  gstPercent          Float @default(5.0)
+  stampDutyPercent    Float @default(4.9)
+  registrationPercent Float @default(1.0)
 
   // Computed (denormalized for fast query)
   basicCostTotal    Int?
@@ -449,31 +451,31 @@ model ProjectPricing {
   //   { type: "3BHK", sbaSqft: 1450, carpetSqft: 950, allInTotal: number },
   //   ...
   // ]
-  bhkConfigs        Json?
+  bhkConfigs Json?
 
   // Metadata
-  lastUpdated       DateTime @updatedAt
-  updatedBy         String?
-  pricingVersion    Int      @default(1)
+  lastUpdated    DateTime @updatedAt
+  updatedBy      String?
+  pricingVersion Int      @default(1)
 
-  history           PricingHistory[]
+  history PricingHistory[]
 
   @@index([projectId])
 }
 
 model PricingHistory {
-  id                String   @id @default(cuid())
-  pricingId         String
-  pricing           ProjectPricing @relation(fields: [pricingId], references: [id], onDelete: Cascade)
-  projectId         String
-  project           Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  id        String         @id @default(cuid())
+  pricingId String
+  pricing   ProjectPricing @relation(fields: [pricingId], references: [id], onDelete: Cascade)
+  projectId String
+  project   Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
-  basicRatePerSqft  Int?
-  grandTotalAllIn   Int?
-  snapshotJson      Json     // full pricing snapshot at this point
-  changedAt         DateTime @default(now())
-  changedBy         String?
-  changeReason      String?
+  basicRatePerSqft Int?
+  grandTotalAllIn  Int?
+  snapshotJson     Json // full pricing snapshot at this point
+  changedAt        DateTime @default(now())
+  changedBy        String?
+  changeReason     String?
 
   @@index([projectId, changedAt])
 }

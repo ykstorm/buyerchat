@@ -1,0 +1,73 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Single concurrency group per ref so a fast follow-up push cancels the
+# in-flight run instead of stacking minutes.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    env:
+      # Build-time env. Values are dummies — Next.js validates env at
+      # runtime, not at build, so the build only needs the names to exist.
+      # Real values come from Vercel envs at deploy.
+      DATABASE_URL: postgres://test:test@localhost:5432/test
+      DIRECT_URL: postgres://test:test@localhost:5432/test
+      NEXTAUTH_SECRET: dummy-ci-secret-min-32-chars-long-x
+      AUTH_SECRET: dummy-ci-secret-min-32-chars-long-x
+      OPENAI_API_KEY: sk-dummy-for-build
+      ADMIN_EMAIL: ci@example.com
+      GOOGLE_CLIENT_ID: dummy
+      GOOGLE_CLIENT_SECRET: dummy
+      RESEND_API_KEY: dummy
+      FROM_EMAIL: ci@example.com
+      CLOUDINARY_CLOUD_NAME: dummy
+      CLOUDINARY_API_KEY: dummy
+      CLOUDINARY_API_SECRET: dummy
+      VERIFY_METHOD: none
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma client
+        run: npx prisma generate
+
+      - name: Validate Prisma schema (format + validate)
+        run: |
+          npx prisma format --schema=prisma/schema.prisma
+          npx prisma validate --schema=prisma/schema.prisma
+          # If `prisma format` produced changes, that means the committed
+          # schema is not canonical-formatted — fail so we keep the diff
+          # clean.
+          if ! git diff --quiet prisma/schema.prisma; then
+            echo "::error::prisma/schema.prisma is not formatted. Run 'npx prisma format' locally."
+            git diff prisma/schema.prisma
+            exit 1
+          fi
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build
+        run: npm run build
+
+      - name: Test
+        run: npm test
