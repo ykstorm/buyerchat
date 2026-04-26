@@ -48,6 +48,15 @@ interface ProjectForm {
   decisionTag: string
   honestConcern: string
   analystNote: string
+  // Provenance for the two buyer-facing free-text fields. Read-only on the
+  // form — the API stamps these whenever an operator save lands. Backfilled
+  // rows show 'unknown' and surface the orange badge until reviewed.
+  honestConcernSource: string | null
+  honestConcernAuthor: string | null
+  honestConcernVerifiedAt: string | null
+  analystNoteSource: string | null
+  analystNoteAuthor: string | null
+  analystNoteVerifiedAt: string | null
   possessionFlag: string
   configurations: string
   bankApprovals: string

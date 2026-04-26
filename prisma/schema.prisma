@@ -39,6 +39,20 @@ model Project {
   decisionTag         String?
   honestConcern       String?
   analystNote         String?
+  // Source tracking for buyer-facing free-text fields. Required after Agent 10
+  // surfaced fabricated stats in Project.analystNote (e.g. Vishwanath Sarathya
+  // had unverified "ET Industry Leader 2023" / "34 years Gujarat experience"
+  // claims). Source vocabulary: 'operator' | 'ai_generated' | 'imported' |
+  // 'unknown'. Writes flow through src/lib/project-content-source.ts which
+  // BLOCKS source='ai_generated' from reaching these fields and Sentry-warns
+  // on the attempt. The admin edit page renders source badges so unverified
+  // ('unknown', 'imported') content is visually flagged for operator review.
+  analystNoteSource       String?
+  analystNoteAuthor       String?
+  analystNoteVerifiedAt   DateTime?
+  honestConcernSource     String?
+  honestConcernAuthor     String?
+  honestConcernVerifiedAt DateTime?
   possessionFlag      String?
   configurations      String?
   bankApprovals       String?

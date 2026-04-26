@@ -8,6 +8,7 @@ import { invalidateAdminCache } from '@/lib/admin-cache'
 import { logAdminAction } from '@/lib/audit-log'
 import { computeGrade } from '@/lib/grade'
 import { embedProject } from '@/lib/rag/embed-writer'
+import { writeProjectContent } from '@/lib/project-content-source'
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -97,12 +98,55 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         ...(d.sopTotal !== undefined && { sopTotal: Number(d.sopTotal) }),
         ...(d.isActive !== undefined && { isActive: d.isActive }),
         ...(d.decisionTag !== undefined && { decisionTag: d.decisionTag }),
-        // Both reach LLM context via the project disclosure protocol in
-        // system-prompt.ts — sanitize identically to projectName/microMarket.
-        ...(d.honestConcern !== undefined && { honestConcern: d.honestConcern === null ? null : sanitizeAdminInput(d.honestConcern) }),
-        ...(d.analystNote !== undefined && { analystNote: d.analystNote === null ? null : sanitizeAdminInput(d.analystNote) }),
+        // honestConcern + analystNote are intentionally NOT updated here. They
+        // reach buyers via the AI context builder and are routed through
+        // src/lib/project-content-source.ts below so every write is stamped
+        // with source/author/verifiedAt and AI-generated writes are blocked.
+        // null clears below take a separate prisma path because clearing a
+        // field has no provenance to record.
+        ...(d.honestConcern === null && {
+          honestConcern: null,
+          honestConcernSource: null,
+          honestConcernAuthor: null,
+          honestConcernVerifiedAt: null,
+        }),
+        ...(d.analystNote === null && {
+          analystNote: null,
+          analystNoteSource: null,
+          analystNoteAuthor: null,
+          analystNoteVerifiedAt: null,
+        }),
       }
     })
+
+    // Source-tracked writes for the two buyer-facing free-text fields. These
+    // run after the main update so a partial failure here cannot orphan
+    // unrelated field changes. Both reach the LLM via the disclosure
+    // protocol in system-prompt.ts — sanitize identically to projectName.
+    if (typeof d.honestConcern === 'string') {
+      const r = await writeProjectContent(
+        id,
+        'honestConcern',
+        sanitizeAdminInput(d.honestConcern),
+        'operator',
+        session!.user!.email!,
+      )
+      if (!r.ok) {
+        return NextResponse.json({ error: r.reason ?? 'Content write blocked' }, { status: 400 })
+      }
+    }
+    if (typeof d.analystNote === 'string') {
+      const r = await writeProjectContent(
+        id,
+        'analystNote',
+        sanitizeAdminInput(d.analystNote),
+        'operator',
+        session!.user!.email!,
+      )
+      if (!r.ok) {
+        return NextResponse.json({ error: r.reason ?? 'Content write blocked' }, { status: 400 })
+      }
+    }
 
     // If builder scores were updated, recalculate totalTrustScore and grade on Builder
     if (hasScoreUpdate) {
