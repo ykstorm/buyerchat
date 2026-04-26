@@ -29,8 +29,10 @@ Source documents (all live in `docs/diagnostics/`):
 
 | # | Item | Severity | Status | File / Notes |
 |---|---|---|---|---|
-| A1 | Pricing surface consolidation (P2P-1 sprint, Option 1) | P1 | TODO | Strip pricing inputs from `/admin/projects/new` Step 3 and `/admin/projects/[id]` inline form; lock API write paths to `PRICING_LOCKED`; redirect new-save to canonical `/admin/projects/[id]/pricing`. See `pricing-surface-diagnosis.md`. |
-| A2 | Stage A capture: schema drift + chat-client wire-up | P1 | TODO | Untracked: `src/components/chat/StageACapture.tsx`, `src/app/api/chat/capture/`, `prisma/migrations/20260426000000_add_capture_fields_to_session/`. **schema.prisma is missing the 4 capture columns** — must add `capturedPhone/capturedName/captureStage/capturedAt` to `ChatSession` model and run `prisma generate`. Component is not yet rendered in `chat-client.tsx`. |
+| A1a | Pricing API lockdown (P2P-1 partial) | P1 | DONE in `129d220` | API POST/PUT reject pricing fields with 400 PRICING_LOCKED + Sentry warn. New-flow redirects to `/admin/projects/[id]/pricing`. Helper at `src/lib/pricing-lockdown.ts`, +8 tests. |
+| A1b | Strip inline pricing UI from `/admin/projects/new` Step 3 (replace with explanatory card) | P2 | TODO | Inputs still render but their values are dropped client-side. UX polish only — security/correctness already shipped in A1a. ~30 min. |
+| A1c | Strip inline pricing UI from `/admin/projects/[id]` Step 3 + add read-only summary card | P2 | TODO | ~300 line edit in `[id]/page.tsx`. ~1 hr. |
+| A2 | Stage A capture: schema drift + chat-client wire-up | P1 | DONE in `a0c6efa` | Added 4 capture columns to schema.prisma, regenerated Prisma client, wired `StageACapture` via new `captureCard` ChatCenter prop, fixed dead `buyerStage` GET-response code. |
 | A3 | Insider Note review (3 unverified rows) | P1 | OPERATOR-ONLY | Mama opens `/admin/projects` → reviews/edits `analystNote` for Riviera Bliss, Shaligram Pride, Vishwanath Sarathya West. Doc: `insider-note-mama-review.md`. |
 | A4 | Sentry: mark JS-NEXTJS-K, E, J as resolved | P2 | OPERATOR-ONLY | <https://buyerchat.sentry.io/issues>. Reasoning + commit refs in `sentry-resolution-log-2026-04-26.md`. |
 
@@ -40,10 +42,10 @@ Source documents (all live in `docs/diagnostics/`):
 
 | # | Item | Severity | Status | File / Notes |
 |---|---|---|---|---|
-| B1 | NextAuth session `maxAge: 12 * 60 * 60` (was implicit 30 days) | P1 | TODO | `src/lib/auth.ts`. 5 min. Bounds blast radius of any compromised session. |
-| B2 | Pin NextAuth from `^5.0.0-beta.25` to `5.0.0-beta.25` (no caret) | P1 | TODO | `package.json:43`. 1 min. |
-| B3 | Sentry `beforeSend` PII scrubber (phone + email regex redact) | P2 | TODO | `sentry.server.config.ts`, `sentry.edge.config.ts`, `src/instrumentation-client.ts`. 20 min. |
-| B4 | `/api/chat/capture` — always return `{ ok: true }` (drop `alreadyVerified` branch) + tighten rate limit to `capture:${sessionId}:${ip}` | P2 | TODO | `src/app/api/chat/capture/route.ts:62,104`. 15 min. |
+| B1 | NextAuth session `maxAge: 12 * 60 * 60` (was implicit 30 days) | P1 | DONE in `6be0fda` | `src/lib/auth.ts`. updateAge=1h keeps active users signed in. |
+| B2 | Pin NextAuth from `^5.0.0-beta.25` to `5.0.0-beta.25` (no caret) | P1 | DONE in `6be0fda` | `package.json:43`. |
+| B3 | Sentry `beforeSend` PII scrubber (phone + email regex redact) | P2 | DONE in `6be0fda` | New helper `src/lib/sentry-redact.ts` applied to all 3 Sentry configs. |
+| B4 | `/api/chat/capture` — always return `{ ok: true }` (drop `alreadyVerified` branch) + tighten rate limit to `capture:${sessionId}:${ip}` | P2 | DONE in `6be0fda` | Per-(session,ip) limit at 4/min, malformed bodies in separate 30/min bucket. |
 | B5 | Verify Neon automated backups enabled, 30-day retention | P1 | OPERATOR-ONLY | Neon dashboard. |
 | B6 | Rotate `OPENAI_API_KEY` if it ever appeared in any log/issue/PR | – | OPERATOR-ONLY | Sanity check before going live with more buyers. |
 
@@ -55,7 +57,7 @@ Source documents (all live in `docs/diagnostics/`):
 |---|---|---|---|---|
 | C1 | iOS keyboard hides VisitBooking CTA (conversion blocker) | P1 | TODO | `src/components/chat/artifacts/VisitBooking.tsx`. Add `visualViewport` listener + dynamic-height CSS var. 40 min. |
 | C2 | `prefers-reduced-motion` guards across Framer Motion | P1 | TODO | `ChatCenter.tsx`, `page.tsx`, `artifacts/*`. 45 min. |
-| C3 | `robots: { index: false }` on `/dashboard` + `/auth/signin` | P1 | TODO | `dashboard/layout.tsx`, `auth/signin/page.tsx`. 10 min. |
+| C3 | `robots: { index: false }` on `/dashboard` + `/auth/signin` | P1 | DONE (already shipped) | UX agent flagged this but both layouts already had `robots: { index: false, follow: false }`. |
 | C4 | `focus-visible:ring-*` on artifact buttons | P2 | TODO | `ProjectCardV2.tsx`, `ComparisonCard.tsx`, `CostBreakdownCard.tsx`. 25 min. |
 | C5 | `/chat` bundle: finish LazyMotion + lazy ReactMarkdown → 278 kB | P2 | TODO | `src/app/chat/chat-client.tsx`, `src/components/chat/ChatCenter.tsx`. 50 min. Closes "323 kB 8% over" CLAUDE.md issue. |
 | C6 | Fix `--text-label` contrast (`#454560` on `#1C1917` = 2.1:1, fails AA) | P2 | TODO | Tailwind tokens. 5 min. |
