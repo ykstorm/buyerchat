@@ -9,13 +9,15 @@ import { useSession, signOut } from "next-auth/react"
 // Routes that render their own shell (Option 2 contextual shells, per
 // docs/diagnostics/dashboard-revamp-audit.md). Navbar must hide entirely on
 // these to avoid double-headers.
-//   - /chat:  Chat shell (ChatSidebar + ChatCenter)
-//   - /admin: Admin shell (AdminNavClient)
-//   - /auth:  Sign-in pages have their own minimal layout
+//   - /chat:      Chat shell (ChatSidebar + ChatCenter)
+//   - /admin:     Admin shell (AdminNavClient)
+//   - /auth:      Sign-in pages have their own minimal layout
+//   - /dashboard: Luxury warm-tone shell (sticky header on the page itself,
+//                 P2-DASHBOARD revamp 2026-04-27)
 // Landing `/` still ships a bespoke hero header (custom dark toggle,
 // "Begin" CTA, philosophy anchor) — keep it suppressed here; merging into
 // the canonical Navbar is a follow-up beyond the consistency refactor.
-const HIDE_PREFIXES = ['/chat', '/admin', '/auth']
+const HIDE_PREFIXES = ['/chat', '/admin', '/auth', '/dashboard']
 const HIDE_EXACT = ['/']
 
 function isActive(href: string, pathname: string | null): boolean {

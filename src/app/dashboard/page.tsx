@@ -1,9 +1,51 @@
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
-import { motion } from 'framer-motion'
-import Link from 'next/link'
+/**
+ * /dashboard — Luxury warm-tone home for signed-in buyers.
+ *
+ * Sprint P2-DASHBOARD (2026-04-27): rewrites the legacy "var(--bg-base)"
+ * dashboard into the sign-in extension aesthetic — ink black background,
+ * gold-on-white serif headers, framer-motion staggered mounts, prefers-
+ * reduced-motion respected.
+ *
+ * Header: this page renders its OWN sticky brand header. The shared
+ * Navbar suppresses /dashboard via HIDE_PREFIXES to avoid double headers.
+ *
+ * Data: keeps the existing /api/saved + /api/visit-requests calls and the
+ * shapes they return today. Adds /api/chat-sessions for "Recent
+ * Conversations" — the route already exists (returns up to 20 sessions,
+ * session-gated, returns [] for unauthed). All three calls are run in
+ * parallel.
+ */
 
+import { useEffect, useState, useMemo } from 'react'
+import { motion, useReducedMotion } from 'framer-motion'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { useSession, signOut } from 'next-auth/react'
+import { Calendar, MapPin, MessageSquare, ArrowRight, LogOut, Sparkles } from 'lucide-react'
+
+/* ── Design tokens (warm ink + gold) ─────────────────────────────── */
+const T = {
+  bg: '#0A0A0A',
+  surface: '#141414',
+  surface2: '#1C1C1C',
+  gold: '#B8860B',
+  goldGlow: 'rgba(184,134,11,0.2)',
+  goldBorder: 'rgba(184,134,11,0.25)',
+  goldFaint: 'rgba(184,134,11,0.08)',
+  text: '#FAFAF7',
+  muted: '#737373',
+  amber: '#F59E0B',
+  blue: '#3B82F6',
+  green: '#10B981',
+  divider: 'rgba(184,134,11,0.15)',
+} as const
+
+const SERIF = 'Georgia, "Times New Roman", serif'
+const EASE_OUT_EXPO: [number, number, number, number] = [0.22, 1, 0.36, 1]
+
+/* ── Types (shape matches /api/saved + /api/visit-requests today) ── */
 interface SavedProject {
   id: string
   projectId: string
@@ -19,8 +61,19 @@ interface SavedProject {
   createdAt: string
 }
 
+interface VisitRequestRaw {
+  id: string
+  project?: { id?: string; projectName?: string; builderName?: string }
+  visitScheduledDate: string
+  visitCompleted?: boolean
+  otpVerified?: boolean
+  createdAt: string
+  visitToken?: string
+}
+
 interface VisitRequest {
   id: string
+  projectId?: string
   projectName: string
   builderName: string
   visitDate: string
@@ -29,91 +82,92 @@ interface VisitRequest {
   visitToken?: string
 }
 
-const STATUS_CONFIG: Record<string, { bg: string; text: string; dot: string; label: string }> = {
-  pending: { bg: 'rgba(196,155,80,0.10)', text: '#8B6914', dot: '#C49B50', label: 'Pending' },
-  confirmed: { bg: 'rgba(27,79,138,0.10)', text: '#1B4F8A', dot: '#1B4F8A', label: 'Confirmed' },
-  completed: { bg: 'rgba(15,110,86,0.10)', text: '#0F6E56', dot: '#0F6E56', label: 'Completed' },
+interface ChatSessionLite {
+  id: string
+  buyerStage?: string | null
+  lastMessageAt?: string | null
+  customName?: string | null
+  firstMessage?: string
 }
 
-/* ── Count-up hook ── */
-function useCountUp(target: number, duration = 1200) {
-  const [value, setValue] = useState(0)
-  const ref = useRef<HTMLDivElement>(null)
-  const counted = useRef(false)
-
-  useEffect(() => {
-    if (counted.current) return
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (!entry.isIntersecting || counted.current) return
-        counted.current = true
-        const start = performance.now()
-        const step = (now: number) => {
-          const elapsed = now - start
-          const progress = Math.min(elapsed / duration, 1)
-          // ease-out cubic
-          const eased = 1 - Math.pow(1 - progress, 3)
-          setValue(Math.round(eased * target))
-          if (progress < 1) requestAnimationFrame(step)
-        }
-        requestAnimationFrame(step)
-      },
-      { threshold: 0.5 }
-    )
-    if (ref.current) observer.observe(ref.current)
-    return () => observer.disconnect()
-  }, [target, duration])
-
-  return { value, ref }
+type TimelineEvent = {
+  kind: 'shortlist' | 'visit-request' | 'visit-complete'
+  label: string
+  ts: number
 }
 
-function CountUpStat({ label, target, accent }: { label: string; target: number; accent: string }) {
-  const { value, ref } = useCountUp(target)
-  return (
-    <motion.div
-      ref={ref}
-      whileHover={{ y: -2 }}
-      transition={{ duration: 0.2 }}
-      className="relative rounded-2xl p-4 grain"
-      style={{
-        background: 'var(--bg-surface)',
-        border: '1px solid var(--border-subtle)',
-        boxShadow: '0 1px 2px rgba(0,0,0,0.03), 0 4px 12px rgba(0,0,0,0.04)',
-      }}
-    >
-      <div
-        className="absolute top-0 left-4 right-4 h-[1px]"
-        style={{ background: `linear-gradient(90deg, transparent, ${accent}30, transparent)` }}
-      />
-      <p className="text-[10px] uppercase tracking-[0.12em] mb-1.5" style={{ color: 'var(--text-muted)' }}>
-        {label}
-      </p>
-      <p className="text-[26px] font-bold leading-none" style={{ color: 'var(--text-primary)' }}>
-        {value}
-      </p>
-    </motion.div>
-  )
+const STATUS_CONFIG: Record<VisitRequest['status'], { bg: string; fg: string; label: string }> = {
+  pending: { bg: 'rgba(245,158,11,0.12)', fg: T.amber, label: 'Pending' },
+  confirmed: { bg: 'rgba(59,130,246,0.12)', fg: T.blue, label: 'Confirmed' },
+  completed: { bg: 'rgba(16,185,129,0.12)', fg: T.green, label: 'Completed' },
+}
+
+/* ── Time-ago helper ────────────────────────────────────────────── */
+function timeAgo(iso: number | string): string {
+  const ts = typeof iso === 'string' ? new Date(iso).getTime() : iso
+  const diff = Date.now() - ts
+  const m = Math.floor(diff / 60_000)
+  if (m < 1) return 'just now'
+  if (m < 60) return `${m}m ago`
+  const h = Math.floor(m / 60)
+  if (h < 24) return `${h}h ago`
+  const d = Math.floor(h / 24)
+  if (d < 30) return `${d}d ago`
+  const mo = Math.floor(d / 30)
+  return `${mo}mo ago`
+}
+
+/* ── Price formatter (matches existing dashboard convention) ────── */
+function formatPriceRange(min: number, max: number): string {
+  if (!min || !max || min <= 0 || max <= 0) return 'Price on request'
+  return `INR ${Math.round(min / 100000)}L – ${Math.round(max / 100000)}L`
+}
+
+/* ── First-name helper from session ─────────────────────────────── */
+function firstName(name?: string | null, email?: string | null): string {
+  if (name) return name.split(' ')[0]
+  if (email) return email.split('@')[0]
+  return 'there'
 }
 
 export default function DashboardPage() {
+  const { data: session, status } = useSession()
+  const router = useRouter()
+  const prefersReduced = useReducedMotion()
+
   const [savedProjects, setSavedProjects] = useState<SavedProject[]>([])
   const [visitRequests, setVisitRequests] = useState<VisitRequest[]>([])
+  const [chatSessions, setChatSessions] = useState<ChatSessionLite[]>([])
   const [loading, setLoading] = useState(true)
 
+  /* Auth gate: bounce to sign-in if unauthenticated. */
   useEffect(() => {
+    if (status === 'unauthenticated') {
+      router.replace('/auth/signin')
+    }
+  }, [status, router])
+
+  /* Parallel data fetch — preserve the three existing endpoints. */
+  useEffect(() => {
+    if (status !== 'authenticated') return
     let cancelled = false
     const fetchData = async () => {
       try {
-        const [projectsRes, visitsRes] = await Promise.all([
+        const [savedRes, visitsRes, chatsRes] = await Promise.all([
           fetch('/api/saved'),
           fetch('/api/visit-requests'),
+          fetch('/api/chat-sessions'),
         ])
-        const projects = await projectsRes.json()
-        const visits = await visitsRes.json()
+        const savedJson = await savedRes.json().catch(() => ({}))
+        const visitsJson = await visitsRes.json().catch(() => [])
+        const chatsJson = await chatsRes.json().catch(() => [])
         if (cancelled) return
-        setSavedProjects(projects?.savedProjects ?? [])
-        const mapped = (visits ?? []).map((v: any) => ({
+
+        setSavedProjects(savedJson?.savedProjects ?? [])
+
+        const mappedVisits: VisitRequest[] = (Array.isArray(visitsJson) ? visitsJson : []).map((v: VisitRequestRaw) => ({
           id: v.id,
+          projectId: v.project?.id,
           projectName: v.project?.projectName ?? '—',
           builderName: v.project?.builderName ?? '—',
           visitDate: v.visitScheduledDate,
@@ -121,400 +175,647 @@ export default function DashboardPage() {
           bookedAt: v.createdAt,
           visitToken: v.visitToken,
         }))
-        setVisitRequests(mapped)
-      } catch (error) {
-        console.error('Error fetching dashboard data:', error)
+        setVisitRequests(mappedVisits)
+
+        setChatSessions(Array.isArray(chatsJson) ? chatsJson : [])
+      } catch (err) {
+        // Silent — empty states will render. Errors here are not user-actionable.
+        console.error('[dashboard] fetch error', err)
       } finally {
         if (!cancelled) setLoading(false)
       }
     }
     fetchData()
     return () => { cancelled = true }
-  }, [])
+  }, [status])
 
-  if (loading) {
+  /* Activity timeline derived from saved + visits. Top 8, desc by ts. */
+  const timeline: TimelineEvent[] = useMemo(() => {
+    const events: TimelineEvent[] = []
+    for (const sp of savedProjects) {
+      events.push({
+        kind: 'shortlist',
+        label: `Shortlisted ${sp.project.projectName}`,
+        ts: new Date(sp.createdAt).getTime(),
+      })
+    }
+    for (const v of visitRequests) {
+      events.push({
+        kind: 'visit-request',
+        label: `Visit requested: ${v.projectName}`,
+        ts: new Date(v.bookedAt).getTime(),
+      })
+      if (v.status === 'completed') {
+        events.push({
+          kind: 'visit-complete',
+          label: `Visit completed: ${v.projectName}`,
+          ts: new Date(v.visitDate).getTime(),
+        })
+      }
+    }
+    return events.sort((a, b) => b.ts - a.ts).slice(0, 8)
+  }, [savedProjects, visitRequests])
+
+  /* Reduced-motion: collapse durations to 0. */
+  const D = prefersReduced ? 0 : 0.6
+  const D_FAST = prefersReduced ? 0 : 0.4
+  const STAGGER = prefersReduced ? 0 : 0.08
+
+  /* Loading splash — matches sign-in vibe. */
+  if (status === 'loading' || (status === 'authenticated' && loading)) {
     return (
-      <main className="min-h-screen flex items-center justify-center" style={{ background: 'var(--bg-base)' }}>
+      <main
+        className="min-h-screen flex items-center justify-center"
+        style={{ background: T.bg }}
+      >
         <motion.div
-          animate={{ rotate: 360 }}
-          transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-          className="w-5 h-5 rounded-full"
-          style={{ border: '2px solid var(--border)', borderTopColor: 'var(--text-primary)' }}
-        />
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: prefersReduced ? 0 : 0.4 }}
+          className="flex flex-col items-center gap-3"
+        >
+          <div
+            className="h-px w-8"
+            style={{ background: T.gold, opacity: 0.6 }}
+          />
+          <p
+            className="text-[11px] uppercase"
+            style={{ color: T.muted, letterSpacing: '0.25em', fontFamily: SERIF }}
+          >
+            Loading
+          </p>
+        </motion.div>
       </main>
     )
   }
 
+  // status === 'unauthenticated' is handled by useEffect redirect above; render nothing
+  if (status !== 'authenticated') return null
+
+  const fname = firstName(session?.user?.name, session?.user?.email)
+  const userImg = session?.user?.image
+  const userInitial = fname.charAt(0).toUpperCase()
+
   return (
-    <main className="min-h-screen relative overflow-hidden" style={{ background: 'var(--bg-base)', paddingBottom: 'calc(72px + env(safe-area-inset-bottom, 0px))' }}>
+    <main
+      className="min-h-screen relative"
+      style={{ background: T.bg, color: T.text, fontFamily: 'var(--font-geist-sans), system-ui, sans-serif' }}
+    >
+      {/* Ambient warm radial — subtle, behind everything */}
+      <div
+        aria-hidden
+        className="pointer-events-none fixed inset-0"
+        style={{
+          backgroundImage: `radial-gradient(600px circle at 20% 0%, ${T.goldFaint}, transparent 60%), radial-gradient(500px circle at 90% 100%, rgba(184,134,11,0.04), transparent 60%)`,
+          zIndex: 0,
+        }}
+      />
 
-      {/* Warm ambient background layers */}
-      <div className="fixed inset-0 pointer-events-none" style={{ zIndex: 0 }}>
-        <div
-          className="absolute top-0 left-1/4 w-[500px] h-[500px] rounded-full"
-          style={{
-            background: 'radial-gradient(circle, rgba(196,155,80,0.06) 0%, transparent 70%)',
-            filter: 'blur(80px)',
-            animation: 'warm-pulse 6s ease-in-out infinite',
-          }}
-        />
-        <div
-          className="absolute bottom-1/4 right-0 w-[400px] h-[400px] rounded-full"
-          style={{
-            background: 'radial-gradient(circle, rgba(27,79,138,0.04) 0%, transparent 70%)',
-            filter: 'blur(60px)',
-          }}
-        />
-      </div>
-
-      {/* Top bar removed — shared Navbar (Option 2 contextual shells) now provides
-          brand + global nav across `/dashboard`. See docs/diagnostics/dashboard-revamp-audit.md
-          §4 wireframe + §5 recommendation. The pt-[88px] below clears the fixed Navbar. */}
-
-      <div className="relative z-10 max-w-xl mx-auto px-5 pt-[88px]">
-
-        {/* Heading with gold accent — Cormorant Garamond */}
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] }}
-          className="mb-8"
-        >
-          <div className="flex items-center gap-2.5 mb-3">
-            <div style={{ width: 24, height: 1.5, background: 'linear-gradient(90deg, #C49B50, transparent)', borderRadius: 1 }} />
-            <span className="text-[11px] uppercase tracking-[0.15em] font-medium" style={{ color: '#C49B50' }}>
-              Your Journey
+      {/* ─── Sticky header (brand-extended) ─────────────────────── */}
+      <header
+        className="sticky top-0 z-50"
+        style={{
+          background: 'rgba(10,10,10,0.85)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+          borderBottom: `1px solid ${T.divider}`,
+        }}
+      >
+        <div className="max-w-6xl mx-auto px-5 md:px-8 py-4 flex items-center justify-between gap-4">
+          {/* Brand */}
+          <Link href="/" className="flex items-baseline">
+            <span style={{ fontFamily: SERIF, fontSize: 20, color: T.gold, letterSpacing: '-0.01em' }}>
+              Homesty
             </span>
-          </div>
-          <h1
-            style={{ fontFamily: 'var(--font-cormorant, "Cormorant Garamond", Georgia, serif)', color: 'var(--text-primary)' }}
-            className="text-[32px] font-bold leading-[1.15] mb-1.5"
+            <span style={{ fontFamily: SERIF, fontSize: 20, color: T.muted, letterSpacing: '-0.01em' }}>
+              .ai
+            </span>
+          </Link>
+
+          {/* Center location line — md+ only */}
+          <p
+            className="hidden md:block"
+            style={{
+              fontSize: 10,
+              color: T.gold,
+              letterSpacing: '0.3em',
+              textTransform: 'uppercase',
+              fontWeight: 500,
+            }}
           >
-            Property Journey
-          </h1>
-          <p className="text-[13px]" style={{ color: 'var(--text-secondary)' }}>
-            Saved projects and upcoming visits
+            South Bopal · Shela · Ahmedabad
           </p>
-        </motion.div>
 
-        {/* Stats row — count-up */}
-        <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.08, ease: [0.25, 0.46, 0.45, 0.94] }}
-          className="grid grid-cols-3 gap-3 mb-9"
-        >
-          <CountUpStat label="Saved" target={savedProjects.length} accent="#C49B50" />
-          <CountUpStat label="Visits" target={visitRequests.length} accent="#1B4F8A" />
-          <CountUpStat label="Active" target={visitRequests.filter(v => v.status !== 'completed').length} accent="#0F6E56" />
-        </motion.div>
-
-        {/* Saved Projects */}
-        <motion.section
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.14, ease: [0.25, 0.46, 0.45, 0.94] }}
-          className="mb-9"
-        >
-          <div className="flex items-center gap-2.5 mb-4">
-            <div className="w-1 h-4 rounded-full" style={{ background: '#C49B50' }} />
-            <p className="text-[11px] uppercase tracking-[0.15em] font-medium" style={{ color: 'var(--text-muted)' }}>
-              Saved Projects
-            </p>
-            {savedProjects.length > 0 && (
+          {/* Right: avatar + name + sign out */}
+          <div className="flex items-center gap-3">
+            <div className="hidden sm:flex items-center gap-2.5">
               <span
-                className="text-[10px] font-medium px-1.5 py-0.5 rounded-full"
-                style={{ background: 'rgba(196,155,80,0.10)', color: '#C49B50' }}
+                className="flex items-center justify-center rounded-full overflow-hidden"
+                style={{
+                  width: 28,
+                  height: 28,
+                  border: `1px solid ${T.goldBorder}`,
+                  background: T.surface,
+                  color: T.gold,
+                  fontSize: 12,
+                  fontWeight: 600,
+                  fontFamily: SERIF,
+                }}
+                aria-hidden
               >
-                {savedProjects.length}
+                {userImg ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={userImg} alt="" className="h-full w-full object-cover" />
+                ) : (
+                  userInitial
+                )}
               </span>
-            )}
+              <span
+                style={{ fontSize: 13, color: T.text }}
+                className="truncate max-w-[140px]"
+              >
+                {fname}
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => signOut({ callbackUrl: '/' })}
+              className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 transition-colors"
+              style={{
+                fontSize: 12,
+                color: T.muted,
+                border: `1px solid ${T.divider}`,
+                background: 'transparent',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = T.gold
+                e.currentTarget.style.borderColor = T.goldBorder
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = T.muted
+                e.currentTarget.style.borderColor = T.divider
+              }}
+            >
+              <LogOut size={12} />
+              Sign Out
+            </button>
           </div>
+        </div>
+      </header>
 
-          {savedProjects.length > 0 ? (
-            <div className="space-y-3">
-              {savedProjects.map((sp, i) => (
-                <motion.div
-                  key={sp.id}
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3, delay: 0.16 + i * 0.04 }}
-                  className="group relative rounded-2xl p-4 transition-all duration-200 grain"
-                  style={{
-                    background: 'var(--bg-surface)',
-                    border: '1px solid var(--border-subtle)',
-                    boxShadow: '0 1px 2px rgba(0,0,0,0.03), 0 2px 8px rgba(0,0,0,0.04)',
-                  }}
-                  onMouseEnter={e => {
-                    e.currentTarget.style.borderColor = 'rgba(196,155,80,0.25)'
-                    e.currentTarget.style.boxShadow = '0 1px 2px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.06), 0 0 0 1px rgba(196,155,80,0.08)'
-                  }}
-                  onMouseLeave={e => {
-                    e.currentTarget.style.borderColor = 'var(--border-subtle)'
-                    e.currentTarget.style.boxShadow = '0 1px 2px rgba(0,0,0,0.03), 0 2px 8px rgba(0,0,0,0.04)'
-                  }}
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex-1 min-w-0">
-                      <h3
-                        style={{ fontFamily: 'var(--font-cormorant, "Cormorant Garamond", Georgia, serif)', color: 'var(--text-primary)' }}
-                        className="text-[17px] leading-tight mb-0.5 truncate"
+      {/* ─── Body ──────────────────────────────────────────────── */}
+      <div className="relative z-10 max-w-6xl mx-auto px-5 md:px-8 py-10 md:py-14">
+
+        {/* Hero greeting */}
+        <motion.section
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: D, ease: EASE_OUT_EXPO }}
+          className="mb-12 md:mb-16"
+        >
+          <h1
+            className="leading-[1.1]"
+            style={{
+              fontFamily: SERIF,
+              fontSize: 'clamp(28px, 5vw, 36px)',
+              color: T.text,
+              fontWeight: 400,
+              letterSpacing: '-0.01em',
+            }}
+          >
+            Namaste, <span style={{ color: T.gold }}>{fname}</span>.
+          </h1>
+          <p
+            className="mt-3"
+            style={{ fontSize: 14, color: T.muted, lineHeight: 1.6 }}
+          >
+            Aapka shortlist aur recent activity yahan hai.
+          </p>
+        </motion.section>
+
+        {/* 2-column main grid: shortlist+visits left (60%), timeline right (40%) on md+ */}
+        <div className="grid gap-10 md:gap-12 md:grid-cols-[3fr_2fr]">
+
+          {/* ─── Left column ─────────────────────── */}
+          <div className="flex flex-col gap-12">
+
+            {/* Shortlisted Projects */}
+            <section>
+              <SectionHeader label="Shortlisted Projects" count={savedProjects.length} />
+
+              {savedProjects.length > 0 ? (
+                <div className="grid gap-4 md:grid-cols-2 mt-6">
+                  {savedProjects.map((sp, i) => (
+                    <motion.article
+                      key={sp.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{
+                        duration: D_FAST,
+                        delay: i * STAGGER,
+                        type: prefersReduced ? 'tween' : 'spring',
+                        damping: 20,
+                      }}
+                      whileHover={prefersReduced ? undefined : { scale: 1.01, boxShadow: `0 0 0 1px ${T.goldBorder}, 0 8px 24px rgba(184,134,11,0.08)` }}
+                      className="rounded-xl p-5 flex flex-col gap-3"
+                      style={{
+                        background: T.surface,
+                        border: `1px solid ${T.divider}`,
+                      }}
+                    >
+                      <div>
+                        <h3
+                          style={{
+                            fontFamily: SERIF,
+                            fontSize: 18,
+                            color: T.gold,
+                            fontWeight: 500,
+                            lineHeight: 1.2,
+                          }}
+                        >
+                          {sp.project.projectName}
+                        </h3>
+                        <p style={{ fontSize: 12, color: T.muted, marginTop: 4 }}>
+                          {sp.project.builderName} · {sp.project.microMarket}
+                        </p>
+                      </div>
+
+                      <p
+                        style={{
+                          fontFamily: SERIF,
+                          fontSize: 22,
+                          color: T.text,
+                          fontWeight: 400,
+                          letterSpacing: '-0.01em',
+                        }}
                       >
-                        {sp.project.projectName}
-                      </h3>
-                      <p className="text-[12px] mb-2.5" style={{ color: 'var(--text-secondary)' }}>
-                        {sp.project.builderName} · {sp.project.microMarket}
+                        {formatPriceRange(sp.project.minPrice, sp.project.maxPrice)}
                       </p>
-                      <div className="flex flex-wrap gap-1.5 mb-3">
+
+                      {/* TODO: API /api/saved doesn't currently return honestConcern,
+                          decisionTag, or builder.grade. Surface them once the API
+                          select includes those fields. */}
+
+                      <div className="flex flex-wrap gap-1.5">
                         {sp.project.unitTypes.slice(0, 3).map((ut, j) => (
                           <span
                             key={j}
-                            className="text-[10px] px-2 py-0.5 rounded-full"
-                            style={{ background: 'var(--bg-subtle)', color: 'var(--text-secondary)' }}
+                            className="rounded-full px-2 py-0.5"
+                            style={{
+                              fontSize: 10,
+                              color: T.muted,
+                              background: T.surface2,
+                              border: `1px solid ${T.divider}`,
+                            }}
                           >
                             {ut}
                           </span>
                         ))}
                       </div>
-                    </div>
-                    <Link
-                      href={`/projects/${sp.project.id}`}
-                      className="flex-shrink-0 mt-1 flex items-center gap-1 text-[11px] transition-colors"
-                      style={{ color: 'var(--text-muted)' }}
-                      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#1B4F8A' }}
-                      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'var(--text-muted)' }}
-                    >
-                      View
-                      <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                        <path d="M4.5 3L7.5 6L4.5 9" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
-                      </svg>
-                    </Link>
-                  </div>
 
-                  <div
-                    className="pt-2.5 flex items-center justify-between"
-                    style={{ borderTop: '1px solid var(--border-subtle)' }}
-                  >
-                    <p className="text-[14px] font-semibold" style={{ color: '#1B4F8A' }}>
-                      {sp.project.minPrice > 0 && sp.project.maxPrice > 0
-                        ? `₹${Math.round(sp.project.minPrice / 100000)}L – ₹${Math.round(sp.project.maxPrice / 100000)}L`
-                        : 'Price on request'}
-                    </p>
-                    <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
-                      Saved {new Date(sp.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
-                    </p>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          ) : (
-            <div
-              className="rounded-2xl p-8 text-center grain"
-              style={{
-                background: 'var(--bg-surface)',
-                border: '1px solid var(--border-subtle)',
-                boxShadow: '0 1px 2px rgba(0,0,0,0.03)',
-              }}
-            >
-              <div
-                className="w-10 h-10 rounded-full mx-auto mb-3 flex items-center justify-center"
-                style={{ background: 'rgba(196,155,80,0.08)' }}
-              >
-                <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                  <path d="M9 2.25L10.85 6.95L16 7.5L12.25 10.8L13.3 15.75L9 13.25L4.7 15.75L5.75 10.8L2 7.5L7.15 6.95L9 2.25Z" stroke="#C49B50" strokeWidth="1.2" fill="none" strokeLinejoin="round"/>
-                </svg>
-              </div>
-              <p className="text-[13px] mb-1.5" style={{ color: 'var(--text-secondary)' }}>No saved projects yet</p>
-              <Link href="/chat" className="text-[12px] font-medium transition-colors" style={{ color: '#1B4F8A' }}>
-                Start exploring →
-              </Link>
-            </div>
-          )}
-        </motion.section>
-
-        {/* Site Visits */}
-        <motion.section
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.2, ease: [0.25, 0.46, 0.45, 0.94] }}
-          className="mb-9"
-        >
-          <div className="flex items-center gap-2.5 mb-4">
-            <div className="w-1 h-4 rounded-full" style={{ background: '#1B4F8A' }} />
-            <p className="text-[11px] uppercase tracking-[0.15em] font-medium" style={{ color: 'var(--text-muted)' }}>
-              Site Visits
-            </p>
-            {visitRequests.length > 0 && (
-              <span
-                className="text-[10px] font-medium px-1.5 py-0.5 rounded-full"
-                style={{ background: 'rgba(27,79,138,0.10)', color: '#1B4F8A' }}
-              >
-                {visitRequests.length}
-              </span>
-            )}
-          </div>
-
-          {visitRequests.length > 0 ? (
-            <div className="space-y-3">
-              {visitRequests.map((visit, i) => {
-                const config = STATUS_CONFIG[visit.status] ?? STATUS_CONFIG.pending
-                return (
-                  <motion.div
-                    key={visit.id}
-                    initial={{ opacity: 0, y: 6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3, delay: 0.22 + i * 0.04 }}
-                    className="relative rounded-2xl p-4 grain"
-                    style={{
-                      background: 'var(--bg-surface)',
-                      border: '1px solid var(--border-subtle)',
-                      boxShadow: '0 1px 2px rgba(0,0,0,0.03), 0 2px 8px rgba(0,0,0,0.04)',
-                    }}
-                  >
-                    <div className="flex items-start justify-between gap-3 mb-3">
-                      <div className="min-w-0">
-                        <h3
-                          style={{ fontFamily: 'var(--font-cormorant, "Cormorant Garamond", Georgia, serif)', color: 'var(--text-primary)' }}
-                          className="text-[16px] leading-tight mb-0.5"
+                      <div
+                        className="flex items-center gap-3 pt-3 mt-1"
+                        style={{ borderTop: `1px solid ${T.divider}` }}
+                      >
+                        <Link
+                          href={`/projects/${sp.project.id}`}
+                          className="inline-flex items-center gap-1 transition-colors"
+                          style={{ fontSize: 12, color: T.muted }}
+                          onMouseEnter={(e) => { e.currentTarget.style.color = T.gold }}
+                          onMouseLeave={(e) => { e.currentTarget.style.color = T.muted }}
                         >
-                          {visit.projectName}
-                        </h3>
-                        <p className="text-[12px]" style={{ color: 'var(--text-secondary)' }}>
-                          {visit.builderName}
-                        </p>
+                          View project <ArrowRight size={11} />
+                        </Link>
+                        <span style={{ width: 1, height: 12, background: T.divider }} aria-hidden />
+                        <Link
+                          href="/chat"
+                          className="inline-flex items-center gap-1 transition-colors"
+                          style={{ fontSize: 12, color: T.muted }}
+                          onMouseEnter={(e) => { e.currentTarget.style.color = T.gold }}
+                          onMouseLeave={(e) => { e.currentTarget.style.color = T.muted }}
+                        >
+                          Chat about this <ArrowRight size={11} />
+                        </Link>
                       </div>
-                      <span
-                        className="flex-shrink-0 flex items-center gap-1.5 text-[10px] font-medium px-2 py-1 rounded-full"
-                        style={{ background: config.bg, color: config.text }}
+                    </motion.article>
+                  ))}
+                </div>
+              ) : (
+                <EmptyShortlist prefersReduced={!!prefersReduced} />
+              )}
+            </section>
+
+            {/* Site Visits */}
+            <section>
+              <SectionHeader label="Site Visits" count={visitRequests.length} accent={T.blue} />
+
+              {visitRequests.length > 0 ? (
+                <ul className="flex flex-col gap-2 mt-6">
+                  {visitRequests.map((v, i) => {
+                    const cfg = STATUS_CONFIG[v.status]
+                    return (
+                      <motion.li
+                        key={v.id}
+                        initial={{ opacity: 0, x: -16 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ duration: D_FAST, delay: i * (prefersReduced ? 0 : 0.06), ease: EASE_OUT_EXPO }}
+                        className="rounded-lg px-4 py-3 flex items-center gap-3 flex-wrap"
+                        style={{
+                          background: T.surface,
+                          border: `1px solid ${T.divider}`,
+                        }}
                       >
                         <span
-                          className="w-1.5 h-1.5 rounded-full"
-                          style={{ background: config.dot }}
-                        />
-                        {config.label}
-                      </span>
-                    </div>
-
-                    <div
-                      className="pt-3 flex items-center justify-between"
-                      style={{ borderTop: '1px solid var(--border-subtle)' }}
-                    >
-                      <div className="flex items-center gap-1.5">
-                        <svg width="13" height="13" viewBox="0 0 13 13" fill="none" style={{ color: 'var(--text-muted)' }}>
-                          <rect x="1.5" y="2.5" width="10" height="9" rx="1.5" stroke="currentColor" strokeWidth="1"/>
-                          <path d="M1.5 5.5H11.5" stroke="currentColor" strokeWidth="1"/>
-                          <path d="M4 1V3" stroke="currentColor" strokeWidth="1" strokeLinecap="round"/>
-                          <path d="M9 1V3" stroke="currentColor" strokeWidth="1" strokeLinecap="round"/>
-                        </svg>
-                        <p className="text-[12px]" style={{ color: 'var(--text-secondary)' }}>
-                          {new Date(visit.visitDate).toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}
-                        </p>
-                      </div>
-                      {visit.visitToken && (
-                        <p
-                          className="text-[11px] font-mono font-medium px-2 py-0.5 rounded"
-                          style={{ background: 'rgba(15,110,86,0.08)', color: '#0F6E56' }}
+                          className="inline-flex items-center gap-1.5 rounded-full px-2 py-0.5"
+                          style={{
+                            background: cfg.bg,
+                            color: cfg.fg,
+                            fontSize: 10,
+                            fontWeight: 500,
+                            letterSpacing: '0.04em',
+                          }}
                         >
-                          {visit.visitToken}
-                        </p>
-                      )}
-                    </div>
-                  </motion.div>
-                )
-              })}
-            </div>
-          ) : (
-            <div
-              className="rounded-2xl p-8 text-center grain"
-              style={{
-                background: 'var(--bg-surface)',
-                border: '1px solid var(--border-subtle)',
-                boxShadow: '0 1px 2px rgba(0,0,0,0.03)',
-              }}
-            >
-              <div
-                className="w-10 h-10 rounded-full mx-auto mb-3 flex items-center justify-center"
-                style={{ background: 'rgba(27,79,138,0.08)' }}
-              >
-                <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                  <rect x="2.5" y="3.5" width="13" height="12" rx="2" stroke="#1B4F8A" strokeWidth="1.2" fill="none"/>
-                  <path d="M2.5 7.5H15.5" stroke="#1B4F8A" strokeWidth="1.2"/>
-                  <path d="M6 1.5V4.5" stroke="#1B4F8A" strokeWidth="1.2" strokeLinecap="round"/>
-                  <path d="M12 1.5V4.5" stroke="#1B4F8A" strokeWidth="1.2" strokeLinecap="round"/>
-                </svg>
-              </div>
-              <p className="text-[13px] mb-1.5" style={{ color: 'var(--text-secondary)' }}>No visits booked yet</p>
-              <Link href="/chat" className="text-[12px] font-medium transition-colors" style={{ color: '#1B4F8A' }}>
-                Book a site visit →
-              </Link>
-            </div>
-          )}
-        </motion.section>
+                          <span
+                            className="rounded-full"
+                            style={{ width: 6, height: 6, background: cfg.fg }}
+                          />
+                          {cfg.label}
+                        </span>
+                        <span
+                          style={{ fontFamily: SERIF, fontSize: 15, color: T.text }}
+                          className="truncate max-w-[260px]"
+                        >
+                          {v.projectName}
+                        </span>
+                        <span className="inline-flex items-center gap-1" style={{ fontSize: 12, color: T.muted }}>
+                          <Calendar size={11} />
+                          {new Date(v.visitDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                        </span>
+                        {v.status === 'confirmed' && v.visitToken && (
+                          <span
+                            className="ml-auto rounded px-2 py-0.5 font-mono"
+                            style={{ fontSize: 11, color: T.gold, background: T.goldFaint, letterSpacing: '0.05em' }}
+                          >
+                            {v.visitToken}
+                          </span>
+                        )}
+                      </motion.li>
+                    )
+                  })}
+                </ul>
+              ) : (
+                <EmptyVisits prefersReduced={!!prefersReduced} />
+              )}
+            </section>
 
-        {/* Find another home CTA */}
-        <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.28, ease: [0.25, 0.46, 0.45, 0.94] }}
-          className="rounded-2xl p-6 text-center grain mb-6"
-          style={{
-            background: 'var(--bg-surface)',
-            border: '1px solid var(--border-subtle)',
-            boxShadow: '0 1px 2px rgba(0,0,0,0.03), 0 4px 12px rgba(0,0,0,0.04)',
-          }}
+            {/* Recent Conversations — only render if API returned anything */}
+            <section>
+              <SectionHeader label="Recent Conversations" count={chatSessions.length} accent={T.gold} />
+
+              {chatSessions.length > 0 ? (
+                <ul className="flex flex-col gap-2 mt-6">
+                  {chatSessions.slice(0, 5).map((s, i) => {
+                    const title = s.customName?.trim()
+                      || (s.firstMessage ? s.firstMessage.slice(0, 60) : 'Conversation')
+                    return (
+                      <motion.li
+                        key={s.id}
+                        initial={{ opacity: 0, x: -16 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ duration: D_FAST, delay: i * (prefersReduced ? 0 : 0.06), ease: EASE_OUT_EXPO }}
+                      >
+                        <Link
+                          href="/chat"
+                          className="group rounded-lg px-4 py-3 flex items-center gap-3 transition-colors"
+                          style={{
+                            background: T.surface,
+                            border: `1px solid ${T.divider}`,
+                          }}
+                          onMouseEnter={(e) => { e.currentTarget.style.borderColor = T.goldBorder }}
+                          onMouseLeave={(e) => { e.currentTarget.style.borderColor = T.divider }}
+                        >
+                          <MessageSquare size={14} style={{ color: T.gold, flexShrink: 0 }} />
+                          <span
+                            style={{ fontFamily: SERIF, fontSize: 14, color: T.text }}
+                            className="truncate flex-1"
+                          >
+                            {title}
+                          </span>
+                          {s.lastMessageAt && (
+                            <span style={{ fontSize: 11, color: T.muted }}>
+                              {timeAgo(s.lastMessageAt)}
+                            </span>
+                          )}
+                          <ArrowRight size={12} style={{ color: T.muted }} />
+                        </Link>
+                      </motion.li>
+                    )
+                  })}
+                </ul>
+              ) : (
+                <div
+                  className="rounded-xl px-5 py-8 text-center mt-6"
+                  style={{ background: T.surface, border: `1px solid ${T.divider}` }}
+                >
+                  <p style={{ fontSize: 13, color: T.muted }}>
+                    Recent conversations coming soon
+                  </p>
+                </div>
+              )}
+            </section>
+
+          </div>
+
+          {/* ─── Right column: timeline ─────────────────────── */}
+          <aside>
+            <SectionHeader label="Activity" count={timeline.length} accent={T.gold} />
+
+            {timeline.length > 0 ? (
+              <ol
+                className="relative mt-6 pl-5"
+                style={{ borderLeft: `1px solid ${T.divider}` }}
+              >
+                {timeline.map((e, i) => (
+                  <motion.li
+                    key={`${e.kind}-${e.ts}-${i}`}
+                    initial={{ opacity: 0, x: 16 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: D_FAST, delay: i * (prefersReduced ? 0 : 0.07), ease: EASE_OUT_EXPO }}
+                    className="relative pb-5 last:pb-0"
+                  >
+                    {/* dot */}
+                    <span
+                      aria-hidden
+                      className="absolute rounded-full"
+                      style={{
+                        left: -23,
+                        top: 4,
+                        width: 6,
+                        height: 6,
+                        background: T.gold,
+                        boxShadow: `0 0 0 3px ${T.bg}, 0 0 8px ${T.goldGlow}`,
+                      }}
+                    />
+                    <p style={{ fontSize: 13, color: T.text, lineHeight: 1.4 }}>
+                      {e.label}
+                    </p>
+                    <p style={{ fontSize: 11, color: T.muted, marginTop: 2 }}>
+                      {timeAgo(e.ts)}
+                    </p>
+                  </motion.li>
+                ))}
+              </ol>
+            ) : (
+              <div
+                className="rounded-xl px-5 py-8 text-center mt-6"
+                style={{ background: T.surface, border: `1px solid ${T.divider}` }}
+              >
+                <p style={{ fontSize: 13, color: T.muted }}>
+                  No activity yet
+                </p>
+              </div>
+            )}
+          </aside>
+        </div>
+
+        {/* Footer breath line */}
+        <div
+          className="mt-16 pt-8 flex items-center justify-between gap-4 flex-wrap"
+          style={{ borderTop: `1px solid ${T.divider}` }}
         >
-          <div
-            className="absolute top-0 left-6 right-6 h-[1px]"
-            style={{ background: 'linear-gradient(90deg, transparent, rgba(196,155,80,0.3), transparent)' }}
-          />
-          <h2
-            style={{ fontFamily: 'var(--font-cormorant, "Cormorant Garamond", Georgia, serif)', color: 'var(--text-primary)' }}
-            className="text-[22px] font-semibold leading-tight mb-2"
+          <p
+            style={{
+              fontSize: 10,
+              color: T.muted,
+              letterSpacing: '0.25em',
+              textTransform: 'uppercase',
+            }}
           >
-            Find another home
-          </h2>
-          <p className="text-[12px] mb-5" style={{ color: 'var(--text-secondary)' }}>
-            Tell Homesty AI what you need — budget, location, unit type — and get honest recommendations.
+            <MapPin size={10} className="inline mr-1.5" style={{ color: T.gold }} />
+            South Bopal · Shela
           </p>
           <Link
             href="/chat"
-            className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full text-[13px] font-semibold transition-all duration-200"
+            className="inline-flex items-center gap-2 rounded-full px-5 py-2 transition-all"
             style={{
-              background: 'linear-gradient(135deg, #1B4F8A, #2563EB)',
-              color: '#FFFFFF',
-              boxShadow: '0 2px 8px rgba(27,79,138,0.25)',
+              fontSize: 13,
+              color: T.gold,
+              border: `1px solid ${T.goldBorder}`,
+              background: T.goldFaint,
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = T.gold
+              e.currentTarget.style.color = T.bg
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = T.goldFaint
+              e.currentTarget.style.color = T.gold
             }}
           >
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-              <path d="M12 7C12 9.76 9.76 12 7 12C5.93 12 4.95 11.65 4.15 11.06L2 12L2.94 9.85C2.34 9.05 2 8.07 2 7C2 4.24 4.24 2 7 2C9.76 2 12 4.24 12 7Z" stroke="currentColor" strokeWidth="1.2" fill="none" strokeLinejoin="round"/>
-            </svg>
-            Start chatting
+            Continue chatting <ArrowRight size={12} />
           </Link>
-        </motion.div>
-
+        </div>
       </div>
 
-      {/* Fixed bottom bar */}
-      <div
-        className="fixed bottom-0 left-0 right-0 z-20 backdrop-blur-md flex items-center justify-center"
+      {/* keyframes for empty-state gold pulse */}
+      <style jsx>{`
+        @keyframes goldPulse {
+          0%, 100% { box-shadow: 0 0 0 0 rgba(184,134,11,0); }
+          50%      { box-shadow: 0 0 0 8px rgba(184,134,11,0.5); }
+        }
+      `}</style>
+    </main>
+  )
+}
+
+/* ── Section header (small-caps gold tag) ───────────────────────── */
+function SectionHeader({ label, count, accent = T.gold }: { label: string; count?: number; accent?: string }) {
+  return (
+    <div className="flex items-center gap-3">
+      <span
         style={{
-          background: 'color-mix(in srgb, var(--bg-surface) 90%, transparent)',
-          borderTop: '1px solid var(--border-subtle)',
-          padding: `12px 20px calc(12px + env(safe-area-inset-bottom, 0px))`,
+          fontSize: 13,
+          color: accent,
+          letterSpacing: '0.2em',
+          textTransform: 'uppercase',
+          fontWeight: 500,
+          fontFamily: SERIF,
         }}
       >
-        <Link
-          href="/chat"
-          className="flex items-center gap-1.5 text-[13px] transition-colors"
-          style={{ color: 'var(--text-secondary)' }}
+        {label}
+      </span>
+      {typeof count === 'number' && count > 0 && (
+        <span
+          className="rounded-full px-1.5 py-0"
+          style={{
+            fontSize: 10,
+            color: accent,
+            background: 'rgba(184,134,11,0.08)',
+            border: `1px solid ${T.divider}`,
+            minWidth: 18,
+            textAlign: 'center',
+          }}
         >
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-            <path d="M12 7C12 9.76 9.76 12 7 12C5.93 12 4.95 11.65 4.15 11.06L2 12L2.94 9.85C2.34 9.05 2 8.07 2 7C2 4.24 4.24 2 7 2C9.76 2 12 4.24 12 7Z" stroke="currentColor" strokeWidth="1.2" fill="none" strokeLinejoin="round"/>
-          </svg>
-          Back to chat
-        </Link>
-      </div>
+          {count}
+        </span>
+      )}
+      <div className="flex-1 h-px" style={{ background: T.divider }} />
+    </div>
+  )
+}
 
-    </main>
+/* ── Empty states ─────────────────────────────────────────────── */
+function EmptyShortlist({ prefersReduced }: { prefersReduced: boolean }) {
+  return (
+    <div
+      className="rounded-xl px-6 py-10 text-center mt-6"
+      style={{ background: T.surface, border: `1px solid ${T.divider}` }}
+    >
+      <Sparkles size={20} className="mx-auto mb-4" style={{ color: T.gold }} />
+      <p style={{ fontSize: 14, color: T.text, marginBottom: 4 }}>
+        Koi project shortlist nahi kiya abhi tak.
+      </p>
+      <p style={{ fontSize: 12, color: T.muted, marginBottom: 16 }}>
+        Tell Homesty AI what you need — get honest matches.
+      </p>
+      <Link
+        href="/chat"
+        className="inline-flex items-center gap-2 rounded-full px-5 py-2 transition-all"
+        style={{
+          fontSize: 13,
+          color: T.bg,
+          background: T.gold,
+          fontWeight: 500,
+          animation: prefersReduced ? undefined : 'goldPulse 2.5s ease-in-out infinite',
+        }}
+      >
+        Begin your HomeSearch <ArrowRight size={12} />
+      </Link>
+    </div>
+  )
+}
+
+function EmptyVisits({ prefersReduced }: { prefersReduced: boolean }) {
+  return (
+    <div
+      className="rounded-xl px-6 py-8 text-center mt-6"
+      style={{ background: T.surface, border: `1px solid ${T.divider}` }}
+    >
+      <Calendar size={18} className="mx-auto mb-3" style={{ color: T.muted }} />
+      <p style={{ fontSize: 13, color: T.muted, marginBottom: 12 }}>
+        Koi visit book nahi hua abhi.
+      </p>
+      <Link
+        href="/chat"
+        className="inline-flex items-center gap-1.5 transition-colors"
+        style={{
+          fontSize: 12,
+          color: T.gold,
+          animation: prefersReduced ? undefined : undefined,
+        }}
+      >
+        Book a site visit <ArrowRight size={11} />
+      </Link>
+    </div>
   )
 }
