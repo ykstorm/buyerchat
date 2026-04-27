@@ -5,10 +5,14 @@
 
 ## Last updated
 
-2026-04-27 16:10 IST — P2-DASHBOARD + P2-DOCKER: dashboard luxury revamp + Docker setup
+2026-04-27 16:39 IST — P2-CRITICAL-8: 6 live prod bugs (NO_MARKDOWN, FAKE_VISIT, timeouts, amenity FP, Book Visit, floating widget)
 
 ## What just shipped (most recent first)
 
+- `675ea2d` — fix(ui): remove FloatingChatWidget — Book Visit redirect replaces its purpose
+- `71b1203` — feat(chat): Book Visit redirects to /chat with prefilled+autosend message (project page + book-visit event)
+- `5d28e47` — fix(chat-api): bump abort timeout 15s→25s + recognise timeout vs leak + buyer Hinglish fallback
+- `0fc8506` — fix(prompt+checker): purge "OTP ke baad" + WRONG/RIGHT bullet shot + FINAL REMINDER + amenity allowlist (Bugs 1+2+4)
 - `1dc3b86` — chore(docker): Dockerfile.dev + multi-stage Dockerfile + compose + standalone output. Vercel ignores standalone flag.
 - `d84bf66` — feat(dashboard): luxury warm-tone revamp — gold/black, spring animations, DB-wired (Shortlisted + Visits + Conversations + Activity Timeline)
 - `1a05846` — test(prompt): lock PART 0 + few-shot ordering + parking-defuse invariants (156/156)
@@ -37,8 +41,8 @@ stay local.
 
 ## What's queued (priority order)
 
-0. **Bug 7 (deferred)** — Dashboard already wires saved projects + visit requests from DB; the "How it works / Contact dead links" reported in smoke test live on the **landing page** (`src/app/page.tsx`), not dashboard. If those landing-page links are dead, that's a separate (smaller) sweep.
-1. **Re-test Bug 1 in production** — Mama smoke test on homesty.ai/chat: book a visit (give name + 10-digit phone). Expect the holding message verbatim, NO "OTP bheja hai", NO loop. If model still fabricates OTP, the fix didn't take and we need stream-level abort.
+0. **Re-test on prod after auto-deploy of `675ea2d`** — verify in Sentry that NO_MARKDOWN drops, OTP_FABRICATION drops, result.onError drops (timeout fallback now graceful), and HALLUCINATION false-positives on real amenity names disappear.
+1. **P2-CLEANUP-AUDIT (read-only sprint)** — operator asked for: (a) dead workflow + dead-API-route audit, (b) account-deletion / buyer-data-purge feature spec, (c) animation pass on dashboard, (d) project detail page UI consistency review (operator says "first one still old"). Output: docs/diagnostics/cleanup-audit-apr27.md. Read-only, no code changes — produces the actionable backlog for a follow-up sprint.
 2. **P2-WAVE2-A1** — Stage B Hard Capture (single agent, foreground, 1-2 hr). Spec in operator-provided prompt; Option 1 (phone-only, no verify) decision is locked. `VERIFY_METHOD=none` default.
 2. **P2-WAVE2-A2** — In-chat visit booking 4-step flow (sequential after A1, ~1 day).
 3. **P2-WAVE2-A3** — Stage-aware follow-up buttons (sequential after A2, 4 hr).
@@ -59,7 +63,7 @@ stay local.
 
 ## Verification state (last `npm run verify` baseline)
 
-- Tests: **156/156** passing (+3 PART 0 / few-shot ordering / parking-defuse invariants from P2-PROMPT-NUCLEAR)
+- Tests: **159/159** passing (+3 HALLUCINATION amenity-allowlist invariants from P2-CRITICAL-8 Bug #4)
 - Build: **clean**, /chat 300 kB, / 268 kB shared
 - Lint: clean on touched files (pre-existing warnings on untouched files OK per discipline §9)
 - Schema: `prisma validate` passes
