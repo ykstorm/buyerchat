@@ -533,134 +533,65 @@ export default function ProjectEditPage() {
             </div>
           )}
 
-          {/* Step 3: Pricing */}
+          {/* Step 3: Pricing — read-only + canonical link.
+              P2-MOBILE-PRICING (2026-04-28): the prior inline form had
+              editable inputs for pricePerSqft / minPrice / maxPrice /
+              loadingFactor / charges, but the API rejects all of these
+              with PRICING_LOCKED — the canonical surface is
+              /admin/projects/[id]/pricing (BHK Configurations table).
+              Step 3 here is now a read-only snapshot of the persisted
+              values plus a prominent "Manage pricing →" link to that
+              page. Location (lat/lng) stays editable since it isn't a
+              pricing field. See pricing-lockdown.ts. */}
           {step === 3 && (
               <div className="space-y-4">
-                {/* Warning */}
-                <div className="rounded-xl px-3 py-2.5" style={{ background: '#FEF3C7', border: '1px solid #D97706' }}>
-                  <p className="text-[11px] font-semibold text-[#92400E]">⚠ Always call builder for current price</p>
-                  <p className="text-[11px] text-[#92400E]">Never use 99acres or MagicBricks — portal prices lag 2-4 months.</p>
+                {/* Lockdown notice + canonical link */}
+                <div className="rounded-xl p-5" style={{ background: 'rgba(186,117,23,0.08)', border: '1px solid rgba(186,117,23,0.30)' }}>
+                  <p className="text-[13px] font-semibold mb-2" style={{ color: '#F5C76E' }}>
+                    Pricing managed on the dedicated pricing page
+                  </p>
+                  <p className="text-[12px] mb-4" style={{ color: '#E5C896', lineHeight: 1.55 }}>
+                    Pricing fields here are read-only. Per-BHK all-in cost,
+                    package charges, and rate updates ke liye dedicated
+                    pricing editor use karein — yahan kuch likhne ka
+                    matlab nahi.
+                  </p>
+                  <a href={`/admin/projects/${id}/pricing`}
+                    className="inline-flex items-center gap-2 text-[12px] font-medium px-4 py-2 rounded-lg transition-colors"
+                    style={{ background: '#185FA5', color: 'white' }}>
+                    Manage pricing →
+                  </a>
                 </div>
 
-                {/* Base Price */}
+                {/* Read-only snapshot of persisted pricing */}
                 <div className="rounded-xl p-4" style={{ background: '#111827', border: '1px solid rgba(255,255,255,0.07)' }}>
-                  <p className="text-[11px] font-semibold uppercase tracking-wider mb-3" style={{ color: '#4B5563' }}>Base Price</p>
-                  <div className="grid grid-cols-2 gap-3 mb-3">
-                    <div>
-                      <label className="block text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: '#4B5563' }}>Rate (₹/sqft) *</label>
-                      <input type="number" value={form.pricePerSqft} onChange={e => set('pricePerSqft', e.target.value)}
-                        className="w-full px-3 py-2 rounded-lg text-[12px] font-mono text-white outline-none"
-                        style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }} />
-                    </div>
-                    <div>
-                      <label className="block text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: '#4B5563' }}>Type</label>
-                      <div className="flex gap-2">
-                        {['SBU', 'CARPET'].map(t => (
-                          <button key={t} type="button" onClick={() => set('pricePerSqftType', t)}
-                            className="flex-1 py-2 rounded-lg text-[11px] font-semibold transition-colors"
-                            style={{ background: form.pricePerSqftType === t ? '#1B4F8A' : 'rgba(255,255,255,0.05)', color: form.pricePerSqftType === t ? 'white' : '#6B7280', border: `1px solid ${form.pricePerSqftType === t ? '#1B4F8A' : 'rgba(255,255,255,0.08)'}` }}>
-                            {t}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-3 gap-3">
-                    <div>
-                      <label className="block text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: '#4B5563' }}>Min Price (₹)</label>
-                      <input type="number" value={form.minPrice} onChange={e => set('minPrice', e.target.value)}
-                        className="w-full px-3 py-2 rounded-lg text-[12px] font-mono text-white outline-none"
-                        style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }} />
-                    </div>
-                    <div>
-                      <label className="block text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: '#4B5563' }}>Max Price (₹)</label>
-                      <input type="number" value={form.maxPrice} onChange={e => set('maxPrice', e.target.value)}
-                        className="w-full px-3 py-2 rounded-lg text-[12px] font-mono text-white outline-none"
-                        style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }} />
-                    </div>
-                    <div>
-                      <label className="block text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: '#4B5563' }}>Loading Factor</label>
-                      <input type="number" step="0.01" value={form.loadingFactor} onChange={e => set('loadingFactor', e.target.value)}
-                        className="w-full px-3 py-2 rounded-lg text-[12px] font-mono text-white outline-none"
-                        style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }} />
-                    </div>
-                  </div>
-                  {form.pricePerSqft > 0 && (
-                    <div className="mt-3 grid grid-cols-2 gap-2 text-[11px]">
-                      <div className="rounded-lg px-3 py-2" style={{ background: 'rgba(96,165,250,0.08)', border: '1px solid rgba(96,165,250,0.15)' }}>
-                        <p style={{ color: '#6B7280' }}>SBU Rate</p>
-                        <p className="font-mono font-semibold text-white">₹{form.pricePerSqftType === 'SBU' ? form.pricePerSqft.toLocaleString('en-IN') : Math.round(form.pricePerSqft / form.loadingFactor).toLocaleString('en-IN')}/sqft</p>
-                      </div>
-                      <div className="rounded-lg px-3 py-2" style={{ background: 'rgba(167,139,250,0.08)', border: '1px solid rgba(167,139,250,0.15)' }}>
-                        <p style={{ color: '#6B7280' }}>Carpet Rate</p>
-                        <p className="font-mono font-semibold text-white">₹{form.pricePerSqftType === 'CARPET' ? form.pricePerSqft.toLocaleString('en-IN') : Math.round(form.pricePerSqft * form.loadingFactor).toLocaleString('en-IN')}/sqft</p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Package Charges */}
-                <div className="rounded-xl p-4" style={{ background: '#111827', border: '1px solid rgba(255,255,255,0.07)' }}>
-                  <div className="flex items-center justify-between mb-3">
-                    <p className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: '#4B5563' }}>Package Charges</p>
-                    <button type="button"
-                      onClick={() => set('charges', [...form.charges, { name: '', rate: 0, type: 'SBU', amount: 0 }])}
-                      className="text-[10px] px-2 py-1 rounded-lg" style={{ background: 'rgba(96,165,250,0.1)', color: '#60A5FA', border: '1px solid rgba(96,165,250,0.2)' }}>
-                      + Add row
-                    </button>
-                  </div>
-                    <div className="flex flex-wrap gap-2 mt-2">
-                      {[
-                        { name: 'Club Membership', rate: 150000, type: 'FIXED' },
-                        { name: 'Car Parking', rate: 350000, type: 'FIXED' },
-                        { name: 'Legal Charges', rate: 50000, type: 'FIXED' },
-                        { name: 'AUDA/GEB', rate: 150, type: 'SBU' },
-                        { name: 'Infrastructure', rate: 200, type: 'SBU' },
-                        { name: 'Maintenance Deposit', rate: 50, type: 'CARPET' },
-                      ].map(preset => (
-                        <button key={preset.name} type="button"
-                          onClick={() => set('charges', [...form.charges, { ...preset, amount: preset.type === 'FIXED' ? preset.rate : 0 }])}
-                          className="text-[10px] px-2 py-1 rounded-lg transition-colors"
-                          style={{ background: 'rgba(96,165,250,0.08)', color: '#60A5FA', border: '1px solid rgba(96,165,250,0.15)' }}>
-                          + {preset.name}
-                        </button>
-                      ))}
-                    </div>
-                  {form.charges.length === 0 && (
-                    <p className="text-[11px] text-center py-3" style={{ color: '#4B5563' }}>No charges added. Click + Add row.</p>
-                  )}
-                  <div className="space-y-2">
-                    {form.charges.map((charge, i) => (
-                      <div key={i} className="grid gap-2" style={{ gridTemplateColumns: '1fr 80px 90px 70px 24px' }}>
-                        <input placeholder="Charge name" value={charge.name}
-                          onChange={e => { const c = [...form.charges]; c[i] = { ...c[i], name: e.target.value }; set('charges', c) }}
-                          className="px-2 py-1.5 rounded-lg text-[11px] text-white outline-none"
-                          style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }} />
-                        <input type="number" placeholder="Rate" value={charge.rate}
-                          onChange={e => { const c = [...form.charges]; c[i] = { ...c[i], rate: Number(e.target.value), amount: charge.type === 'FIXED' ? Number(e.target.value) : 0 }; set('charges', c) }}
-                          className="px-2 py-1.5 rounded-lg text-[11px] font-mono text-white outline-none"
-                          style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }} />
-                        <select value={charge.type}
-                          onChange={e => { const c = [...form.charges]; c[i] = { ...c[i], type: e.target.value }; set('charges', c) }}
-                          className="px-2 py-1.5 rounded-lg text-[11px] text-white outline-none"
-                          style={{ background: '#1F2937', border: '1px solid rgba(255,255,255,0.08)' }}>
-                          <option value="SBU">₹/sqft SBU</option>
-                          <option value="CARPET">₹/sqft Carpet</option>
-                          <option value="FIXED">Fixed ₹</option>
-                        </select>
-                        <span className="text-[10px] font-mono flex items-center" style={{ color: '#34D399' }}>
-                          ₹{charge.type === 'FIXED' ? (charge.rate/100000).toFixed(1) : '—'}L
-                        </span>
-                        <button type="button" onClick={() => { const c = [...form.charges]; c.splice(i, 1); set('charges', c) }}
-                          className="text-[#F87171] text-[14px] flex items-center justify-center">×</button>
+                  <p className="text-[11px] font-semibold uppercase tracking-wider mb-3" style={{ color: '#4B5563' }}>Persisted pricing (read-only)</p>
+                  <div className="grid grid-cols-2 gap-3 text-[12px]">
+                    {[
+                      ['Rate (₹/sqft)', form.pricePerSqft ? `₹${Number(form.pricePerSqft).toLocaleString('en-IN')}` : '—'],
+                      ['Type', form.pricePerSqftType || '—'],
+                      ['Min Price (₹)', form.minPrice ? `₹${Number(form.minPrice).toLocaleString('en-IN')}` : '—'],
+                      ['Max Price (₹)', form.maxPrice ? `₹${Number(form.maxPrice).toLocaleString('en-IN')}` : '—'],
+                      ['Loading Factor', form.loadingFactor || '—'],
+                      ['Package charges', form.charges?.length ? `${form.charges.length} row${form.charges.length === 1 ? '' : 's'}` : 'None'],
+                    ].map(([label, value]) => (
+                      <div key={label} className="flex justify-between gap-3 py-1.5" style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                        <span className="text-[11px]" style={{ color: '#6B7280' }}>{label}</span>
+                        <span className="font-mono text-right" style={{ color: '#D1D5DB' }}>{value}</span>
                       </div>
                     ))}
                   </div>
+                  {allIn > 0 && (
+                    <div className="mt-3 pt-3 flex justify-between" style={{ borderTop: '1px solid rgba(52,211,153,0.2)' }}>
+                      <span className="text-[11px] font-semibold" style={{ color: '#34D399' }}>All-in estimate</span>
+                      <span className="font-mono font-bold text-[12px]" style={{ color: '#34D399' }}>{formatIndianCurrency(allIn)}</span>
+                    </div>
+                  )}
                 </div>
 
-                {/* Location */}
+                {/* Location — still editable, not a pricing field */}
                 <div className="rounded-xl p-4" style={{ background: '#111827', border: '1px solid rgba(255,255,255,0.07)' }}>
-                  <p className="text-[11px] font-semibold uppercase tracking-wider mb-3" style={{ color: '#4B5563' }}>Location</p>
+                  <p className="text-[11px] font-semibold uppercase tracking-wider mb-3" style={{ color: '#4B5563' }}>Location (Map coordinates)</p>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className="block text-[10px] uppercase tracking-wider mb-1" style={{ color: '#4B5563' }}>Latitude</label>
@@ -676,30 +607,6 @@ export default function ProjectEditPage() {
                     </div>
                   </div>
                 </div>
-
-                {/* ALL-IN summary */}
-                {form.minPrice > 0 && (
-                  <div className="rounded-xl p-4" style={{ background: 'rgba(52,211,153,0.06)', border: '1px solid rgba(52,211,153,0.2)' }}>
-                    <p className="text-[11px] font-semibold uppercase tracking-wider mb-3" style={{ color: '#34D399' }}>ALL-IN Estimate</p>
-                    <div className="space-y-1.5 text-[11px]">
-                      {[
-                        { label: 'Base price', value: form.minPrice },
-                        { label: '+ GST 5%', value: Math.round(form.minPrice * 0.05) },
-                        { label: '+ Stamp duty 6.5%', value: Math.round(form.minPrice * 0.065) },
-                        { label: '+ Registration 1%', value: Math.round(form.minPrice * 0.01) },
-                      ].map(row => (
-                        <div key={row.label} className="flex justify-between">
-                          <span style={{ color: '#6B7280' }}>{row.label}</span>
-                          <span className="font-mono" style={{ color: '#D1D5DB' }}>₹{row.value.toLocaleString('en-IN')}</span>
-                        </div>
-                      ))}
-                      <div className="flex justify-between pt-2 mt-1" style={{ borderTop: '1px solid rgba(52,211,153,0.2)' }}>
-                        <span className="font-semibold" style={{ color: '#34D399' }}>ALL-IN Total</span>
-                        <span className="font-mono font-bold" style={{ color: '#34D399' }}>{formatIndianCurrency(allIn)}</span>
-                      </div>
-                    </div>
-                  </div>
-                )}
               </div>
           )}
 

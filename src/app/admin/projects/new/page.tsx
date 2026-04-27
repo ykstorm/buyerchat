@@ -464,58 +464,63 @@ export default function ProjectEditPage() {
             </div>
           )}
 
-          {/* Step 3: Pricing */}
+          {/* Step 3: Pricing — skip panel.
+              P2-MOBILE-PRICING (2026-04-28): the prior inline form let
+              Mama type 0 into pricePerSqft/minPrice/maxPrice and submit;
+              the API silently rejected the pricing fields with PRICING_LOCKED
+              (see handleSave) but the UI showed no error, so she thought
+              the project saved with pricing. The canonical surface is
+              /admin/projects/[id]/pricing which renders the BHK
+              configurations table, and the wizard's final-submit redirect
+              already goes there (line 273). Step 3 in the wizard is now a
+              non-input panel directing her to skip and complete pricing
+              on the dedicated page after save. The 2 location fields
+              (latitude/longitude) move to the same panel since they are
+              the only non-pricing inputs the old Step 3 carried. */}
           {step === 3 && (
-            <div className="rounded-xl p-4" style={{ background: '#111827', border: '1px solid rgba(255,255,255,0.07)' }}>
-              <p className="text-[12px] font-medium text-white mb-1">Step 3 — Pricing</p>
-              <div className="bg-[#FAEEDA] border border-[#BA7517]/30 rounded-lg px-3 py-2 mb-4">
-                <p className="text-[11px] font-medium text-[#633806]">⚠ Always call builder for current price</p>
-                <p className="text-[11px] text-[#633806]">Never use 99acres or MagicBricks price — portal prices lag by 2–4 months. Wrong price = wrong buyer recommendation.</p>
+            <div className="space-y-4">
+              <div className="rounded-xl p-5" style={{ background: 'rgba(186,117,23,0.08)', border: '1px solid rgba(186,117,23,0.30)' }}>
+                <p className="text-[13px] font-semibold mb-2" style={{ color: '#F5C76E' }}>
+                  Pricing is entered AFTER the project is created
+                </p>
+                <p className="text-[12px] mb-3" style={{ color: '#E5C896', lineHeight: 1.55 }}>
+                  Yeh step skip kar sakte hain. Project save hone ke baad,
+                  pricing ka ek dedicated page milega jahan aap har BHK ka
+                  all-in cost (base + GST + stamp duty + parking + club
+                  membership + maintenance) set kar sakte hain.
+                </p>
+                <p className="text-[11px]" style={{ color: '#9C8362' }}>
+                  Yahan kuch likhne ki zaroorat nahi — pricing fields silently
+                  reject ho jaate hain. Niche &quot;Skip Pricing&quot; click karein.
+                </p>
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: '#4B5563' }}>Base price per sqft (₹) — CALL BUILDER *</label>
-                  <input type="number" value={form.pricePerSqft} onChange={e => set('pricePerSqft', e.target.value)}
-                    className="w-full rounded-lg px-3 py-2 text-[12px] font-mono text-white outline-none" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }} />
-                </div>
-                <div>
-                  <label className="block text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: '#4B5563' }}>Min price (₹)</label>
-                  <input type="number" value={form.minPrice} onChange={e => set('minPrice', e.target.value)}
-                    className="w-full rounded-lg px-3 py-2 text-[12px] font-mono text-white outline-none" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }} />
-                </div>
-                <div>
-                  <label className="block text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: '#4B5563' }}>Max price (₹)</label>
-                  <input type="number" value={form.maxPrice} onChange={e => set('maxPrice', e.target.value)}
-                    className="w-full rounded-lg px-3 py-2 text-[12px] font-mono text-white outline-none" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }} />
-                </div>
-                <div>
-                  <label className="block text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: '#4B5563' }}>Latitude</label>
-                  <input type="number" step="0.0001" value={form.latitude} onChange={e => set('latitude', e.target.value)}
-                    className="w-full rounded-lg px-3 py-2 text-[12px] font-mono text-white outline-none" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }} />
-                </div>
-                <div>
-                  <label className="block text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: '#4B5563' }}>Longitude</label>
-                  <input type="number" step="0.0001" value={form.longitude} onChange={e => set('longitude', e.target.value)}
-                    className="w-full rounded-lg px-3 py-2 text-[12px] font-mono text-white outline-none" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }} />
-                </div>
-              </div>
-              {allIn > 0 && (
-                <div className="mt-4 bg-white/10 rounded-lg p-3">
-                  <p className="text-[11px] font-medium text-white mb-2">Auto-calculated all-in estimate</p>
-                  <div className="grid grid-cols-2 gap-2 text-[11px]">
-                    <span className="text-[#9CA3AF]">Base price</span>
-                    <span className="font-mono text-right">₹{Number(form.minPrice).toLocaleString('en-IN')}</span>
-                    <span className="text-[#9CA3AF]">+ GST 5%</span>
-                    <span className="font-mono text-right">₹{Math.round(form.minPrice * 0.05).toLocaleString('en-IN')}</span>
-                    <span className="text-[#9CA3AF]">+ Stamp duty 6.5%</span>
-                    <span className="font-mono text-right">₹{Math.round(form.minPrice * 0.065).toLocaleString('en-IN')}</span>
-                    <span className="text-[#9CA3AF]">+ Registration 1%</span>
-                    <span className="font-mono text-right">₹{Math.round(form.minPrice * 0.01).toLocaleString('en-IN')}</span>
-                    <span className="font-semibold text-white border-t border-[#E4E4E7] pt-1">All-in total</span>
-                    <span className="font-mono font-semibold text-[#185FA5] border-t border-[#E4E4E7] pt-1 text-right">₹{allIn.toLocaleString('en-IN')}</span>
+
+              <div className="rounded-xl p-4" style={{ background: '#111827', border: '1px solid rgba(255,255,255,0.07)' }}>
+                <p className="text-[11px] font-semibold uppercase tracking-wider mb-3" style={{ color: '#4B5563' }}>Location (Map coordinates)</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[10px] uppercase tracking-wider mb-1" style={{ color: '#4B5563' }}>Latitude</label>
+                    <input type="number" step="0.0001" value={form.latitude} onChange={e => set('latitude', e.target.value)}
+                      className="w-full rounded-lg px-3 py-2 text-[12px] font-mono text-white outline-none" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }} />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] uppercase tracking-wider mb-1" style={{ color: '#4B5563' }}>Longitude</label>
+                    <input type="number" step="0.0001" value={form.longitude} onChange={e => set('longitude', e.target.value)}
+                      className="w-full rounded-lg px-3 py-2 text-[12px] font-mono text-white outline-none" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }} />
                   </div>
                 </div>
-              )}
+              </div>
+
+              <div className="flex items-center justify-between gap-2">
+                <button type="button" onClick={() => setStep(s => Math.max(1, s - 1))}
+                  className="text-[12px] text-[#9CA3AF] border border-white/10 px-4 py-2 rounded-lg hover:bg-white/5 transition-colors">
+                  ← Back
+                </button>
+                <button type="button" onClick={() => setStep(4)}
+                  className="text-[12px] bg-[#185FA5] text-white px-4 py-2 rounded-lg hover:bg-[#0C447C] transition-colors font-medium">
+                  Skip Pricing — Set Later →
+                </button>
+              </div>
             </div>
           )}
 
