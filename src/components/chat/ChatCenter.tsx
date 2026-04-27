@@ -755,7 +755,12 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
         </div>
       )}
 
-      <div className="backdrop-blur-sm px-4 py-3 sticky bottom-0 z-50 flex-shrink-0" style={{ borderTop: '1px solid var(--border-subtle)', background: 'color-mix(in srgb, var(--bg-base) 90%, transparent)', paddingBottom: 'max(16px, env(safe-area-inset-bottom))' }}>
+      {/* Input wrapper paddingBottom = max of safe-area inset and the iOS
+          keyboard height written to --keyboard-height by chat-client.tsx's
+          visualViewport listener. Keeps the input visible above the soft
+          keyboard on iOS (where h-dvh + sticky-bottom does not always
+          re-flow on focus). transition-padding-* keeps the slide smooth. */}
+      <div className="backdrop-blur-sm px-4 py-3 sticky bottom-0 z-50 flex-shrink-0" style={{ borderTop: '1px solid var(--border-subtle)', background: 'color-mix(in srgb, var(--bg-base) 90%, transparent)', paddingBottom: 'max(16px, env(safe-area-inset-bottom), var(--keyboard-height, 0px))', transition: 'padding-bottom 0.12s ease' }}>
         <form onSubmit={handleSubmit} className="flex gap-2 items-center">
           <input
             value={input}

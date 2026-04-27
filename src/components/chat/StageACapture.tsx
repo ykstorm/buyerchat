@@ -141,7 +141,8 @@ export default function StageACapture({ sessionId, onComplete }: Props) {
             onChange={(e) => setName(e.target.value.slice(0, 50))}
             disabled={saving}
             placeholder="Aapka naam"
-            className="mt-1 w-full px-3 py-2 rounded-lg text-[13px] outline-none focus:ring-2"
+            // text-[16px] on mobile defeats iOS Safari auto-zoom on focus.
+            className="mt-1 w-full px-3 py-2 rounded-lg text-[16px] md:text-[13px] outline-none focus:ring-2"
             style={{
               background: 'var(--bg-base)',
               border: '1px solid var(--border)',
@@ -181,7 +182,7 @@ export default function StageACapture({ sessionId, onComplete }: Props) {
               onChange={(e) => setPhone(digitsOnly(e.target.value))}
               disabled={saving}
               placeholder="10 digit number"
-              className="flex-1 px-3 py-2 text-[13px] bg-transparent outline-none"
+              className="flex-1 px-3 py-2 text-[16px] md:text-[13px] bg-transparent outline-none"
               style={{ color: 'var(--text-primary)' }}
               autoComplete="tel-national"
               aria-invalid={phone.length > 0 && !phoneValid}

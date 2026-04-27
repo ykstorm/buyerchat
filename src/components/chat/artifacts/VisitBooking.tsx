@@ -259,14 +259,15 @@ export function VisitBooking({ projectId, projectName }: VisitBookingProps) {
           <div className="flex flex-col gap-2 mb-4">
             <input type="text" placeholder="Your name" value={name}
               onChange={e => setName(e.target.value)}
-              className="w-full px-3 py-2.5 rounded-xl text-[14px] focus:outline-none focus:ring-2 focus:ring-[#1B4F8A]/15 focus:border-[#1B4F8A]/50 transition-all"
+              // text-[16px] on mobile defeats iOS Safari auto-zoom on focus.
+              className="w-full px-3 py-2.5 rounded-xl text-[16px] md:text-[14px] focus:outline-none focus:ring-2 focus:ring-[#1B4F8A]/15 focus:border-[#1B4F8A]/50 transition-all"
               style={{ background: 'var(--bg-input)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
             />
             <div className="flex gap-2">
               <span className="flex items-center px-3 rounded-xl text-sm flex-shrink-0" style={{ border: '1px solid var(--border)', color: 'var(--text-secondary)', background: 'var(--bg-surface)' }}>+91</span>
               <input type="tel" placeholder="10-digit number" value={phone} maxLength={10}
                 onChange={e => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
-                className="flex-1 px-3 py-2.5 rounded-xl text-[14px] focus:outline-none focus:ring-2 focus:ring-[#1B4F8A]/15 focus:border-[#1B4F8A]/50 transition-all"
+                className="flex-1 px-3 py-2.5 rounded-xl text-[16px] md:text-[14px] focus:outline-none focus:ring-2 focus:ring-[#1B4F8A]/15 focus:border-[#1B4F8A]/50 transition-all"
                 style={{ background: 'var(--bg-input)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
               />
             </div>

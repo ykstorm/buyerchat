@@ -58,6 +58,37 @@ export default function ChatClient({
 
   useEffect(() => { if (artifact) setShowArtifact(true) }, [artifact])
 
+  // P2-MOBILE-PRICING — iOS Safari keyboard handling.
+  // h-dvh on the chat surface is supposed to track the dynamic viewport
+  // and shrink when the soft keyboard opens. In practice, iOS Safari does
+  // not consistently re-flow sticky-bottom elements on focus, leaving the
+  // chat input bar partially obscured. Fix: read window.visualViewport's
+  // delta against window.innerHeight, write it as --keyboard-height on
+  // <html>, and let the input wrapper add it to its bottom padding.
+  // This keeps the input visible above the keyboard on iOS, and is a
+  // no-op on browsers without visualViewport (Android Chrome already
+  // re-flows correctly via dvh + interactive-widget=resizes-content).
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const vv = window.visualViewport
+    if (!vv) return
+
+    const update = () => {
+      const kbH = Math.max(0, window.innerHeight - vv.height - vv.offsetTop)
+      document.documentElement.style.setProperty('--keyboard-height', `${kbH}px`)
+    }
+
+    vv.addEventListener('resize', update)
+    vv.addEventListener('scroll', update)
+    update()
+
+    return () => {
+      vv.removeEventListener('resize', update)
+      vv.removeEventListener('scroll', update)
+      document.documentElement.style.removeProperty('--keyboard-height')
+    }
+  }, [])
+
   useEffect(() => {
     const handler = (e: Event) => {
       const { projectId } = (e as CustomEvent).detail
