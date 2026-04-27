@@ -5,10 +5,12 @@
 
 ## Last updated
 
-2026-04-27 18:30 IST — P2-CHIPS-DASHBOARD: chip MARKDOWN_ABORT + PROJECT_LIMIT + Playfair font + landing dead links
+2026-04-27 20:10 IST — P2-DASHBOARD-SITE-REVAMP: dashboard rebuild + site-wide animation polish
 
 ## What just shipped (most recent first)
 
+- `1dfe508` — feat(animations): site-wide motion polish — projects stagger, chat msg spring, right-panel slide, button tap, page fade, empty-state cascade (P2-DASHBOARD-SITE-REVAMP Parts 2+3)
+- `8699838` — feat(dashboard): full rebuild — warm luxury editorial, gold serif, stagger, DB-wired, zero dead links (P2-DASHBOARD-SITE-REVAMP Part 1)
 - `d721750` — fix(chat+ui): chips → card-producing queries + PROJECT_LIMIT cap + Playfair font + landing dead links (P2-CHIPS-DASHBOARD)
 - `cbaf883` — docs(handoff): P2-CRITICAL-8 landed (6 bugs)
 - `675ea2d` — fix(ui): remove FloatingChatWidget — Book Visit redirect replaces its purpose
@@ -43,8 +45,8 @@ stay local.
 
 ## What's queued (priority order)
 
-0. **Re-test on prod after auto-deploy of `675ea2d`** — verify in Sentry that NO_MARKDOWN drops, OTP_FABRICATION drops, result.onError drops (timeout fallback now graceful), and HALLUCINATION false-positives on real amenity names disappear.
-1. **P2-CLEANUP-AUDIT (read-only sprint)** — operator asked for: (a) dead workflow + dead-API-route audit, (b) account-deletion / buyer-data-purge feature spec, (c) animation pass on dashboard, (d) project detail page UI consistency review (operator says "first one still old"). Output: docs/diagnostics/cleanup-audit-apr27.md. Read-only, no code changes — produces the actionable backlog for a follow-up sprint.
+0. **Re-test on prod after auto-deploy of `1dfe508`** — verify on prod (a) /dashboard renders new warm luxury layout, gold serif greeting, stagger-in shortlist cards (b) /projects cards spring stagger on mount (c) /chat new AI msg fades in, empty-state chips scale-in with gold hover (d) right panel artifact slides in, no flash-of-white on nav. Sentry: still expect NO_MARKDOWN drops, OTP_FABRICATION drops, result.onError drops (timeout fallback graceful), HALLUCINATION false-positives on real amenity names gone — pending operator confirmation from earlier `675ea2d` deploy too.
+1. **P2-CLEANUP-AUDIT (read-only sprint)** — operator asked for: (a) dead workflow + dead-API-route audit, (b) account-deletion / buyer-data-purge feature spec, (c) project detail page UI consistency review (operator says "first one still old"). Output: docs/diagnostics/cleanup-audit-apr27.md. Read-only, no code changes — produces the actionable backlog for a follow-up sprint. NOTE: dashboard animation pass (item c on the original plan) is now COMPLETE per this sprint.
 2. **P2-WAVE2-A1** — Stage B Hard Capture (single agent, foreground, 1-2 hr). Spec in operator-provided prompt; Option 1 (phone-only, no verify) decision is locked. `VERIFY_METHOD=none` default.
 2. **P2-WAVE2-A2** — In-chat visit booking 4-step flow (sequential after A1, ~1 day).
 3. **P2-WAVE2-A3** — Stage-aware follow-up buttons (sequential after A2, 4 hr).
@@ -65,8 +67,8 @@ stay local.
 
 ## Verification state (last `npm run verify` baseline)
 
-- Tests: **159/159** passing (+3 HALLUCINATION amenity-allowlist invariants from P2-CRITICAL-8 Bug #4)
-- Build: **clean**, /chat 300 kB, / 268 kB shared
+- Tests: **159/159** passing (no test changes this sprint — animation polish + dashboard rebuild are pure UI)
+- Build: **clean**, /chat 49.9 kB route / 300 kB first-load (was 49.5/300 — +0.4 kB route, shared unchanged), /dashboard 7.91 kB / 275 kB (was 8.41/276), /projects 3.66 kB / 253 kB (was 3.29/267 — LazyMotion saved ~14 kB first-load)
 - Lint: clean on touched files (pre-existing warnings on untouched files OK per discipline §9)
 - Schema: `prisma validate` passes
 - Sentry: 5 issues open — JS-NEXTJS-K/E/J pending operator-resolution (closed by recent commits per `docs/diagnostics/sentry-resolution-log-2026-04-26.md`); JS-NEXTJS-B (NO_MARKDOWN) and JS-NEXTJS-9 (RERA timeout) intentionally audit-only
