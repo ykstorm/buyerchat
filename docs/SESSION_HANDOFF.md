@@ -5,10 +5,12 @@
 
 ## Last updated
 
-2026-04-27 16:39 IST — P2-CRITICAL-8: 6 live prod bugs (NO_MARKDOWN, FAKE_VISIT, timeouts, amenity FP, Book Visit, floating widget)
+2026-04-27 18:30 IST — P2-CHIPS-DASHBOARD: chip MARKDOWN_ABORT + PROJECT_LIMIT + Playfair font + landing dead links
 
 ## What just shipped (most recent first)
 
+- `d721750` — fix(chat+ui): chips → card-producing queries + PROJECT_LIMIT cap + Playfair font + landing dead links (P2-CHIPS-DASHBOARD)
+- `cbaf883` — docs(handoff): P2-CRITICAL-8 landed (6 bugs)
 - `675ea2d` — fix(ui): remove FloatingChatWidget — Book Visit redirect replaces its purpose
 - `71b1203` — feat(chat): Book Visit redirects to /chat with prefilled+autosend message (project page + book-visit event)
 - `5d28e47` — fix(chat-api): bump abort timeout 15s→25s + recognise timeout vs leak + buyer Hinglish fallback
