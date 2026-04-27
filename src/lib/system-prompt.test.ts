@@ -35,6 +35,44 @@ const baseCtx = {
 }
 
 describe('v3 system prompt — PART invariants', () => {
+  it('PART 0 ABSOLUTE RULES: appears before Master Formula and lists Rules A-F', () => {
+    const prompt = buildSystemPrompt(baseCtx)
+    // The "ABSOLUTE RULES" header must come before the Master Formula header
+    // (P2-PROMPT-NUCLEAR contract — front-load the hard stops).
+    const absIdx = prompt.indexOf('PART 0 — ABSOLUTE RULES')
+    const masterIdx = prompt.indexOf('MASTER FORMULA')
+    expect(absIdx).toBeGreaterThan(-1)
+    expect(masterIdx).toBeGreaterThan(absIdx)
+    // All six rule labels are present.
+    expect(prompt).toContain('RULE A — OUTPUT FORMAT')
+    expect(prompt).toContain('RULE B — VISIT BOOKING')
+    expect(prompt).toContain('RULE C — OTP PROHIBITION')
+    expect(prompt).toContain('RULE D — AMENITY NAMES')
+    expect(prompt).toContain('RULE E — NO FIRST PERSON')
+    expect(prompt).toContain('RULE F — CARD CONTRACT')
+  })
+
+  it('PART 16 few-shots: EXAMPLE 17 + 18 appear BEFORE Example 1', () => {
+    const prompt = buildSystemPrompt(baseCtx)
+    const ex17 = prompt.indexOf('EXAMPLE 17 — Hinglish budget+config')
+    const ex18 = prompt.indexOf('EXAMPLE 18 — Visit-booking name+phone')
+    const ex1 = prompt.indexOf('EXAMPLE 1 — Family buyer opening')
+    expect(ex17).toBeGreaterThan(-1)
+    expect(ex18).toBeGreaterThan(-1)
+    expect(ex1).toBeGreaterThan(-1)
+    expect(ex17).toBeLessThan(ex1)
+    expect(ex18).toBeLessThan(ex1)
+  })
+
+  it('PART 7: visit-checklist no longer says "parking allocation" as a thing to confirm', () => {
+    const prompt = buildSystemPrompt(baseCtx)
+    // The phrase "parking allocation confirm karna" was the source of the
+    // Sentry "Parking Allocation" HALLUCINATION event (the model read the
+    // visit checklist as an amenities list). Replaced by the safer phrasing.
+    expect(prompt).toContain('parking space ka arrangement seedha builder se confirm karna')
+    expect(prompt).not.toMatch(/parking allocation confirm karna/i)
+  })
+
   it('PART 2: emits the canonical Hinglish opener verbatim', () => {
     const prompt = buildSystemPrompt(baseCtx)
     expect(prompt).toContain(

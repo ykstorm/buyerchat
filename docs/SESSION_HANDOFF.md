@@ -5,10 +5,11 @@
 
 ## Last updated
 
-2026-04-27 05:25 IST — P2-CRITICAL-7: 6 live prod bugs fixed (Bugs 1-6)
+2026-04-27 14:49 IST — P2-PROMPT-NUCLEAR: PART 0 absolute rules + reorder PART 16 + parking defuse + 3 invariant tests
 
 ## What just shipped (most recent first)
 
+- `54561c1` — fix(prompt): NUCLEAR — PART 0 absolute rules at very top, EXAMPLE 17+18 first in PART 16, "parking allocation" → "parking space arrangement", result.onError noise traced to MARKDOWN_ABORT (resolves once bullets stop)
 - `8f4e453` — fix(compare): accept ?ids=a,b,c URL preselect — future Compare CTAs / shareable links work
 - `85d2aac` — fix(ui): floating chat only on /projects/[id] — was cluttering listing/profile/compare pages
 - `b03cd63` — fix(nav): remove /builders index link — only /builders/[id] dynamic route exists
@@ -55,7 +56,7 @@ stay local.
 
 ## Verification state (last `npm run verify` baseline)
 
-- Tests: **153/153** passing (+5 OTP/PART7/PART9 invariants from P2-CRITICAL-7)
+- Tests: **156/156** passing (+3 PART 0 / few-shot ordering / parking-defuse invariants from P2-PROMPT-NUCLEAR)
 - Build: **clean**, /chat 300 kB, / 268 kB shared
 - Lint: clean on touched files (pre-existing warnings on untouched files OK per discipline §9)
 - Schema: `prisma validate` passes
