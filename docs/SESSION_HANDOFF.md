@@ -5,10 +5,12 @@
 
 ## Last updated
 
-2026-04-27 20:10 IST — P2-DASHBOARD-SITE-REVAMP: dashboard rebuild + site-wide animation polish
+2026-04-28 01:35 IST — P2-MOBILE-PRICING: admin pricing UI fix (both surfaces) + iOS keyboard height fix
 
 ## What just shipped (most recent first)
 
+- `99e5c49` — fix(chat): iOS keyboard height — visualViewport listener + paddingBottom + 16px input fonts (P2-MOBILE-PRICING Bug 2)
+- `fee4e6e` — fix(admin): /new + /[id] pricing step → skip / read-only + canonical pricing link (P2-MOBILE-PRICING Bug 1) — Mama landed on Step 3, saw editable BASE PRICE/MIN/MAX, typed 0s, submitted; API silently rejected pricing fields. Both wizard surfaces now redirect to canonical /admin/projects/[id]/pricing.
 - `1dfe508` — feat(animations): site-wide motion polish — projects stagger, chat msg spring, right-panel slide, button tap, page fade, empty-state cascade (P2-DASHBOARD-SITE-REVAMP Parts 2+3)
 - `8699838` — feat(dashboard): full rebuild — warm luxury editorial, gold serif, stagger, DB-wired, zero dead links (P2-DASHBOARD-SITE-REVAMP Part 1)
 - `d721750` — fix(chat+ui): chips → card-producing queries + PROJECT_LIMIT cap + Playfair font + landing dead links (P2-CHIPS-DASHBOARD)
@@ -45,7 +47,11 @@ stay local.
 
 ## What's queued (priority order)
 
-0. **Re-test on prod after auto-deploy of `1dfe508`** — verify on prod (a) /dashboard renders new warm luxury layout, gold serif greeting, stagger-in shortlist cards (b) /projects cards spring stagger on mount (c) /chat new AI msg fades in, empty-state chips scale-in with gold hover (d) right panel artifact slides in, no flash-of-white on nav. Sentry: still expect NO_MARKDOWN drops, OTP_FABRICATION drops, result.onError drops (timeout fallback graceful), HALLUCINATION false-positives on real amenity names gone — pending operator confirmation from earlier `675ea2d` deploy too.
+0. **Re-test on prod after auto-deploy of `99e5c49` + `fee4e6e`** — verify (a) /admin/projects/new Step 3 shows the warm-amber "Pricing entered AFTER project is created" panel, no editable price inputs, the "Skip Pricing — Set Later →" button advances to Step 4 (b) Final submit on /new redirects to /admin/projects/[id]/pricing (the BHK Configurations table page) (c) /admin/projects/[id] Step 3 shows read-only persisted pricing snapshot + "Manage pricing →" button to canonical surface (d) On iPhone Safari, opening /chat and tapping the input keeps the input bar visible above the keyboard, no zoom-on-focus. Plus continued P2-DASHBOARD-SITE-REVAMP smoke (dashboard layout, /projects stagger, chat msg fade, no flash-of-white). Sentry checks per earlier `1dfe508` re-test still owed.
+
+   **MAMA — REDO PRICING:** Whatever projects she created in the last 24h
+   were saved with pricing fields silently rejected. She must
+   re-enter pricing for each project on /admin/projects/[id]/pricing.
 1. **P2-CLEANUP-AUDIT (read-only sprint)** — operator asked for: (a) dead workflow + dead-API-route audit, (b) account-deletion / buyer-data-purge feature spec, (c) project detail page UI consistency review (operator says "first one still old"). Output: docs/diagnostics/cleanup-audit-apr27.md. Read-only, no code changes — produces the actionable backlog for a follow-up sprint. NOTE: dashboard animation pass (item c on the original plan) is now COMPLETE per this sprint.
 2. **P2-WAVE2-A1** — Stage B Hard Capture (single agent, foreground, 1-2 hr). Spec in operator-provided prompt; Option 1 (phone-only, no verify) decision is locked. `VERIFY_METHOD=none` default.
 2. **P2-WAVE2-A2** — In-chat visit booking 4-step flow (sequential after A1, ~1 day).
@@ -67,15 +73,16 @@ stay local.
 
 ## Verification state (last `npm run verify` baseline)
 
-- Tests: **159/159** passing (no test changes this sprint — animation polish + dashboard rebuild are pure UI)
-- Build: **clean**, /chat 49.9 kB route / 300 kB first-load (was 49.5/300 — +0.4 kB route, shared unchanged), /dashboard 7.91 kB / 275 kB (was 8.41/276), /projects 3.66 kB / 253 kB (was 3.29/267 — LazyMotion saved ~14 kB first-load)
+- Tests: **159/159** passing (no test changes — both bugs are UI/CSS hygiene)
+- Build: **clean**. /chat 49.9 → 50.1 kB route / 300 → 301 kB first-load (+0.2 kB route from visualViewport listener). /admin/projects/new 6.77 kB route / 223 kB (down ~1.6 kB from removing the editable pricing form). /admin/projects/[id] 8.63 kB route / 225 kB (down ~1 kB from same).
 - Lint: clean on touched files (pre-existing warnings on untouched files OK per discipline §9)
 - Schema: `prisma validate` passes
 - Sentry: 5 issues open — JS-NEXTJS-K/E/J pending operator-resolution (closed by recent commits per `docs/diagnostics/sentry-resolution-log-2026-04-26.md`); JS-NEXTJS-B (NO_MARKDOWN) and JS-NEXTJS-9 (RERA timeout) intentionally audit-only
 
 ## Mama's last test session
 
-- Pricing entry workflow not yet retested by Mama post-lockdown commit `129d220`.
+- **2026-04-28 ~01:04 IST** — Mama tried /admin/projects/new and was caught by the duplicate-surface bug (Step 3 had editable price inputs that the API silently rejected). She entered 0s and submitted; projects from last 24h have no real pricing. Fix `fee4e6e` lands her on /admin/projects/[id]/pricing post-create from now on. **She must redo pricing for projects created in the gap.**
+- Pricing entry workflow on the canonical /admin/projects/[id]/pricing page not yet retested by Mama post-lockdown commit `129d220`.
 - 3 unverified `analystNote` rows still pending review per `docs/diagnostics/insider-note-mama-review.md` (Riviera Bliss, Shaligram Pride, Vishwanath Sarathya West).
 
 ## Latest production deployment
