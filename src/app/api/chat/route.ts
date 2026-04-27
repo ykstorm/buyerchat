@@ -18,6 +18,11 @@ import { z } from 'zod'
 import * as Sentry from '@sentry/nextjs'
 
 const STREAM_ABORT_FALLBACK = 'Dekho, kuch problem hui. Dubara try karein.'
+// P2-CRITICAL-8 Bug #3 — separate buyer-facing fallback for genuine stream
+// errors (timeout, OpenAI 5xx, network blip). Distinct from leak/markdown
+// abort fallback so the operator can tell them apart in Sentry.
+const STREAM_TIMEOUT_FALLBACK =
+  'Response thoda slow ho raha hai — sawaal dubara puchein ya thoda specific batayein.'
 const CONTACT_LEAK_ABORT_MSG = 'Contact information leak detected'
 const BUSINESS_LEAK_ABORT_MSG = 'Business information leak detected'
 const MARKDOWN_ABORT_MSG = 'Markdown formatting detected'
@@ -226,6 +231,12 @@ if (hasInjection) {
   // partial/empty assistant message and the response wrapper will deliver the
   // Hinglish fallback instead of the (possibly leaky) partial content.
   let streamAbortedByLeak = false
+  // P2-CRITICAL-8 Bug #3 — track non-leak stream errors (timeout, OpenAI
+  // 5xx, network) so the wrapper can serve a Hinglish fallback to the buyer
+  // instead of an empty body. Without this, Sentry's onError fires AND the
+  // wrapper's reader.read() throws, double-counting the same incident.
+  let streamHadError = false
+  let streamErrorKind: 'leak' | 'markdown' | 'timeout' | 'unknown' | null = null
   // Separate flag for markdown abort — same behavior (fallback + skip persist)
   // but a distinct Sentry tag so admins can distinguish format drift from
   // the stricter contact/business leak aborts.
@@ -253,7 +264,13 @@ if (hasInjection) {
     messages: cappedMessages,
     temperature: 0.3,
     maxOutputTokens: 500,
-    abortSignal: AbortSignal.timeout(15_000),
+    // P2-CRITICAL-8 Bug #3 — bumped 15s → 25s. Cold gpt-4o + ~12K-token
+    // system prompt (PART 0 + 14 numbered parts + RAG block + persona +
+    // FINAL REMINDER) regularly takes 8-14s for first token. The old 15s
+    // ceiling was firing on legit cost-breakdown / "kal 10" turns and
+    // surfacing as result.onError noise in Sentry. 25s is enough headroom
+    // for cold + slow turns without leaving truly stuck requests pinned.
+    abortSignal: AbortSignal.timeout(25_000),
     onChunk: async ({ chunk }) => {
       if (chunk.type === 'text-delta') {
         // In AI SDK v6 the text-delta shape carries the string on `text`.
@@ -288,11 +305,27 @@ if (hasInjection) {
       const isLeakAbort =
         message === CONTACT_LEAK_ABORT_MSG || message === BUSINESS_LEAK_ABORT_MSG
       const isMarkdownAbort = message === MARKDOWN_ABORT_MSG
+      // P2-CRITICAL-8 Bug #3 — recognise AbortSignal timeouts so the wrapper
+      // can serve the Hinglish "thoda slow" fallback. AbortError name is
+      // emitted by AbortSignal.timeout when the deadline fires.
+      const isTimeout =
+        (error instanceof Error && error.name === 'AbortError') ||
+        message.toLowerCase().includes('aborted') ||
+        message.toLowerCase().includes('timeout')
+      streamHadError = true
+      streamErrorKind = isLeakAbort
+        ? 'leak'
+        : isMarkdownAbort
+          ? 'markdown'
+          : isTimeout
+            ? 'timeout'
+            : 'unknown'
       Sentry.captureException(error, {
         tags: {
           context: 'streaming_abort',
           leak_abort: String(isLeakAbort),
           markdown_abort: String(isMarkdownAbort),
+          timeout: String(isTimeout),
         },
       })
       if (!isLeakAbort && !isMarkdownAbort) {
@@ -510,15 +543,29 @@ if (hasInjection) {
           if (value) controller.enqueue(value)
         }
       } catch (err) {
-        // Most common cause here is onChunk throwing on a detected leak or
-        // markdown drift. onError already logged to Sentry; fall through to
-        // the fallback.
-        Sentry.captureException(err, {
-          tags: { context: 'streaming_abort', stage: 'stream_wrapper' },
-        })
+        // P2-CRITICAL-8 Bug #3 — onError already captured + tagged. Re-
+        // capturing here doubled Sentry events on every timeout. Skip the
+        // duplicate when onError already saw the error; only capture for
+        // truly novel wrapper-stage failures (which set neither flag).
+        if (!streamAbortedByLeak && !streamAbortedByMarkdown && !streamHadError) {
+          Sentry.captureException(err, {
+            tags: { context: 'streaming_abort', stage: 'stream_wrapper' },
+          })
+        }
+        // Mark as errored so the fallback branch below picks it up.
+        streamHadError = true
+        if (streamErrorKind === null) streamErrorKind = 'unknown'
       }
+      // Buyer-facing fallback selection. Leak/markdown got the existing
+      // STREAM_ABORT_FALLBACK; timeout / unknown errors get the gentler
+      // "response slow" copy so the buyer knows to retry instead of
+      // staring at "Kuch problem hui" with no guidance.
       if (streamAbortedByLeak || streamAbortedByMarkdown) {
         controller.enqueue(encoder.encode(STREAM_ABORT_FALLBACK))
+      } else if (streamHadError) {
+        const fallback =
+          streamErrorKind === 'timeout' ? STREAM_TIMEOUT_FALLBACK : STREAM_ABORT_FALLBACK
+        controller.enqueue(encoder.encode(fallback))
       }
       controller.close()
     },
