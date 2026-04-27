@@ -215,13 +215,22 @@ type Props = {
   captureCard?: React.ReactNode
 }
 
+// P2-CHIPS-DASHBOARD — these chips are tuned to produce CARD-emitting
+// responses, not bullet lists. Sentry confirmed earlier chips ("Compare
+// two projects for me", "Builder kaunsa reliable hai?") triggered
+// MARKDOWN_ABORT because GPT-4o defaulted to bullet/numbered lists for
+// vague queries. Each chip below either: (a) names a config + budget +
+// area (triggers project_card emission per EXAMPLE 17), (b) names two
+// specific projects (triggers comparison card), (c) names a specific
+// builder (triggers builder_trust card or prose), or (d) is emotional
+// prose-friendly. Avoid generic "show me X" / "which is better" phrasing.
 const STARTERS = [
-  '3BHK family ke liye, 85L budget',
-  'Strong options under ₹90L',
-  'Honest opinion on Riviera projects',
-  'Compare two projects for me',
-  'Builder kaunsa reliable hai?',
-  'Pehli baar le raha hoon — help',
+  '3BHK family ke liye, 85L budget Shela mein',
+  'Shela mein strong options 90L ke andar dikhao',
+  'Riviera Bliss ka honest review chahiye',
+  'Riviera Bliss aur Shaligram Pride compare karo',
+  'Goyal & Co ka trust score kitna hai?',
+  'Pehli baar le raha hoon — help karo',
 ]
 
 export default function ChatCenter({ messages, input, handleInputChange, handleSubmit, isLoading, append, loadingSession, artifact, builders = [], showArtifact, onToggleArtifact, canGoBack, canGoForward, onArtifactBack, onArtifactForward, artifactCurrent, artifactTotal, artifactHistory, onSelectArtifact, compareToast, buyerStage, onMessageAction, userId, userName, userImage, captureCard }: Props) {
@@ -435,17 +444,22 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
                       const lower = msg.content.toLowerCase()
                       const hasProject = lower.includes('possession') || lower.includes('sqft') || lower.includes('bhk')
                       const hasComparison = lower.includes('vs') || lower.includes('compare') || lower.includes('both')
+                      // P2-CHIPS-DASHBOARD — chips rewritten to produce card or
+                      // prose responses, never bullet lists. Removed "OTP-verified"
+                      // language (Rule C). Generic "show me", "which is better"
+                      // phrasings replaced with grounded queries that trigger card
+                      // emission (specific config / budget / area / project name).
                       const hasVisit = lower.includes('visit') || lower.includes('site')
-                      if (hasVisit) return ['Book OTP-verified visit', 'What to check at site?', 'Tell me about the builder']
-                      if (hasComparison) return ['Which one should I choose?', 'Book a site visit', 'What are the risks?']
-                      if (buyerStage === 'post_visit') return ['How was the visit?', 'Should I book now?', 'Compare with another project', 'Any concerns?']
-                      if (buyerStage === 'pre_visit') return ['What to check at site?', 'Questions to ask builder?', 'How to verify RERA on site?', 'What are red flags?']
-                      if (buyerStage === 'visit_trigger') return ['Book OTP-verified visit', 'What documents needed?', 'Best time to visit?', 'Any concerns?']
-                      if (buyerStage === 'comparison') return ['Compare these two projects', 'Which has better trust score?', 'Which is better value?', 'Show cost breakdown']
-                      if (buyerStage === 'qualification') return ['Show me strong options', 'What fits my budget?', 'Which area is better?', 'Help me decide']
-                      if (buyerStage === 'project_disclosure') return ['Tell me more', 'What are the risks?', 'Compare with another', 'Show cost breakdown']
-                      if (hasProject) return ['Book a site visit', 'Compare with another project', 'What are the risks?', 'Tell me about the builder']
-                      return ['Show me strong options', 'What is my ideal budget?', 'Which area is better?', 'Help me decide']
+                      if (hasVisit) return ['Visit book karna hai', 'Site pe kya check karein?', 'Builder ke baare mein batao']
+                      if (hasComparison) return ['Dono compare karke decide karne mein help karo', 'Visit book karna hai', 'Iss case ke risks kya hain?']
+                      if (buyerStage === 'post_visit') return ['Visit kaisa raha?', 'Ab booking karein?', 'Doosre project se compare karo', 'Koi concerns hain?']
+                      if (buyerStage === 'pre_visit') return ['Site pe kya check karein?', 'Builder se kya pucchein?', 'RERA site pe kaise verify karein?', 'Red flags kya hote hain?']
+                      if (buyerStage === 'visit_trigger') return ['Visit book karna hai', 'Documents kya chahiye?', 'Best time to visit?', 'Koi concerns?']
+                      if (buyerStage === 'comparison') return ['Dono projects compare karo', 'Trust score kis ka behtar hai?', 'Kaunsa better value hai?', 'Cost breakdown dikhao']
+                      if (buyerStage === 'qualification') return ['Shela mein strong 3BHK options dikhao', 'Family ke liye ideal budget kya hona chahiye?', 'South Bopal ya Shela — family ke liye kaunsa?', 'Dono compare karke decide karo']
+                      if (buyerStage === 'project_disclosure') return ['Aur batao', 'Risks kya hain?', 'Doosre se compare karo', 'Cost breakdown chahiye']
+                      if (hasProject) return ['Visit book karna hai', 'Doosre project se compare karo', 'Risks kya hain?', 'Builder ke baare mein batao']
+                      return ['Shela mein strong 3BHK options dikhao', 'Family ke liye ideal budget kya hona chahiye?', 'South Bopal ya Shela — family ke liye kaunsa?', 'Dono compare karke decide karne mein help karo']
                     })().map(chip => (
                       <button
                         key={chip}

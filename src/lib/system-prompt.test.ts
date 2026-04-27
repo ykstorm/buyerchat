@@ -86,9 +86,12 @@ describe('v3 system prompt — PART invariants', () => {
     expect(prompt).toContain('maximum 1-2 per message')
   })
 
-  it('PART 4: enforces max 2 projects per recommendation', () => {
+  it('PART 4: enforces MAXIMUM 2 projects per recommendation', () => {
     const prompt = buildSystemPrompt(baseCtx)
-    expect(prompt).toContain('Max 2 projects per recommendation')
+    // Wording strengthened in P2-CHIPS-DASHBOARD (PROJECT_LIMIT
+    // enforcement) — old "Max 2 projects per recommendation" → new
+    // "MAXIMUM 2 projects per response" + cap restated for CARD blocks.
+    expect(prompt).toContain('MAXIMUM 2 projects per response')
   })
 
   it('PART 7: lists the 4-step visit booking flow', () => {

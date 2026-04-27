@@ -42,7 +42,11 @@ const T = {
   divider: 'rgba(184,134,11,0.15)',
 } as const
 
-const SERIF = 'Georgia, "Times New Roman", serif'
+// Layout.tsx loads Playfair Display via next/font and exposes
+// var(--font-playfair). Apply it for the luxury serif headers; Georgia
+// is the synchronous fallback so headers render serif immediately while
+// the web font streams in (avoids the FOIT flash).
+const SERIF = 'var(--font-playfair), Georgia, "Times New Roman", serif'
 const EASE_OUT_EXPO: [number, number, number, number] = [0.22, 1, 0.36, 1]
 
 /* ── Types (shape matches /api/saved + /api/visit-requests today) ── */

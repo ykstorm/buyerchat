@@ -190,22 +190,26 @@ export default function HomePage() {
         className="absolute inset-x-0 bottom-6 flex flex-col items-center gap-2 px-6 text-center"
         style={{ fontSize: '12px', color: '#888' }}
       >
+        {/* Footer links — /how-it-works, /about, /privacy, /contact pages do
+            not exist yet (Phase 3 content surfaces). Rendered as non-clickable
+            spans so buyers don't 404 from the landing page. Privacy is the
+            most-asked-for; create it first when content pages land. */}
         <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
-          <Link href="/how-it-works" style={{ color: '#888', textDecoration: 'none' }} className="hover:opacity-80">
+          <span style={{ color: '#888', cursor: 'not-allowed', opacity: 0.6 }}>
             How it works
-          </Link>
+          </span>
           <span aria-hidden="true">·</span>
-          <Link href="/about" style={{ color: '#888', textDecoration: 'none' }} className="hover:opacity-80">
+          <span style={{ color: '#888', cursor: 'not-allowed', opacity: 0.6 }}>
             About
-          </Link>
+          </span>
           <span aria-hidden="true">·</span>
-          <Link href="/privacy" style={{ color: '#888', textDecoration: 'none' }} className="hover:opacity-80">
+          <span style={{ color: '#888', cursor: 'not-allowed', opacity: 0.6 }}>
             Privacy
-          </Link>
+          </span>
           <span aria-hidden="true">·</span>
-          <Link href="/contact" style={{ color: '#888', textDecoration: 'none' }} className="hover:opacity-80">
+          <span style={{ color: '#888', cursor: 'not-allowed', opacity: 0.6 }}>
             Contact
-          </Link>
+          </span>
         </div>
         <span>© 2026 Homesty AI Technology LLP</span>
       </footer>
