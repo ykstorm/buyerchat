@@ -1,7 +1,9 @@
 'use client'
 import { useState } from 'react'
-import { m } from 'framer-motion'
+import { m, useReducedMotion } from 'framer-motion'
 import type { ProjectType } from '@/lib/types/chat'
+
+const FOCUS_RING = 'focus-visible:ring-2 focus-visible:ring-[#1B4F8A]/50 focus-visible:ring-offset-2 focus-visible:outline-none'
 
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
@@ -23,11 +25,12 @@ export default function VisitPromptCard({ project }: {
   project: ProjectType
 }) {
   const [selected, setSelected] = useState<number | null>(null)
+  const prefersReduced = useReducedMotion() ?? false
   const slots = getSlots()
 
   return (
     <m.div
-      initial={{ opacity: 0, y: 16 }}
+      initial={prefersReduced ? false : { opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ type: 'spring', stiffness: 300, damping: 28 }}
       className="bg-white rounded-2xl overflow-hidden"
@@ -47,22 +50,35 @@ export default function VisitPromptCard({ project }: {
         </div>
 
         <p className="text-[10px] font-semibold uppercase tracking-wider text-[#A8A29E] mb-2">Pick a slot</p>
+        {/* Shared-layout indicator: a single outlined pill animates between
+            slots via layoutId — feels like the selection physically slides
+            from one tile to the next. */}
         <div className="grid grid-cols-2 gap-2 mb-4">
           {slots.map((slot, i) => (
             <m.button
               key={i}
               type="button"
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.97 }}
+              whileHover={prefersReduced ? undefined : { scale: 1.02 }}
+              whileTap={prefersReduced ? undefined : { scale: 0.97 }}
               onClick={() => setSelected(i)}
-              className="text-left rounded-xl px-3 py-2.5 transition-all"
+              className={`relative text-left rounded-xl px-3 py-2.5 transition-all ${FOCUS_RING}`}
               style={{
                 background: selected === i ? '#EFF6FF' : '#F4F3F0',
-                border: `1px solid ${selected === i ? '#1B4F8A' : '#E7E5E4'}`,
+                border: `1px solid ${selected === i ? 'transparent' : '#E7E5E4'}`,
               }}
+              aria-pressed={selected === i}
             >
-              <p className="text-[11px] font-semibold" style={{ color: selected === i ? '#1B4F8A' : '#1C1917' }}>{slot.label}</p>
-              <p className="text-[10px]" style={{ color: '#78716C' }}>{slot.time}</p>
+              {selected === i && (
+                <m.span
+                  layoutId="slot-selected"
+                  aria-hidden
+                  className="absolute inset-0 rounded-xl pointer-events-none"
+                  style={{ border: '1.5px solid #1B4F8A', boxShadow: '0 0 0 3px rgba(27,79,138,0.08)' }}
+                  transition={{ type: 'spring', stiffness: 400, damping: 28 }}
+                />
+              )}
+              <p className="relative text-[11px] font-semibold" style={{ color: selected === i ? '#1B4F8A' : '#1C1917' }}>{slot.label}</p>
+              <p className="relative text-[10px]" style={{ color: '#78716C' }}>{slot.time}</p>
             </m.button>
           ))}
         </div>
@@ -79,14 +95,14 @@ export default function VisitPromptCard({ project }: {
 
         <m.button
           type="button"
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.97 }}
+          whileHover={prefersReduced ? undefined : { scale: 1.02 }}
+          whileTap={prefersReduced ? undefined : { scale: 0.97 }}
           disabled={selected === null}
           onClick={() => {
             if (selected === null) return
             window.dispatchEvent(new CustomEvent('book-visit', { detail: { projectId: project.id } }))
           }}
-          className="w-full py-3 rounded-xl text-[13px] font-semibold text-white transition-all disabled:opacity-40"
+          className={`w-full py-3 rounded-xl text-[13px] font-semibold text-white transition-all disabled:opacity-40 ${FOCUS_RING}`}
           style={{ background: 'linear-gradient(135deg, #1B4F8A, #2563EB)' }}
         >
           {selected === null ? 'Select a slot first' : `Confirm visit — ${slots[selected].label}`}

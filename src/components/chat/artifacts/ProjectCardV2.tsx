@@ -1,10 +1,9 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
-import { m, useMotionValue, useTransform } from 'framer-motion'
+import { m, useMotionValue, useTransform, animate, useReducedMotion } from 'framer-motion'
 import { signIn } from 'next-auth/react'
 import type { ProjectType } from '@/lib/types/chat'
 
-const formatL = (n: number | null | undefined) => n ? Math.round(n / 100000) : null
 const emi = (allIn: number) => Math.round(allIn * 0.00729 * Math.pow(1.00729, 240) / (Math.pow(1.00729, 240) - 1))
 
 // Pending-save persistence — survives the OAuth full-page reload so the save
@@ -12,23 +11,36 @@ const emi = (allIn: number) => Math.round(allIn * 0.00729 * Math.pow(1.00729, 24
 const PENDING_SAVE_TTL_MS = 10 * 60 * 1000 // 10 min
 const pendingSaveKey = (projectId: string) => `buyerchat:pendingsave:${projectId}`
 
+const FOCUS_RING = 'focus-visible:ring-2 focus-visible:ring-[#1B4F8A]/50 focus-visible:ring-offset-2 focus-visible:outline-none'
+
 export default function ProjectCardV2({ project }: { project: ProjectType }) {
   const [saved, setSaved] = useState(false)
   const [saving, setSaving] = useState(false)
   const [hovered, setHovered] = useState(false)
   const [showSignInPrompt, setShowSignInPrompt] = useState(false)
   const [showSavedToast, setShowSavedToast] = useState(false)
-  const x = useMotionValue(0)
-  const y = useMotionValue(0)
-  // Subtle tilt — ±1.5deg preserves the "felt" depth without the drunk-wobble
-  // that ±4deg produced on the ~320px right-panel card.
-  const rotateX = useTransform(y, [-100, 100], [1.5, -1.5])
-  const rotateY = useTransform(x, [-100, 100], [-1.5, 1.5])
-  const lastMoveTs = useRef(0)
+  const prefersReduced = useReducedMotion()
+
+  // Trust-score counter — number races the bar 0 → trustScore over 0.8s.
+  const trustMV = useMotionValue(0)
+  const trustDisplay = useTransform(trustMV, v => Math.round(v))
+  const [trustNum, setTrustNum] = useState(0)
+  useEffect(() => {
+    const unsub = trustDisplay.on('change', v => setTrustNum(v as number))
+    return unsub
+  }, [trustDisplay])
+  useEffect(() => {
+    if (!project.trustScore) return
+    if (prefersReduced) {
+      trustMV.set(project.trustScore)
+      return
+    }
+    const controls = animate(trustMV, project.trustScore, { duration: 0.8, ease: 'easeOut', delay: 0.3 })
+    return () => controls.stop()
+  }, [project.trustScore, trustMV, prefersReduced])
 
   useEffect(() => {
     let cancelled = false
-    // Check sessionStorage for a pending-save intent (post-OAuth return).
     let pending: { ts: number } | null = null
     if (typeof window !== 'undefined') {
       try {
@@ -46,22 +58,16 @@ export default function ProjectCardV2({ project }: { project: ProjectType }) {
 
     fetch('/api/saved').then(async r => {
       if (cancelled) return
-      if (r.status !== 200) {
-        // Not signed in — can't auto-retry; leave pending-save in storage so a
-        // subsequent authed mount can still fire.
-        return null
-      }
+      if (r.status !== 200) return null
       const data = await r.json()
-      const alreadySaved = (data.savedProjects ?? []).some((s: any) => s.projectId === project.id)
+      const alreadySaved = (data.savedProjects ?? []).some((s: { projectId: string }) => s.projectId === project.id)
       if (alreadySaved) {
         setSaved(true)
-        // Clean up stale pending-save key — no retry needed.
         if (pending && typeof window !== 'undefined') {
           try { window.sessionStorage.removeItem(pendingSaveKey(project.id)) } catch {}
         }
         return null
       }
-      // Signed in, not saved — auto-retry if we had a pending intent.
       if (pending) {
         try {
           const saveRes = await fetch('/api/saved', {
@@ -98,8 +104,6 @@ export default function ProjectCardV2({ project }: { project: ProjectType }) {
         body: JSON.stringify({ projectId: project.id })
       })
       if (res.status === 401) {
-        // Anonymous save attempt — revert and surface a sign-in prompt pill
-        // instead of silently failing.
         setSaved(prev)
         setShowSignInPrompt(true)
         setTimeout(() => setShowSignInPrompt(false), 4000)
@@ -123,20 +127,19 @@ export default function ProjectCardV2({ project }: { project: ProjectType }) {
 
   return (
     <m.div
-      initial={{ opacity: 0, y: 20, scale: 0.97 }}
+      initial={prefersReduced ? false : { opacity: 0, y: 20, scale: 0.97 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{ type: 'spring', stiffness: 300, damping: 28 }}
-      style={{ rotateX, rotateY, transformStyle: 'preserve-3d', willChange: 'transform', background: 'var(--bg-surface-alt)', border: '1px solid var(--border)', boxShadow: hovered ? '0 20px 60px rgba(27,79,138,0.12)' : '0 4px 20px rgba(0,0,0,0.06)' }}
-      onMouseMove={e => {
-        const now = Date.now()
-        if (now - lastMoveTs.current < 30) return
-        lastMoveTs.current = now
-        const rect = e.currentTarget.getBoundingClientRect()
-        x.set(e.clientX - rect.left - rect.width / 2)
-        y.set(e.clientY - rect.top - rect.height / 2)
+      // 3D tilt removed (P3-WAVE-PARALLEL Agent A) — felt drunk on small
+      // panels. Hover lift via shadow only.
+      style={{
+        background: 'var(--bg-surface-alt)',
+        border: '1px solid var(--border)',
+        boxShadow: hovered ? '0 20px 60px rgba(27,79,138,0.14)' : '0 4px 20px rgba(0,0,0,0.06)',
+        transition: 'box-shadow 220ms ease',
       }}
       onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => { setHovered(false); x.set(0); y.set(0) }}
+      onMouseLeave={() => setHovered(false)}
       className="relative overflow-hidden rounded-2xl"
     >
       {/* Gradient accent top */}
@@ -147,14 +150,12 @@ export default function ProjectCardV2({ project }: { project: ProjectType }) {
         <div className="absolute inset-0 flex items-center justify-center opacity-10">
           <svg width="80" height="80" viewBox="0 0 24 24" fill="white"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><polyline points="9 22 9 12 15 12 15 22" fill="white"/></svg>
         </div>
-        {/* Shimmer effect */}
         <m.div
           className="absolute inset-0 opacity-10"
           style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent)', backgroundSize: '200% 100%' }}
           animate={{ backgroundPosition: hovered ? ['0% 0%', '200% 0%'] : '0% 0%' }}
           transition={{ duration: 1.5, ease: 'linear', repeat: hovered ? Infinity : 0 }}
         />
-        {/* Tag */}
         {project.decisionTag && (
           <div className="absolute top-3 left-3">
             <span className="flex items-center gap-1 text-[10px] font-semibold px-2 py-1 rounded-full" style={{ background: tagColor.bg, color: tagColor.text }}>
@@ -163,20 +164,50 @@ export default function ProjectCardV2({ project }: { project: ProjectType }) {
             </span>
           </div>
         )}
-        {/* Save button */}
+        {/* Save button — saved state is now unmistakable: green pill + filled
+            bookmark + checkmark badge. Saving state animates a strokeDashoffset
+            sweep on the bookmark outline. */}
         <m.button
           type="button"
           onClick={toggleSave}
-          aria-label={saved ? 'Remove from saved' : 'Save project'}
-          whileTap={{ scale: 0.85 }}
-          className="absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center backdrop-blur-sm"
-          style={{ background: saved ? '#1B4F8A' : 'rgba(255,255,255,0.2)', border: '1px solid rgba(255,255,255,0.3)' }}
+          disabled={saving}
+          aria-label={saved ? 'Remove from saved' : saving ? 'Saving' : 'Save project'}
+          aria-pressed={saved}
+          whileTap={prefersReduced ? undefined : { scale: 0.85 }}
+          className={`absolute top-3 right-3 w-9 h-9 rounded-full flex items-center justify-center backdrop-blur-sm ${FOCUS_RING}`}
+          style={{
+            background: saved ? '#0F6E56' : 'rgba(255,255,255,0.2)',
+            border: `1px solid ${saved ? '#34D399' : 'rgba(255,255,255,0.3)'}`,
+            boxShadow: saved ? '0 0 12px rgba(52,211,153,0.45)' : 'none',
+            transition: 'background 200ms ease, box-shadow 200ms ease, border-color 200ms ease',
+          }}
         >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill={saved ? 'white' : 'none'} stroke="white" strokeWidth="2">
-            <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/>
-          </svg>
+          {saving ? (
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
+              <m.path
+                d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"
+                strokeDasharray="60"
+                animate={prefersReduced ? undefined : { strokeDashoffset: [60, 0, -60] }}
+                transition={{ duration: 0.6, repeat: Infinity, ease: 'easeInOut' }}
+              />
+            </svg>
+          ) : (
+            <>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill={saved ? 'white' : 'none'} stroke="white" strokeWidth="2">
+                <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/>
+              </svg>
+              {saved && (
+                <span
+                  aria-hidden
+                  className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full flex items-center justify-center"
+                  style={{ background: '#FAFAF7', color: '#0F6E56', fontSize: 10, fontWeight: 800, boxShadow: '0 0 0 2px #0F6E56' }}
+                >
+                  ✓
+                </span>
+              )}
+            </>
+          )}
         </m.button>
-        {/* Sign-in prompt pill — appears for 4s when anonymous save hits 401 */}
         {showSignInPrompt && (
           <m.button
             type="button"
@@ -184,7 +215,6 @@ export default function ProjectCardV2({ project }: { project: ProjectType }) {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
             onClick={() => {
-              // Persist intent to retry the save after OAuth round-trip.
               if (typeof window !== 'undefined') {
                 try {
                   window.sessionStorage.setItem(
@@ -197,13 +227,12 @@ export default function ProjectCardV2({ project }: { project: ProjectType }) {
               signIn('google', { callbackUrl })
             }}
             aria-label="Sign in to save this project"
-            className="absolute top-12 right-3 px-2.5 py-1 rounded-full text-[10px] font-semibold backdrop-blur-sm shadow-md transition-opacity hover:opacity-90"
+            className={`absolute top-12 right-3 px-2.5 py-1 rounded-full text-[10px] font-semibold backdrop-blur-sm shadow-md transition-opacity hover:opacity-90 ${FOCUS_RING}`}
             style={{ background: 'var(--bg-accent-green)', color: 'var(--text-accent-green)', border: '1px solid var(--border-accent-green)' }}
           >
             Sign in to save →
           </m.button>
         )}
-        {/* Saved toast — appears for 2s when a pending save auto-completes post-OAuth */}
         {showSavedToast && (
           <m.div
             initial={{ opacity: 0, y: -4 }}
@@ -217,21 +246,18 @@ export default function ProjectCardV2({ project }: { project: ProjectType }) {
             Saved ✓
           </m.div>
         )}
-        {/* Location */}
         <div className="absolute bottom-3 left-3">
           <span className="text-[10px] font-medium text-white/70 uppercase tracking-wider">{project.microMarket}</span>
         </div>
       </div>
 
       <div className="p-4">
-        {/* Name */}
         <h2 style={{ fontFamily: 'var(--font-playfair)', color: 'var(--text-primary)' }} className="text-[17px] font-semibold leading-tight mb-0.5">
           {project.projectName}
         </h2>
         <p className="text-[11px] mb-3" style={{ color: 'var(--text-secondary)' }}>{project.builderName}</p>
 
-        {/* Price — 5-branch fallback: pricePerSqft → min/max range → allInPrice → priceNote → "Price on request".
-            priceNote is always rendered as a secondary line when a structured price branch fires, since it's the most reliable field (16/16 projects populate it). */}
+        {/* Price — 5-branch fallback unchanged */}
         {(() => {
           const hasPps = !!(project.pricePerSqft && project.pricePerSqft > 0)
           const hasRange = project.minPrice > 0 && project.maxPrice > 0
@@ -325,12 +351,12 @@ export default function ProjectCardV2({ project }: { project: ProjectType }) {
           )}
         </div>
 
-        {/* Honest Concern */}
+        {/* Honest Concern — staggered entrance with subtle settle. */}
         {project.honestConcern && (
           <m.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.2 }}
+            initial={prefersReduced ? false : { opacity: 0, y: 6, rotateZ: -1 }}
+            animate={{ opacity: 1, y: 0, rotateZ: 0 }}
+            transition={{ delay: 0.5, type: 'spring', stiffness: 280, damping: 24 }}
             className="rounded-xl px-3 py-2.5 mb-3"
             style={{ background: 'var(--bg-accent-amber)', border: '1px solid var(--border-accent-amber)' }}
           >
@@ -347,18 +373,18 @@ export default function ProjectCardV2({ project }: { project: ProjectType }) {
           </div>
         )}
 
-        {/* Trust score bar — real DB value */}
+        {/* Trust score bar — number races bar over 0.8s */}
         {project.trustScore && (
           <div className="mb-3">
             <div className="flex items-center justify-between mb-1">
               <span className="text-[9px] font-semibold uppercase tracking-wider" style={{ color: '#A8A29E' }}>Builder Trust</span>
               <span className="text-[9px] font-medium" style={{ color: '#1B4F8A' }}>
-                {project.trustScore}/100 · Grade {project.trustGrade ?? (project.trustScore >= 80 ? 'A' : project.trustScore >= 65 ? 'B' : project.trustScore >= 50 ? 'C' : 'D')}
+                <span className="font-mono">{trustNum}</span>/100 · Grade {project.trustGrade ?? (project.trustScore >= 80 ? 'A' : project.trustScore >= 65 ? 'B' : project.trustScore >= 50 ? 'C' : 'D')}
               </span>
             </div>
             <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--bg-subtle)' }}>
               <m.div
-                initial={{ width: 0 }}
+                initial={prefersReduced ? false : { width: 0 }}
                 animate={{ width: `${project.trustScore}%` }}
                 transition={{ duration: 0.8, ease: 'easeOut', delay: 0.3 }}
                 className="h-full rounded-full"
@@ -372,20 +398,20 @@ export default function ProjectCardV2({ project }: { project: ProjectType }) {
         <div className="flex gap-2">
           <m.button
             type="button"
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.97 }}
+            whileHover={prefersReduced ? undefined : { scale: 1.02 }}
+            whileTap={prefersReduced ? undefined : { scale: 0.97 }}
             onClick={() => window.dispatchEvent(new CustomEvent('book-visit', { detail: { projectId: project.id } }))}
-            className="flex-1 py-2.5 rounded-xl text-[12px] font-semibold text-white transition-all"
+            className={`flex-1 py-2.5 rounded-xl text-[12px] font-semibold text-white transition-all ${FOCUS_RING}`}
             style={{ background: 'linear-gradient(135deg, #1B4F8A, #2563EB)' }}
           >
             Book visit →
           </m.button>
           <m.button
             type="button"
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.97 }}
+            whileHover={prefersReduced ? undefined : { scale: 1.02 }}
+            whileTap={prefersReduced ? undefined : { scale: 0.97 }}
             onClick={() => window.dispatchEvent(new CustomEvent('compare-project', { detail: { projectId: project.id } }))}
-            className="px-4 py-2.5 rounded-xl text-[12px] font-medium border transition-all"
+            className={`px-4 py-2.5 rounded-xl text-[12px] font-medium border transition-all ${FOCUS_RING}`}
             style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}
           >
             Compare

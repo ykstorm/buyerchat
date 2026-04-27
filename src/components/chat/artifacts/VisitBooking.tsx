@@ -2,6 +2,31 @@
 import { useState, useEffect } from "react"
 import { signIn } from "next-auth/react"
 
+const FOCUS_RING = 'focus-visible:ring-2 focus-visible:ring-[#1B4F8A]/50 focus-visible:ring-offset-2 focus-visible:outline-none'
+
+// WhatsApp fallback for buyers without a Google account. Read from env so
+// the operator can swap the number without a code change. Set
+// NEXT_PUBLIC_FALLBACK_WA in Vercel envs to a +91XXXXXXXXXX format string.
+const FALLBACK_WA = process.env.NEXT_PUBLIC_FALLBACK_WA || ''
+
+// 14×14 lineart tip icons — replace the emoji set so the card reads like
+// a luxury form instead of a chat. Stroke colour inherits via currentColor.
+function TipIcon({ kind }: { kind: 'note' | 'gate' | 'phone' | 'time' }) {
+  const common = { width: 14, height: 14, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.6, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const }
+  if (kind === 'note') return (
+    <svg {...common} aria-hidden><path d="M14 3H6a2 2 0 00-2 2v14a2 2 0 002 2h12a2 2 0 002-2V9z" /><path d="M14 3v6h6M9 13h6M9 17h4" /></svg>
+  )
+  if (kind === 'gate') return (
+    <svg {...common} aria-hidden><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path d="M9 22V12h6v10" /></svg>
+  )
+  if (kind === 'phone') return (
+    <svg {...common} aria-hidden><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z" /></svg>
+  )
+  return (
+    <svg {...common} aria-hidden><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg>
+  )
+}
+
 interface VisitBookingProps {
   projectId: string
   projectName: string
@@ -189,20 +214,27 @@ export function VisitBooking({ projectId, projectName }: VisitBookingProps) {
             type="button"
             aria-label="Sign in with Google to book visit"
             onClick={() => {
-              // Preserve draft: persist name/phone/date to sessionStorage so that
-              // after the OAuth full-page reload the buyer returns to the same
-              // artifact with their entries intact. Return URL is the chat page
-              // so artifact state re-renders naturally.
               persistDraft(true)
               const callbackUrl = typeof window !== 'undefined' ? window.location.href : '/chat'
               signIn('google', { callbackUrl })
             }}
-            className="w-full py-2.5 rounded-full text-[13px] font-medium text-white text-center transition-opacity hover:opacity-90"
+            className={`w-full py-2.5 rounded-full text-[13px] font-medium text-white text-center transition-opacity hover:opacity-90 ${FOCUS_RING}`}
             style={{ background: '#1B4F8A' }}
           >
             Sign in with Google
           </button>
-          <button type="button" onClick={() => setStatus('idle')} className="text-[11px] transition-colors" style={{ color: 'var(--text-muted)' }}>
+          {FALLBACK_WA && (
+            <a
+              href={`https://wa.me/${FALLBACK_WA.replace(/\D/g, '')}?text=${encodeURIComponent(`Visit book karna hai — ${projectName}`)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`text-[11px] transition-colors ${FOCUS_RING} rounded`}
+              style={{ color: 'var(--text-muted)' }}
+            >
+              No Google account? WhatsApp {FALLBACK_WA} to book.
+            </a>
+          )}
+          <button type="button" onClick={() => setStatus('idle')} className={`text-[11px] transition-colors rounded ${FOCUS_RING}`} style={{ color: 'var(--text-muted)' }}>
             ← Back
           </button>
         </div>
@@ -223,13 +255,16 @@ export function VisitBooking({ projectId, projectName }: VisitBookingProps) {
             <p className="text-[11px] mt-1" style={{ color: 'var(--text-accent-green-light)' }}>Show this at the site. Your commission is protected.</p>
           </div>
           <div className="w-full text-left space-y-2">
-            {[
-              '📋 Note down this token before leaving',
-              '🏗 Builder will verify at the site gate',
-              '📱 Balvir will coordinate your visit',
-              '⏰ Arrive 5 min early',
-            ].map(tip => (
-              <p key={tip} className="text-[12px]" style={{ color: 'var(--text-secondary)' }}>{tip}</p>
+            {([
+              { icon: 'note' as const, text: 'Note down this token before leaving' },
+              { icon: 'gate' as const, text: 'Builder will verify at the site gate' },
+              { icon: 'phone' as const, text: 'Balvir will coordinate your visit' },
+              { icon: 'time' as const, text: 'Arrive 5 min early' },
+            ]).map(tip => (
+              <p key={tip.text} className="text-[12px] flex items-center gap-2" style={{ color: 'var(--text-secondary)' }}>
+                <span style={{ color: 'var(--text-muted)' }}><TipIcon kind={tip.icon} /></span>
+                {tip.text}
+              </p>
             ))}
           </div>
           <button type="button"
@@ -269,13 +304,26 @@ export function VisitBooking({ projectId, projectName }: VisitBookingProps) {
                 onChange={e => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
                 className="flex-1 px-3 py-2.5 rounded-xl text-[16px] md:text-[14px] focus:outline-none focus:ring-2 focus:ring-[#1B4F8A]/15 focus:border-[#1B4F8A]/50 transition-all"
                 style={{ background: 'var(--bg-input)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+                aria-invalid={phone.length > 0 && phone.length !== 10}
+                aria-describedby="vb-phone-hint"
               />
             </div>
+            {/* Phone hint: muted by default; turns red when partial. */}
+            <p
+              id="vb-phone-hint"
+              className="text-[11px] mt-0.5"
+              style={{ color: phone.length > 0 && phone.length !== 10 ? '#A32D2D' : 'var(--text-muted)' }}
+              role={phone.length > 0 && phone.length !== 10 ? 'alert' : undefined}
+            >
+              {phone.length > 0 && phone.length !== 10
+                ? 'Indian mobile number, 10 digits'
+                : "We'll send confirmation to this number"}
+            </p>
           </div>
           {status === 'error' && <p className="text-xs text-[#A32D2D] mb-3">{errorMsg}</p>}
           <button type="button" onClick={handleConfirm}
             disabled={!canSubmit || status === 'loading'}
-            className="w-full py-2.5 rounded-full text-sm font-medium bg-[#1B4F8A] text-white transition-opacity disabled:opacity-40 disabled:cursor-not-allowed hover:opacity-90"
+            className={`w-full py-2.5 rounded-full text-sm font-medium bg-[#1B4F8A] text-white transition-opacity disabled:opacity-40 disabled:cursor-not-allowed hover:opacity-90 ${FOCUS_RING}`}
           >
             {status === 'loading' ? 'Booking...' : 'Confirm visit'}
           </button>
