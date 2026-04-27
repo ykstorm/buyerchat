@@ -33,6 +33,36 @@ const KNOWN_AREAS = [
   'ahmedabad', 'gujarat', 'india', 'magicbricks', 'buyerchat'
 ]
 
+// KNOWN_AMENITIES — verified real names from LocationData / RAG knowledge base.
+// Used to suppress HALLUCINATION false positives: when the model surfaces a
+// real amenity name that happens to share a propertyKeywords suffix ("Park",
+// "Garden", "Heights"), it must NOT be flagged as an invented project.
+// Names below appear verbatim in seed data, embed backfill, or operator-
+// reviewed location docs. Lower-cased on compare. Add new verified names here
+// as they become canonical (do NOT add unverified guesses).
+const KNOWN_AMENITIES = [
+  // Hospitals
+  'krishna shalby', 'krishna shalby hospital', 'saraswati hospital',
+  'tej hospital', 'hcg', 'apollo international', 'cims',
+  // Schools / colleges
+  'dps bopal', 'dps east', 'shanti asiatic', 'shanti asiatic school',
+  'mica', 'anant national university', 'nirma university',
+  // Parks / open spaces (the Sentry false-positive class)
+  'electrotherm park', 'shaligram oxygen park', 'auda sky city',
+  'auda garden', 'bopal lake park',
+  // Malls / retail
+  'dmart', 'trp mall', 'sobo centre', 'sobo center', 'palladium',
+  // Clubs
+  'club o7', 'gala gymkhana', 'karnavati club', 'rajpath club',
+  // Transit
+  'bopal brts', 'iskcon cross roads',
+  // Temples
+  'shri bhidbhanjan hanumanji', 'iskcon temple',
+  // Banks (named branches surface as <Brand> Bank)
+  'hdfc', 'icici', 'sbi', 'axis', 'kotak', 'union bank',
+  'yes bank', 'bob', 'bank of baroda',
+]
+
 // Lexical markers used by the language-match check. Not a real language
 // detector — just a cheap hint. If buyer density >> response density we
 // assume the model drifted back to English.
@@ -171,7 +201,13 @@ export function checkResponse(
     const looksLikeProject = propertyKeywords.some(k => l.includes(k))
     const isKnown = knownProjectNames.some(p => p.toLowerCase() === l)
     const isKnownArea = KNOWN_AREAS.some(a => l.includes(a))
-    return looksLikeProject && !isKnown && !isKnownArea
+    // Allowlist real LocationData amenity names that share propertyKeywords
+    // suffixes (e.g., "Electrotherm Park", "Shaligram Oxygen Park",
+    // "AUDA Sky City"). False-positive class observed in Sentry on
+    // 2026-04-27 (P2-CRITICAL-8 Bug #4). Match by exact or substring on
+    // either direction so plural/abbreviated forms also pass.
+    const isKnownAmenity = KNOWN_AMENITIES.some(a => l === a || l.includes(a) || a.includes(l))
+    return looksLikeProject && !isKnown && !isKnownArea && !isKnownAmenity
   })
   if (hallucinated.length > 0) {
     violations.push(`HALLUCINATION: invented names — ${hallucinated.join(', ')}`)

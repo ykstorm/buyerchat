@@ -538,11 +538,35 @@ describe('FAKE_VISIT_CLAIM check (P1-S1)', () => {
 
   it('no claim phrase → ok regardless of artifact', () => {
     const res = checkResponse(
-      'Visit start karte hain — slot check karte hain aur OTP ke baad confirm hoga.',
+      'Visit start karte hain — slot check karte hain aur Homesty AI team WhatsApp pe confirm karega.',
       [],
       cq()
     )
     expect(res.violations.some(v => v.startsWith('FAKE_VISIT_CLAIM'))).toBe(false)
+  })
+})
+
+describe('HALLUCINATION amenity allowlist (P2-CRITICAL-8 Bug #4)', () => {
+  // Sentry 2026-04-27: AI correctly named real LocationData amenities
+  // ("Electrotherm Park", "Shaligram Oxygen Park", "AUDA Sky City")
+  // but the propertyKeywords-based hallucination check flagged "Park"-
+  // suffixed names as invented projects. KNOWN_AMENITIES allowlist defuses.
+  it('does NOT flag verified amenity "Electrotherm Park"', () => {
+    const text = 'Electrotherm Park aur Shaligram Oxygen Park dono walking distance pe hain.'
+    const res = checkResponse(text, [], cq())
+    expect(res.violations.some(v => v.startsWith('HALLUCINATION'))).toBe(false)
+  })
+
+  it('does NOT flag "AUDA Sky City"', () => {
+    const text = 'AUDA Sky City paas hai — open green space.'
+    const res = checkResponse(text, [], cq())
+    expect(res.violations.some(v => v.startsWith('HALLUCINATION'))).toBe(false)
+  })
+
+  it('STILL flags an invented "Whisper Heights" not in any list', () => {
+    const text = 'Whisper Heights ek strong option hai 85L mein.'
+    const res = checkResponse(text, [], cq())
+    expect(res.violations.some(v => v.startsWith('HALLUCINATION'))).toBe(true)
   })
 })
 
