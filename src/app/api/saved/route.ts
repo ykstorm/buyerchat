@@ -46,6 +46,9 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Please sign in first' }, { status: 401 })
   }
 
+  // Dashboard cards (P2-DASHBOARD-SITE-REVAMP) need pricePerSqft, possession,
+  // status, decisionTag, honestConcern, and builder.grade in addition to the
+  // basic identity columns. All are read-only buyer-safe fields.
   const saved = await prisma.savedProject.findMany({
     where: { userId: session.user.id },
     include: {
@@ -58,6 +61,14 @@ export async function GET(req: NextRequest) {
           minPrice: true,
           maxPrice: true,
           unitTypes: true,
+          pricePerSqft: true,
+          possessionDate: true,
+          constructionStatus: true,
+          decisionTag: true,
+          honestConcern: true,
+          builder: {
+            select: { grade: true },
+          },
         }
       }
     },
