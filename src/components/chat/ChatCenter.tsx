@@ -1,7 +1,7 @@
 'use client'
 import type React from 'react'
 
-import { m, AnimatePresence } from 'framer-motion'
+import { m, AnimatePresence, useReducedMotion } from 'framer-motion'
 import dynamic from 'next/dynamic'
 import { FormEvent, useRef, useEffect, useState, memo, useMemo } from 'react'
 import ReactMarkdown from 'react-markdown'
@@ -251,6 +251,19 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
   const mouseRafRef = useRef<number>(0)
   const [showArtifactMenu, setShowArtifactMenu] = useState(false)
   const artifactMenuRef = useRef<HTMLDivElement>(null)
+  const prefersReduced = useReducedMotion()
+
+  // Baseline snapshot of message count once a session finishes loading.
+  // Messages with index < baseline are "history" and skip the entrance
+  // animation; messages appended after that baseline animate in. This
+  // distinguishes a fresh AI reply from a session reload (spec 2B: "new
+  // AI messages only — not history reload").
+  const baselineCountRef = useRef<number | null>(null)
+  useEffect(() => {
+    if (!loadingSession && baselineCountRef.current === null) {
+      baselineCountRef.current = messages.length
+    }
+  }, [loadingSession, messages.length])
 
   useEffect(() => {
     const close = (e: MouseEvent) => {
@@ -351,7 +364,16 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
             }}
           />
 
-          <div className="relative z-10 text-center px-6 w-full max-w-lg">
+          <m.div
+            // P2-DASHBOARD-SITE-REVAMP — wrap empty-state block in a single
+            // entrance animation so the whole hero springs in together,
+            // not piecemeal. Inner per-element delays still layer for the
+            // editorial cascade, but the block itself fades up first.
+            initial={prefersReduced ? false : { opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: prefersReduced ? 0 : 0.4, ease: [0.22, 1, 0.36, 1] }}
+            className="relative z-10 text-center px-6 w-full max-w-lg"
+          >
 
             {/* Eyebrow with gold accent line */}
             <m.div
@@ -390,19 +412,25 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
               Honest analysis Homesty AI karega.
             </m.p>
 
-            {/* Starter cards */}
+            {/* Starter cards — P2-DASHBOARD-SITE-REVAMP: spring-scale entry
+                + gold-tint hover (scale 1.02, gold bg). Each chip staggers
+                4% behind the prior. */}
             <div className="grid grid-cols-2 gap-3 w-full mb-8">
               {STARTERS.map((s, i) => (
                 <m.button
                   key={s}
                   type="button"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.22 + i * 0.07, duration: 0.3 }}
-                  whileHover={{ y: -3, boxShadow: '0 12px 32px rgba(196,155,80,0.1), 0 4px 12px rgba(0,0,0,0.04)' }}
-                  whileTap={{ scale: 0.97 }}
+                  initial={prefersReduced ? false : { opacity: 0, scale: 0.96 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={
+                    prefersReduced
+                      ? { duration: 0 }
+                      : { type: 'spring', damping: 22, stiffness: 280, delay: 0.18 + i * 0.04 }
+                  }
+                  whileHover={prefersReduced ? undefined : { scale: 1.02, backgroundColor: 'rgba(184,134,11,0.08)' }}
+                  whileTap={prefersReduced ? undefined : { scale: 0.97 }}
                   onClick={() => append({ role: 'user', content: s })}
-                  className="text-left px-4 py-4 rounded-2xl backdrop-blur-sm cursor-pointer group transition-all duration-300"
+                  className="text-left px-4 py-4 rounded-2xl backdrop-blur-sm cursor-pointer group"
                   style={{
                     background: 'color-mix(in srgb, var(--bg-surface) 85%, transparent)',
                     border: '1px solid color-mix(in srgb, var(--border) 60%, transparent)',
@@ -424,7 +452,7 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
             >
               Homesty earns only when you buy. No builder pays for promotion.
             </m.p>
-          </div>
+          </m.div>
         </div>
 
       ) : (
@@ -433,9 +461,23 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
             const prevMsg = messages[i - 1]
             const isGrouped = prevMsg?.role === msg.role
             const isLastAI = msg.role === 'assistant' && i === messages.length - 1 && !isLoading
+            // A "new" AI message is one mounted after the baseline snapshot.
+            // Spring-fade it in. History entries (index < baseline) and
+            // user messages render statically (initial={false} skips the
+            // entrance animation).
+            const isNewAI =
+              !prefersReduced &&
+              msg.role === 'assistant' &&
+              baselineCountRef.current !== null &&
+              i >= baselineCountRef.current
 
             return (
-              <div key={msg.id}>
+              <m.div
+                key={msg.id}
+                initial={isNewAI ? { opacity: 0, y: 8 } : false}
+                animate={isNewAI ? { opacity: 1, y: 0 } : undefined}
+                transition={isNewAI ? { type: 'spring', damping: 25, stiffness: 400 } : undefined}
+              >
                 <ChatBubble msg={msg} isGrouped={isGrouped} onAction={onMessageAction} />
                 {/* Context-aware chips — only after last AI message */}
                 {isLastAI && (
@@ -473,7 +515,7 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
                     ))}
                   </div>
                 )}
-              </div>
+              </m.div>
             )
           })}
 

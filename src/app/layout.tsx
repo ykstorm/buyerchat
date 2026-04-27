@@ -4,6 +4,7 @@ import { Analytics } from '@vercel/analytics/react'
 import { SpeedInsights } from '@vercel/speed-insights/next'
 import './globals.css'
 import Navbar from '@/components/Navbar'
+import PageFade from '@/components/PageFade'
 // FloatingChatWidget removed 2026-04-27 (P2-CRITICAL-8 Bug #6). The
 // "Book Visit →" button on project_card now redirects to /chat with a
 // pre-filled message + auto-send, replacing the widget's purpose.
@@ -108,7 +109,7 @@ export default function RootLayout({
       <body className="antialiased" style={{ background: 'var(--background)' }}>
         <Providers>
           <Navbar />
-          {children}
+          <PageFade>{children}</PageFade>
         </Providers>
         <Analytics />
         <SpeedInsights />

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useCallback, FormEvent } from 'react'
+import { m, useReducedMotion } from 'framer-motion'
 import { isValidIndianMobile } from '@/lib/stage-a-capture'
 
 // Stage A soft capture (Agent 4) — rendered inline in /chat after the AI's
@@ -27,6 +28,7 @@ export default function StageACapture({ sessionId, onComplete }: Props) {
   const [error, setError] = useState<string | null>(null)
 
   const phoneValid = isValidIndianMobile(phone)
+  const prefersReduced = useReducedMotion()
 
   const handleSave = useCallback(
     async (e: FormEvent) => {
@@ -195,9 +197,11 @@ export default function StageACapture({ sessionId, onComplete }: Props) {
       )}
 
       <div className="mt-3 flex flex-wrap gap-2">
-        <button
+        <m.button
           type="submit"
           disabled={!phoneValid || saving}
+          whileTap={prefersReduced || !phoneValid || saving ? undefined : { scale: 0.97 }}
+          transition={{ type: 'spring', damping: 30, stiffness: 500 }}
           className="px-3 py-2 rounded-lg text-[12.5px] font-medium transition-opacity disabled:opacity-50"
           style={{
             background: 'var(--text-primary)',
@@ -205,7 +209,7 @@ export default function StageACapture({ sessionId, onComplete }: Props) {
           }}
         >
           {saving ? 'Saving…' : 'Save with Homesty AI'}
-        </button>
+        </m.button>
         <button
           type="button"
           onClick={handleSkip}

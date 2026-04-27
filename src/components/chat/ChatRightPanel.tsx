@@ -2,7 +2,7 @@
 
 import React from 'react'
 import dynamic from 'next/dynamic'
-import { m, AnimatePresence } from 'framer-motion'
+import { m, AnimatePresence, useReducedMotion } from 'framer-motion'
 import type { ProjectType, Artifact } from '@/lib/types/chat'
 import type { BuilderAIContext } from '@/lib/types/builder-ai-context'
 
@@ -80,6 +80,7 @@ export default function ChatRightPanel({
     ) ?? null
   }
   const [showHistoryMenu, setShowHistoryMenu] = React.useState(false)
+  const prefersReduced = useReducedMotion()
 
   return (
     <>
@@ -89,10 +90,10 @@ export default function ChatRightPanel({
           {artifact ? (
             <m.div
               key={artifact.data.id + artifact.type}
-              initial={{ x: 40, opacity: 0, scale: 0.96 }}
-              animate={{ x: 0, opacity: 1, scale: 1 }}
-              exit={{ x: -20, opacity: 0 }}
-              transition={{ type: 'spring', stiffness: 300, damping: 28, mass: 0.8 }}
+              initial={prefersReduced ? false : { x: 16, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              exit={prefersReduced ? { opacity: 0 } : { x: -12, opacity: 0 }}
+              transition={prefersReduced ? { duration: 0 } : { type: 'spring', stiffness: 300, damping: 22 }}
             >
               {(canGoBack || canGoForward) && (
                 <div className="flex items-center gap-2 mb-3">

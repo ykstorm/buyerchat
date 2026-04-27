@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
-import { motion, useInView } from 'framer-motion'
+import { LazyMotion, domAnimation, m, useInView, useReducedMotion } from 'framer-motion'
 
 interface Project {
   id: string
@@ -36,6 +36,7 @@ function formatPrice(price: number): string {
 function ProjectCard({ project, index }: { project: Project; index: number }) {
   const ref = useRef(null)
   const isInView = useInView(ref, { once: true, margin: '-40px' })
+  const prefersReduced = useReducedMotion()
 
   const tagColor = project.decisionTag === 'Strong Buy' ? { bg: 'rgba(15,110,86,0.12)', text: '#0F6E56', dot: '#34D399' }
     : project.decisionTag === 'Buy w/ Cond' ? { bg: 'rgba(27,79,138,0.12)', text: '#1B4F8A', dot: '#60A5FA' }
@@ -46,11 +47,15 @@ function ProjectCard({ project, index }: { project: Project; index: number }) {
   const possession = new Date(project.possessionDate).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })
 
   return (
-    <motion.div
+    <m.div
       ref={ref}
-      initial={{ opacity: 0, y: 24 }}
-      animate={isInView ? { opacity: 1, y: 0 } : {}}
-      transition={{ duration: 0.6, delay: index * 0.06, ease: [0.25, 0.46, 0.45, 0.94] }}
+      initial={prefersReduced ? false : { opacity: 0, y: 20 }}
+      animate={prefersReduced || isInView ? { opacity: 1, y: 0 } : {}}
+      transition={
+        prefersReduced
+          ? { duration: 0 }
+          : { type: 'spring', damping: 22, stiffness: 280, delay: index * 0.05 }
+      }
       className="group rounded-2xl overflow-hidden"
       style={{ background: 'var(--landing-bg-card)', border: '1px solid var(--landing-border)', transition: 'border-color 200ms, box-shadow 200ms' }}
       onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--landing-accent)'; e.currentTarget.style.boxShadow = '0 12px 40px rgba(184,146,74,0.08)' }}
@@ -144,7 +149,7 @@ function ProjectCard({ project, index }: { project: Project; index: number }) {
           </Link>
         </div>
       </div>
-    </motion.div>
+    </m.div>
   )
 }
 
@@ -203,14 +208,14 @@ export default function ProjectsPage() {
   )
 
   return (
-    <>
+    <LazyMotion features={domAnimation}>
       {/* Landing-scope CSS tokens (--landing-*) live in globals.css so the
           pre-hydration theme script covers them — prevents dark-mode FOUC. */}
       <div style={{ background: 'var(--landing-bg)', minHeight: '100vh', fontFamily: 'var(--font-dm-sans), system-ui, sans-serif' }}>
         <div className="max-w-6xl mx-auto px-6">
 
           {/* Header */}
-          <motion.div
+          <m.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
@@ -228,7 +233,7 @@ export default function ProjectsPage() {
             <p className="text-[14px] mt-2" style={{ color: 'var(--landing-text-secondary)', maxWidth: '440px', lineHeight: 1.7 }}>
               {projects.length > 0 ? `${projects.length} active projects` : 'Loading...'} · Prices updated every 2 weeks · RERA verified
             </p>
-          </motion.div>
+          </m.div>
 
           {/* Filters — sticky offset matches shared Navbar height (Option 2 shells) */}
           <div className="sticky top-[73px] z-30 py-3 -mx-6 px-6" style={{ background: 'var(--landing-bg)', borderBottom: '1px solid var(--landing-border)' }}>
@@ -275,6 +280,6 @@ export default function ProjectsPage() {
 
         </div>
       </div>
-    </>
+    </LazyMotion>
   )
 }

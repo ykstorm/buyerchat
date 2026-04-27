@@ -165,7 +165,8 @@ function SpotlightCTACard({ project, onBookVisit }: { project: ProjectDetail; on
             className="mt-5 w-full rounded-full py-3.5 font-semibold text-sm transition-all duration-300"
             style={{ background: 'var(--accent)', color: 'var(--bg-base)' }}
             whileHover={{ scale: 1.01 }}
-            whileTap={{ scale: 0.98 }}
+            whileTap={{ scale: 0.97 }}
+            transition={{ type: 'spring', damping: 30, stiffness: 500 }}
             onClick={() => {
               // P2-CRITICAL-8 Bug #5 — redirect to /chat with prefilled+autosend
               // message so the AI runs the PART 7 booking flow. Replaces the
