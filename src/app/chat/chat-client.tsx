@@ -445,6 +445,22 @@ export default function ChatClient({
     sendMessage(content)
   }, [sendMessage])
 
+  // P2-CRITICAL-8 Bug #5 — book-visit ALSO triggers a chat message so the AI
+  // runs the PART 7 booking flow. The other book-visit listener (above) opens
+  // the visit_booking artifact in the right panel; this listener pushes a
+  // user message into the conversation. Both fire — additive behavior.
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const { projectId } = (e as CustomEvent).detail
+      const project = projects.find(p => p.id === projectId)
+      if (!project) return
+      const msg = `Visit book karna hai — ${project.projectName ?? 'this project'}`
+      sendMessage(msg)
+    }
+    window.addEventListener('book-visit', handler)
+    return () => window.removeEventListener('book-visit', handler)
+  }, [projects, sendMessage])
+
   const retryLast = useCallback(() => {
     if (!lastFailedMsg) return
     // Remove the last error message from the conversation
@@ -514,7 +530,21 @@ export default function ChatClient({
     if (urlSessionId && !document.referrer.includes('/chat')) {
       router.replace('/chat')
     }
-    // Pre-fill input from intent query params (e.g. from project page visit button)
+    // ?message=... — prefill + AUTO-SEND (P2-CRITICAL-8 Bug #5).
+    // Used by Book Visit buttons on /projects/[id] and ProjectCardV2 to hand
+    // off into the chat flow with the project name already in the message,
+    // so PART 7 visit-booking can take over immediately.
+    const message = searchParams.get('message')
+    if (message) {
+      setInput(message)
+      setTimeout(() => {
+        sendMessage(message)
+        setInput('')
+        router.replace('/chat')
+      }, 400)
+      return
+    }
+    // Legacy ?intent=visit&project=... — prefill only (no auto-send).
     const intent = searchParams.get('intent')
     const projectName = searchParams.get('project')
     if (intent === 'visit' && projectName) {

@@ -159,14 +159,25 @@ function SpotlightCTACard({ project, onBookVisit }: { project: ProjectDetail; on
             See it in person
           </h3>
           <p className="text-xs mt-2" style={{ color: 'var(--text-muted)' }}>
-            OTP-verified. No agent pressure. 30 seconds.
+            No agent pressure. Homesty AI handles the booking.
           </p>
           <motion.button
             className="mt-5 w-full rounded-full py-3.5 font-semibold text-sm transition-all duration-300"
             style={{ background: 'var(--accent)', color: 'var(--bg-base)' }}
             whileHover={{ scale: 1.01 }}
             whileTap={{ scale: 0.98 }}
-            onClick={onBookVisit}
+            onClick={() => {
+              // P2-CRITICAL-8 Bug #5 — redirect to /chat with prefilled+autosend
+              // message so the AI runs the PART 7 booking flow. Replaces the
+              // legacy VisitBookingModal which simulated an OTP step the model
+              // has no tool for. The modal stays available via `onBookVisit`
+              // (kept as a fallback prop) but the primary CTA now hands off
+              // to chat. Old onBookVisit ref retained but unused — operator
+              // can wire it back if a non-chat booking path returns later.
+              void onBookVisit
+              const msg = `Visit book karna hai — ${project.projectName}`
+              router.push(`/chat?message=${encodeURIComponent(msg)}`)
+            }}
           >
             Book Site Visit
           </motion.button>
