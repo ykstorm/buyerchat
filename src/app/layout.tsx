@@ -4,7 +4,10 @@ import { Analytics } from '@vercel/analytics/react'
 import { SpeedInsights } from '@vercel/speed-insights/next'
 import './globals.css'
 import Navbar from '@/components/Navbar'
-import ChatWidgetWrapper from '@/components/ChatWidgetWrapper'
+// FloatingChatWidget removed 2026-04-27 (P2-CRITICAL-8 Bug #6). The
+// "Book Visit →" button on project_card now redirects to /chat with a
+// pre-filled message + auto-send, replacing the widget's purpose.
+// Component file kept on disk for now in case a future surface wants it.
 import Providers from './providers'
 
 const playfair = Playfair_Display({
@@ -106,7 +109,6 @@ export default function RootLayout({
         <Providers>
           <Navbar />
           {children}
-          <ChatWidgetWrapper />
         </Providers>
         <Analytics />
         <SpeedInsights />
