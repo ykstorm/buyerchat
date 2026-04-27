@@ -5,10 +5,13 @@
 
 ## Last updated
 
-2026-04-27 14:49 IST — P2-PROMPT-NUCLEAR: PART 0 absolute rules + reorder PART 16 + parking defuse + 3 invariant tests
+2026-04-27 16:10 IST — P2-DASHBOARD + P2-DOCKER: dashboard luxury revamp + Docker setup
 
 ## What just shipped (most recent first)
 
+- `1dc3b86` — chore(docker): Dockerfile.dev + multi-stage Dockerfile + compose + standalone output. Vercel ignores standalone flag.
+- `d84bf66` — feat(dashboard): luxury warm-tone revamp — gold/black, spring animations, DB-wired (Shortlisted + Visits + Conversations + Activity Timeline)
+- `1a05846` — test(prompt): lock PART 0 + few-shot ordering + parking-defuse invariants (156/156)
 - `54561c1` — fix(prompt): NUCLEAR — PART 0 absolute rules at very top, EXAMPLE 17+18 first in PART 16, "parking allocation" → "parking space arrangement", result.onError noise traced to MARKDOWN_ABORT (resolves once bullets stop)
 - `8f4e453` — fix(compare): accept ?ids=a,b,c URL preselect — future Compare CTAs / shareable links work
 - `85d2aac` — fix(ui): floating chat only on /projects/[id] — was cluttering listing/profile/compare pages
