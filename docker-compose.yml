@@ -1,0 +1,35 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: homesty
+      POSTGRES_PASSWORD: dev_local_only
+      POSTGRES_DB: buyerchat
+    ports: ["5432:5432"]
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U homesty"]
+      interval: 5s
+      retries: 5
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    ports: ["3000:3000"]
+    env_file: [.env.local]
+    environment:
+      DATABASE_URL: postgres://homesty:dev_local_only@db:5432/buyerchat
+      DIRECT_URL: postgres://homesty:dev_local_only@db:5432/buyerchat
+    volumes:
+      - ./src:/app/src
+      - ./prisma:/app/prisma
+      - ./public:/app/public
+      - /app/node_modules
+      - /app/.next
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pgdata:

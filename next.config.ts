@@ -2,6 +2,9 @@ import { withSentryConfig } from '@sentry/nextjs';
 import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
+  // Standalone server output for Docker production image (.next/standalone).
+  // Vercel ignores this flag — safe in both environments.
+  output: 'standalone',
   // Emit .map files so Sentry can symbolicate production stack traces.
   productionBrowserSourceMaps: true,
   // Do not bundle these — their transitive deps (socks → ip-address) break under webpack minification.

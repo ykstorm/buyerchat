@@ -1,0 +1,15 @@
+node_modules
+.next
+.git
+.env
+.env.local
+.env.production.local
+*.log
+.vscode
+coverage
+.DS_Store
+.agent
+.claude
+docs/diagnostics
+playwright-report
+test-results
