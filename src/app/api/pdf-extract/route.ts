@@ -2,6 +2,13 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import Anthropic from '@anthropic-ai/sdk'
 
+export const runtime = 'nodejs'
+// Streaming PDF extraction. Hobby plan caps function duration at 60s
+// for streaming responses; Pro plan goes to 300s. If we ever drop back
+// to the sync fallback path, this needs to come down to 30 (Vercel
+// Hobby sync cap). See AGENT_DISCIPLINE §6.
+export const maxDuration = 60
+
 const MAX_SIZE = 10 * 1024 * 1024 // 10 MB
 
 const EXTRACT_PROMPT = `Extract these fields from this RERA brochure PDF. Return ONLY valid JSON, no other text:
@@ -21,6 +28,57 @@ const EXTRACT_PROMPT = `Extract these fields from this RERA brochure PDF. Return
 }
 Areas in sqft only. If not found use null.`
 
+type SsePayload = Record<string, unknown>
+
+function sse(event: string, data: SsePayload): string {
+  return `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`
+}
+
+function tryParseJson(text: string): unknown | null {
+  if (!text) return null
+  const cleaned = text.replace(/```json|```/g, '').trim()
+  try {
+    return JSON.parse(cleaned)
+  } catch {
+    return null
+  }
+}
+
+async function loadPdfBuffer(req: NextRequest): Promise<
+  { ok: true; buffer: Buffer } | { ok: false; status: number; error: string }
+> {
+  const contentType = req.headers.get('content-type') ?? ''
+
+  if (contentType.includes('application/json')) {
+    const body = await req.json().catch(() => null)
+    const url: unknown = body?.url
+    if (typeof url !== 'string' || !/^https?:\/\//i.test(url)) {
+      return { ok: false, status: 400, error: 'Missing or invalid `url`' }
+    }
+    const res = await fetch(url)
+    if (!res.ok) {
+      return { ok: false, status: 400, error: `Failed to fetch PDF (${res.status})` }
+    }
+    const ab = await res.arrayBuffer()
+    if (ab.byteLength > MAX_SIZE) {
+      return { ok: false, status: 400, error: 'File too large. Maximum 10 MB.' }
+    }
+    return { ok: true, buffer: Buffer.from(ab) }
+  }
+
+  const formData = await req.formData()
+  const file = formData.get('pdf') as File | null
+  if (!file) return { ok: false, status: 400, error: 'No PDF uploaded' }
+  if (file.type !== 'application/pdf') {
+    return { ok: false, status: 400, error: 'Only PDF files are accepted' }
+  }
+  if (file.size > MAX_SIZE) {
+    return { ok: false, status: 400, error: 'File too large. Maximum 10 MB.' }
+  }
+  const ab = await file.arrayBuffer()
+  return { ok: true, buffer: Buffer.from(ab) }
+}
+
 export async function POST(req: NextRequest) {
   const session = await auth()
   if (
@@ -30,103 +88,127 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
-  try {
-    let buffer: Buffer | null = null
-    const contentType = req.headers.get('content-type') ?? ''
-
-    if (contentType.includes('application/json')) {
-      // New path: client uploaded directly to Cloudinary, then posted
-      // back the secure URL. Bypasses the Vercel 4.5 MB body limit.
-      const body = await req.json().catch(() => null)
-      const url: unknown = body?.url
-      if (typeof url !== 'string' || !/^https?:\/\//i.test(url)) {
-        return NextResponse.json(
-          { error: 'Missing or invalid `url`' },
-          { status: 400 },
-        )
-      }
-      const res = await fetch(url)
-      if (!res.ok) {
-        return NextResponse.json(
-          { error: `Failed to fetch PDF (${res.status})` },
-          { status: 400 },
-        )
-      }
-      const ab = await res.arrayBuffer()
-      if (ab.byteLength > MAX_SIZE) {
-        return NextResponse.json(
-          { error: 'File too large. Maximum 10 MB.' },
-          { status: 400 },
-        )
-      }
-      buffer = Buffer.from(ab)
-    } else {
-      // Legacy fallback path: small PDFs uploaded as multipart/form-data.
-      // Vercel's 4.5 MB body limit means anything larger should use the
-      // Cloudinary URL path above instead.
-      const formData = await req.formData()
-      const file = formData.get('pdf') as File | null
-      if (!file) {
-        return NextResponse.json({ error: 'No PDF uploaded' }, { status: 400 })
-      }
-      const allowedTypes = ['application/pdf']
-      if (!allowedTypes.includes(file.type)) {
-        return NextResponse.json(
-          { error: 'Only PDF files are accepted' },
-          { status: 400 },
-        )
-      }
-      if (file.size > MAX_SIZE) {
-        return NextResponse.json(
-          { error: 'File too large. Maximum 10 MB.' },
-          { status: 400 },
-        )
-      }
-      const ab = await file.arrayBuffer()
-      buffer = Buffer.from(ab)
-    }
-
-    const base64 = buffer.toString('base64')
-    const client = new Anthropic()
-    const response = await client.messages.create({
-      model: 'claude-sonnet-4-5',
-      max_tokens: 1024,
-      messages: [
-        {
-          role: 'user',
-          content: [
-            {
-              type: 'document',
-              source: {
-                type: 'base64',
-                media_type: 'application/pdf',
-                data: base64,
-              },
-            },
-            { type: 'text', text: EXTRACT_PROMPT },
-          ],
-        },
-      ],
-    })
-    const text =
-      response.content[0].type === 'text' ? response.content[0].text : ''
-    const clean = text.replace(/```json|```/g, '').trim()
-    const extracted = JSON.parse(clean)
-    return NextResponse.json({ success: true, data: extracted })
-  } catch (err: unknown) {
-    console.error('PDF extract error:', err)
-    try {
-      const Sentry = await import('@sentry/nextjs')
-      Sentry.captureException(err)
-    } catch {
-      /* Sentry not configured */
-    }
-    const detail =
-      process.env.NODE_ENV === 'development' && err instanceof Error
-        ? err.message
-        : err instanceof Error
-        ? err.message
-        : 'Extract failed'
-    return NextResponse.json({ error: detail }, { status: 500 })
+  const loaded = await loadPdfBuffer(req)
+  if (!loaded.ok) {
+    return NextResponse.json({ error: loaded.error }, { status: loaded.status })
   }
+  const base64 = loaded.buffer.toString('base64')
+
+  const encoder = new TextEncoder()
+  const client = new Anthropic()
+
+  const stream = new ReadableStream({
+    start(controller) {
+      let closed = false
+      let slowFired = false
+      let lastChunkAt = Date.now()
+      let acc = ''
+
+      const push = (event: string, data: SsePayload) => {
+        if (closed) return
+        try {
+          controller.enqueue(encoder.encode(sse(event, data)))
+        } catch {
+          /* controller already closed */
+        }
+      }
+
+      const close = () => {
+        if (closed) return
+        closed = true
+        try {
+          controller.close()
+        } catch {
+          /* already closed */
+        }
+      }
+
+      // Server-side 8s no-chunk timeout — emit slow signal but DO NOT
+      // abort. Client decides whether to switch to manual entry.
+      const slowTimer = setInterval(() => {
+        if (slowFired || closed) return
+        if (Date.now() - lastChunkAt > 8000) {
+          slowFired = true
+          push('extraction_slow', {
+            message: 'Taking longer than usual',
+            elapsedMs: Date.now() - lastChunkAt,
+          })
+        }
+      }, 1000)
+
+      push('starting', { message: 'Reading brochure' })
+
+      const messageStream = client.messages.stream({
+        model: 'claude-sonnet-4-5',
+        max_tokens: 1024,
+        messages: [
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'document',
+                source: {
+                  type: 'base64',
+                  media_type: 'application/pdf',
+                  data: base64,
+                },
+              },
+              { type: 'text', text: EXTRACT_PROMPT },
+            ],
+          },
+        ],
+      })
+
+      messageStream.on('text', (delta: string, snapshot: string) => {
+        lastChunkAt = Date.now()
+        acc = snapshot
+        const partial = tryParseJson(snapshot)
+        push('progress', {
+          delta,
+          parsed: partial,
+        })
+      })
+
+      messageStream.on('finalMessage', () => {
+        const text = acc
+        const parsed = tryParseJson(text)
+        if (parsed) {
+          push('extraction_complete', { data: parsed })
+        } else {
+          push('error', {
+            message: 'Model returned non-JSON output',
+            raw: text.slice(0, 500),
+          })
+        }
+        clearInterval(slowTimer)
+        close()
+      })
+
+      messageStream.on('error', (err) => {
+        const detail = err instanceof Error ? err.message : 'Stream error'
+        push('error', { message: detail })
+        clearInterval(slowTimer)
+        close()
+        // Audit-only Sentry capture; client already received the event.
+        import('@sentry/nextjs')
+          .then((Sentry) => Sentry.captureException(err))
+          .catch(() => {})
+      })
+
+      messageStream.on('abort', () => {
+        push('error', { message: 'Stream aborted' })
+        clearInterval(slowTimer)
+        close()
+      })
+    },
+  })
+
+  return new Response(stream, {
+    headers: {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache, no-transform',
+      Connection: 'keep-alive',
+      'X-Accel-Buffering': 'no',
+    },
+  })
 }

@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
-import { uploadAndExtractPdf } from '@/lib/admin/pdf-upload'
+import PdfStreamProgress from '@/components/admin/PdfStreamProgress'
+import RERAManualEntry, { type RERAManualPayload } from '@/components/admin/RERAManualEntry'
 
 interface ProjectForm {
   projectName: string
@@ -179,6 +180,7 @@ export default function ProjectEditPage() {
   const [step, setStep] = useState(1)
   const [reraFetching, setReraFetching] = useState(false)
   const [reraNotice, setReraNotice] = useState<string | null>(null)
+  const [pdfFile, setPdfFile] = useState<File | null>(null)
 
   useEffect(() => {
     if (!isNew && !id) {
@@ -437,6 +439,25 @@ export default function ProjectEditPage() {
                   <p>{reraNotice}</p>
                 </div>
               )}
+              <RERAManualEntry
+                onApply={(d: RERAManualPayload) => {
+                  set('reraNumber', d.reraNumber)
+                  if (d.status) {
+                    set('constructionStatus',
+                      d.status.toLowerCase() === 'active' ? 'Under Construction' : 'Ready to Move')
+                  }
+                  if (d.expiryDate) set('possessionDate', d.expiryDate)
+                  if (d.totalUnits > 0) set('availableUnits', d.totalUnits)
+                  if (d.unitAllocation) {
+                    const types = d.unitAllocation
+                      .split(',')
+                      .map((s) => s.split(':')[0]?.trim())
+                      .filter(Boolean)
+                      .join(', ')
+                    if (types) set('unitTypes', types)
+                  }
+                }}
+              />
               <div className="grid grid-cols-2 gap-3 mt-4">
                 <div>
                   <label className="block text-[11px] text-[#9CA3AF] mb-1">Project name *</label>
@@ -501,34 +522,36 @@ export default function ProjectEditPage() {
                 <p className="text-[11px] mb-3" style={{ color: '#6B7280' }}>Upload RERA brochure — carpet areas, amenities, floors auto-filled</p>
                 <div className="flex gap-2 items-center">
                   <input type="file" accept=".pdf" id="pdf-upload" className="hidden"
-                    onChange={async (e) => {
+                    onChange={(e) => {
                       const file = e.target.files?.[0]
                       if (!file) return
-                      setReraFetching(true)
-                      try {
-                        const data = await uploadAndExtractPdf(file)
-                        if (data) {
-                          if (data.carpet_3bhk) set('carpetSqftMin', data.carpet_3bhk)
-                          if (data.sbu_3bhk) set('sbaSqftMin', data.sbu_3bhk)
-                          if (data.loading_factor) set('loadingFactor', data.loading_factor)
-                          if (data.total_floors) set('availableUnits', data.total_floors * 4)
-                          if (data.amenities) set('amenities', data.amenities.split(',').map((a: string) => a.trim()).join(', '))
-                          if (data.configurations) set('configurations', data.configurations)
-                          if (data.possession_date) set('possessionDate', new Date(data.possession_date).toISOString().split('T')[0])
-                        }
-                      } catch (err) {
-                        console.error('[pdf-upload]', err)
-                        setError(err instanceof Error ? err.message : 'PDF extract failed')
-                      }
-                      setReraFetching(false)
+                      setError(null)
+                      setPdfFile(file)
                     }}
                   />
                   <label htmlFor="pdf-upload" className="cursor-pointer px-4 py-2 rounded-lg text-[12px] font-medium transition-colors"
                     style={{ background: 'rgba(96,165,250,0.1)', color: '#60A5FA', border: '1px solid rgba(96,165,250,0.2)' }}>
-                    {reraFetching ? 'Extracting…' : 'Choose PDF →'}
+                    {pdfFile ? 'Replace PDF →' : 'Choose PDF →'}
                   </label>
                   <span className="text-[11px]" style={{ color: '#4B5563' }}>Carpet, SBU, amenities, floors auto-filled</span>
                 </div>
+                <PdfStreamProgress
+                  file={pdfFile}
+                  onComplete={(data) => {
+                    if (data.carpet_3bhk) set('carpetSqftMin', data.carpet_3bhk)
+                    if (data.sbu_3bhk) set('sbaSqftMin', data.sbu_3bhk)
+                    if (data.loading_factor) set('loadingFactor', data.loading_factor)
+                    if (data.total_floors) set('availableUnits', data.total_floors * 4)
+                    if (data.amenities)
+                      set('amenities', data.amenities.split(',').map((a: string) => a.trim()).join(', '))
+                    if (data.configurations) set('configurations', data.configurations)
+                    if (data.possession_date) {
+                      try { set('possessionDate', new Date(data.possession_date).toISOString().split('T')[0]) } catch {}
+                    }
+                  }}
+                  onError={(msg) => setError(msg)}
+                  onSwitchToManual={() => setPdfFile(null)}
+                />
               </div>
             </div>
           )}

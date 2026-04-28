@@ -158,12 +158,18 @@ export default async function ProjectsPage({
                     </td>
                     <td className="py-2.5 px-3">
                       <div className="flex flex-col gap-1.5">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                           {(!project.decisionTag || !project.honestConcern) && (
                             <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(251,191,36,0.15)', color: '#FBBF24' }}>Score needed</span>
                           )}
+                          {project.minPrice === 0 && (
+                            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(245,158,11,0.15)', color: '#F59E0B' }}>⚠ Price needed</span>
+                          )}
                           <Link href={`/admin/projects/${project.id}`} className="text-[11px] hover:underline" style={{ color: '#60A5FA' }}>
                             Edit →
+                          </Link>
+                          <Link href={`/admin/projects/${project.id}/pricing`} className="text-[11px] hover:underline" style={{ color: '#34D399' }}>
+                            Pricing →
                           </Link>
                         </div>
                         <MatchedBuyersButton projectId={project.id} />

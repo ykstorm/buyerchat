@@ -5,10 +5,11 @@
 
 ## Last updated
 
-2026-04-28 06:42 IST — Agent B: detail-page polish + structured data (JSON-LD on project+builder, H1 enrichment, branded errors, AA contrast)
+2026-04-28 06:50 IST — Agent C: PDF streaming extraction + RERA manual entry fallback + admin pricing discovery
 
 ## What just shipped (most recent first)
 
+- `pending-sha` — feat(pdf+rera): /api/pdf-extract refactored to Anthropic messages.stream + SSE (`runtime: 'nodejs'`, `maxDuration: 60` per Hobby cap), emits `starting` / `progress` / `extraction_slow` (8s no-chunk) / `extraction_complete` / `error` events. New PdfStreamProgress.tsx consumer (Cloudinary upload → SSE stream, cosmetic phrase rotation, "Switch to manual" affordance on slow/error). New RERAManualEntry.tsx collapsed disclosure under existing "Fetch from portal" — applies fields directly to form (no new endpoint; existing project save handles persistence). /admin/projects list gets amber ⚠ Price needed pill (where minPrice===0) + Pricing → deep link adjacent to Edit →. 3 new vitest tests on streaming response shape (162/162). Step 3 read-only panel from `fee4e6e` UNTOUCHED. (Agent C)
 - `3d465d9` — feat(pages+seo): Apartment + Organization JSON-LD on /projects/[id] and /builders/[id] layouts (server-rendered, prisma fetch cached and shared with generateMetadata, summary_large_image twitter cards). H1 on /projects/[id] now visibly carries "<Project> by <Builder> in <microMarket>, Ahmedabad" (was sr-only). Branded error copy on /chat/error.tsx + /projects/error.tsx. Italic founder-voice subline on dashboard EmptyShortlist. /compare empty state heading swaps to "1 selected — pick one more" + same "Pick two — Homesty AI will show the honest difference" subline; ProjectSelector accents the lone selected card with a blue ring; focus-visible rings on Add-project + dropdown rows. globals.css `--text-label` dark token #454560 → #6B7280 for 4.5:1 AA on #1C1917. 162/162 tests, build clean.
 - `99e5c49` — fix(chat): iOS keyboard height — visualViewport listener + paddingBottom + 16px input fonts (P2-MOBILE-PRICING Bug 2)
 - `fee4e6e` — fix(admin): /new + /[id] pricing step → skip / read-only + canonical pricing link (P2-MOBILE-PRICING Bug 1) — Mama landed on Step 3, saw editable BASE PRICE/MIN/MAX, typed 0s, submitted; API silently rejected pricing fields. Both wizard surfaces now redirect to canonical /admin/projects/[id]/pricing.
