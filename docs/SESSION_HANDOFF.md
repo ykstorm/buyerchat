@@ -5,10 +5,11 @@
 
 ## Last updated
 
-2026-04-28 01:35 IST — P2-MOBILE-PRICING: admin pricing UI fix (both surfaces) + iOS keyboard height fix
+2026-04-28 06:42 IST — Agent B: detail-page polish + structured data (JSON-LD on project+builder, H1 enrichment, branded errors, AA contrast)
 
 ## What just shipped (most recent first)
 
+- `3d465d9` — feat(pages+seo): Apartment + Organization JSON-LD on /projects/[id] and /builders/[id] layouts (server-rendered, prisma fetch cached and shared with generateMetadata, summary_large_image twitter cards). H1 on /projects/[id] now visibly carries "<Project> by <Builder> in <microMarket>, Ahmedabad" (was sr-only). Branded error copy on /chat/error.tsx + /projects/error.tsx. Italic founder-voice subline on dashboard EmptyShortlist. /compare empty state heading swaps to "1 selected — pick one more" + same "Pick two — Homesty AI will show the honest difference" subline; ProjectSelector accents the lone selected card with a blue ring; focus-visible rings on Add-project + dropdown rows. globals.css `--text-label` dark token #454560 → #6B7280 for 4.5:1 AA on #1C1917. 162/162 tests, build clean.
 - `99e5c49` — fix(chat): iOS keyboard height — visualViewport listener + paddingBottom + 16px input fonts (P2-MOBILE-PRICING Bug 2)
 - `fee4e6e` — fix(admin): /new + /[id] pricing step → skip / read-only + canonical pricing link (P2-MOBILE-PRICING Bug 1) — Mama landed on Step 3, saw editable BASE PRICE/MIN/MAX, typed 0s, submitted; API silently rejected pricing fields. Both wizard surfaces now redirect to canonical /admin/projects/[id]/pricing.
 - `1dfe508` — feat(animations): site-wide motion polish — projects stagger, chat msg spring, right-panel slide, button tap, page fade, empty-state cascade (P2-DASHBOARD-SITE-REVAMP Parts 2+3)
