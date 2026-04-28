@@ -10,7 +10,57 @@
 
 ## Last updated
 
-2026-04-29 — Day 3 (`p1-audit-fields-day3`)
+2026-04-29 — Day 4 (`p1-audit-fields-day4`)
+
+---
+
+## Day 4 — 2026-04-29 — `508eb09` — RERA cache + verify pill + drop duplicate scraper
+
+**Status:** [OK] — shipped on `p1-audit-fields-day4` off `3c178f2` (Day 3 head).
+
+**What landed:**
+
+- `/api/rera-fetch` now caches verifications for 7 days (Day 1 Q4) and
+  persists `reraVerified` / `reraData` / `reraVerifiedAt` via
+  `auditWrite({ action: 'verify_rera' })` — first cross-route reuse of
+  the Day 2 helper.
+- `?force=true` bypasses the cache (admin "Re-verify" button).
+- `reraNumber` regex `/^[A-Z0-9\-/]+$/i` enforced on the single-fetch
+  path → **Block E4 FULLY CLOSED** (bulk-upload closed the same regex
+  on Day 3).
+- `RERA_GEO_BLOCKED` leaves `reraVerified` untouched (Day 1 Q5).
+- `RERAVerifyPill` admin component (green/amber/stale chip + Verify/Re-
+  verify button) wired into `/admin/projects/[id]` Step 1. Pill takes
+  `projectId` as a typed prop (AGENT_DISCIPLINE §5); fetches its own
+  state from `/api/admin/projects/${id}` on mount.
+- `src/app/api/admin/rera-verify/` (217-line duplicate scraper) DELETED.
+  Pre-flight grep confirmed zero callers across `src/` and `tests/`.
+  Lock-in test asserts the file no longer exists.
+- 6 new tests: cache HIT (no scrape), cache MISS+TTL (scrape +
+  auditWrite), force bypass, GEO_BLOCKED (no flip), regex 400, deletion
+  lock-in.
+
+**Puppeteer mock strategy:** `vi.mock('puppeteer-core', ...)` and
+`vi.mock('@sparticuz/chromium', ...)` return mock `default` objects with
+spy-driven `launch` / `newPage` / `evaluate`. Route's dynamic imports
+(`(await import('puppeteer-core')).default`) honor the hoisted mocks —
+no real browser, no server start. Each test sets up its own
+`launch.mockImplementationOnce` throw or `evaluate.mockResolvedValue`
+shape.
+
+**CSP:** reviewed, no change needed. Puppeteer is server-side; CSP
+`connect-src` governs browser-side fetches only. Browser-side fetches
+in this sprint are all same-origin (`/api/rera-fetch`,
+`/api/admin/projects/[id]`).
+
+**Verify:** **181/181 tests** (175 → 181, +6). Build clean. /chat
+bundle stable at 217 kB. Schema valid. Pre-commit ran tests.
+
+**Discipline checklist applied:** §1 (CSP review, intentionally
+unmodified), §2, §3 (auditWrite array-form), §4 (duplicate-surface
+deleted), §5 (prop pass-through), §6, §7 (operator-trust fields written
+only on confirmed verification + actor captured), §9, §10, §11, §12,
+§13, §14, §15. §8, §16 — n/a.
 
 ---
 
@@ -133,41 +183,48 @@ is a sibling admin route), 175/175 tests, schema valid. **Test count:
 
 ---
 
-## Day 4 queue — RERA cache + delete duplicate scraper
+## Day 5 queue — Builder Onboarding Wizard (4-step)
 
-**Goal:** wire the Day 2 `reraVerified` / `reraData` / `reraVerifiedAt`
-cache columns and remove the orphaned scraper.
+**Goal:** ship a `/admin/builders/new` (and `/admin/builders/[id]/edit`)
+wizard surface that captures Builder rows with operator-trust provenance
+and audit-logged version bumps. Day 4 closed the project-side cache; Day
+5 brings parity to the builder-side admin flow and starts wiring
+provenance fields on free-text content.
 
-1. **Wire RERA cache on `/api/rera-fetch`:**
-   - On a successful scrape (puppeteer or Claude fallback): persist the
-     blob + flip `reraVerified=true` + set `reraVerifiedAt = now()` via
-     `auditWrite({ entity: 'Project', action: 'verify_rera', after: {
-     reraData, reraVerifiedAt }, actor: <admin-email> })`.
-   - Project lookup before scrape: if `reraVerifiedAt > now() - 7d`,
-     return the cached blob directly. Fresh-scrape only on cache miss
-     or operator-forced refresh (`?refresh=true`).
-   - On `RERA_GEO_BLOCKED` (existing 200 + `code:'RERA_GEO_BLOCKED'`
-     response): do NOT flip `reraVerified`, do NOT cache. Keep
-     manual-entry path the only verification on geo-block (Day 1 Q5).
-   - **Manual-entry path** (`RERAManualEntry.tsx`): currently only fills
-     form fields. Day 4 wires it to also persist `reraVerified=true`
-     with `reraData = { source: 'manual', operator: email, raw: <pasted> }`
-     and `reraVerifiedAt = now()` via `auditWrite` action `verify_rera`.
+1. **Wizard UX (4 steps):**
+   - Step 1: identity + brand (`builderName`, `brandName`, optional
+     `partnerStatus`, `commissionRatePct`).
+   - Step 2: trust scores 5×0–20 (`deliveryScore`, `reraScore`,
+     `qualityScore`, `financialScore`, `responsivenessScore`) with the
+     auto-grade computation already used in
+     `src/app/admin/builders/[id]/page.tsx`.
+   - Step 3: contact (`contactEmail`, `contactPhone` — these are
+     intentionally **excluded from AI context** per
+     `src/lib/types/builder-ai-context.ts` — wizard must surface a
+     warning chip "AI never sees this").
+   - Step 4: review + create. Save fires `prisma.builder.create` (sets
+     `createdBy: email`, `version: 1`) followed by the canonical
+     `auditWrite({ entity: 'Builder', action: 'create' })` to start the
+     audit trail at version 2 (matches Day 3 bulk-upload semantics).
 
-2. **Delete `/api/admin/rera-verify`:**
-   - Day 1 flagged the route as duplicate-surface (217 lines, no UI
-     wiring, never called). Sentry-search for the path string in last
-     30d to confirm zero hits before deleting.
-   - Remove the route file + any orphan helpers it imports.
+2. **Manual-entry → reraVerified flip (deferred from Day 4):**
+   - `RERAManualEntry.tsx` currently fills form fields client-side but
+     does NOT persist a manual verification marker. Wire it to call
+     `/api/rera-fetch` with a new optional `manualPayload` body field
+     (or a sibling `/api/rera-verify-manual` route) that flips
+     `reraVerified=true` with `reraData = { source: 'manual', operator:
+     email, raw: <pasted> }` and `reraVerifiedAt = now()` via the
+     existing `auditWrite` helper (action `verify_rera`).
 
 3. **Tests:**
-   - Cache-hit returns cached blob without calling puppeteer.
-   - Cache-miss + successful scrape persists blob and flips
-     `reraVerified`.
-   - Geo-block does NOT flip `reraVerified` and does NOT cache.
-   - Manual-entry path calls `auditWrite` with `verify_rera` and
-     `source: 'manual'` payload.
-   - At least 4 new tests; targets test count 175 → ≥179.
+   - 4-step navigation (Next/Back state machine) with a small unit suite
+     against the wizard's `useReducer` reducer — pure-function tests, no
+     prisma mocks.
+   - Builder create POST: `auditWrite` called once with `action: 'create'`,
+     actor email captured, `entityVersion: 2`.
+   - Manual-entry path: POST flips `reraVerified` + records `source:
+     'manual'` in `reraData`. Geo-block path remains untouched.
+   - Targets test count 181 → ≥185.
 
 ---
 
@@ -178,6 +235,7 @@ cache columns and remove the orphaned scraper.
 | 1   | `33fedac` | 162/162 | clean | read-only investigation only |
 | 2   | `2604474` | 170/170 | clean | +8 from auditWrite suite |
 | 3   | `379c03f` | 175/175 | clean | +5 from bulk-upload suite |
+| 4   | `508eb09` | 181/181 | clean | +6 from rera-fetch suite (cache HIT/MISS, force, GEO_BLOCK, regex, deletion lock-in) |
 
 ---
 
