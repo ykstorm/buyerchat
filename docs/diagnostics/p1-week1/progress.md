@@ -71,3 +71,60 @@ If Q2 (String? vs FK), Q3 (Json? vs normalized), Q4 (7-day TTL), or the
 "delete duplicate `/api/admin/rera-verify`" default are wrong, hold Day 2
 until operator resolves. The other three questions (Q1, Q5, Q6) proceed
 without input.
+
+---
+
+## Day 3 — 2026-04-29 — `p1-audit-fields-day3` (in progress)
+
+**Branch base:** `7d314c3` (Day 2 head on `p1-audit-fields-day2`).
+
+**Verify baseline at start:** 170/170 tests, build clean, prisma validate ✅
+(unchanged from Day 2 close).
+
+### CSV column inventory (mirrored from `import-projects.mjs:22-44`)
+
+The bulk-upload Zod schema accepts CSV with the following column names —
+identical to the canonical script — plus `latitude` / `longitude` which the
+script defaults but the API requires explicitly (defaults at the same
+co-ordinate would collapse all imports onto one map pin).
+
+| CSV column        | DB field            | Type     | Required? | Notes                                                                |
+| ----------------- | ------------------- | -------- | --------- | -------------------------------------------------------------------- |
+| `name`            | `projectName`       | string   | yes       | trimmed                                                              |
+| `builder`         | `builderName`       | string   | yes       | must match an existing `Builder.builderName` (FK, schema-enforced)   |
+| `zone`            | `microMarket`       | string   | yes       | (the script defaults to `'Shela'`; we require it explicitly)         |
+| `rera_number`     | `reraNumber`        | string   | yes       | **regex `/^[A-Z0-9\-/]+$/i` enforced; ANY row failure rejects all**   |
+| `rera_status`     | `constructionStatus`| string   | yes       | (the script defaults to `'Under Construction'`; we require it)       |
+| `min_price_lakh`  | `minPrice`          | number   | yes       | multiplied by 100 000 to land paise-precise INR                      |
+| `max_price_lakh`  | `maxPrice`          | number   | yes       | multiplied by 100 000                                                |
+| `possession_date` | `possessionDate`    | string   | yes       | parsed via the same DD-MM-YYYY / `Month YYYY` / ISO logic as script  |
+| `latitude`        | `latitude`          | number   | yes       | -90..90                                                              |
+| `longitude`       | `longitude`         | number   | yes       | -180..180                                                            |
+| `units`           | `availableUnits`    | int      | no        | defaults to 0 if missing                                             |
+| `bsp_sqft`        | `pricePerSqft`      | number   | no        | defaults to 0 if missing                                             |
+| `possession_flag` | `possessionFlag`    | string   | no        | `green` / `amber` / `red` per existing convention                    |
+| `decision_tag`    | `decisionTag`       | string   | no        |                                                                      |
+| `honest_concern`  | `honestConcern`     | string   | no        |                                                                      |
+| `analyst_note`    | `analystNote`       | string   | no        |                                                                      |
+| `configurations`  | `configurations`    | string   | no        |                                                                      |
+| `bank_approvals`  | `bankApprovals`     | string   | no        |                                                                      |
+| `carpet_sqft`     | `carpetSqftMin`     | int      | no        |                                                                      |
+| `sba_sqft`        | `sbaSqftMin`        | int      | no        |                                                                      |
+| `price_note`      | `priceNote`         | string   | no        |                                                                      |
+
+`delivery_score` and `trust_score` columns from the script's mapping table
+are **NOT in `Project`** (they live on `Builder`). Bulk-upload ignores them
+even when present; this matches the script's behavior (it doesn't write
+them either).
+
+### Rate-limit pattern reused (preflight §5)
+
+`src/lib/rate-limit.ts` — `rateLimit(key, limit, windowMs): Promise<boolean>`.
+The `key` is just the Redis key suffix (`rl:${key}:${windowSec}`) so a
+composite like `bulk-upload:${email}:${ip}` is a drop-in fit. Existing
+precedent: `src/app/api/chat/capture/route.ts:53` uses `capture:${sessionId}:${ip}`
+the same way. **No new module invented.**
+
+(Continued in HANDOFF.md — Day 3 deliverables + commit SHA fill in at
+sprint commit step.)
+
