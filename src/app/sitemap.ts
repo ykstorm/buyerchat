@@ -38,5 +38,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.5
   }))
 
-  return [...staticRoutes, ...projectRoutes, ...builderRoutes]
+  // Mirrors SLUGS in src/app/localities/[slug]/page.tsx.
+  const localitySlugs = ['shela'] as const
+  const localityRoutes: MetadataRoute.Sitemap = localitySlugs.map(slug => ({
+    url: `${base}/localities/${slug}`,
+    lastModified: new Date(),
+    changeFrequency: 'weekly' as const,
+    priority: 0.85
+  }))
+
+  return [...staticRoutes, ...localityRoutes, ...projectRoutes, ...builderRoutes]
 }
