@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { classifyIntent } from './intent-classifier'
+import { classifyIntent, detectHardCaptureIntent } from './intent-classifier'
 
 // These tests lock in the I15-final budget-regex fix. Before the fix, "85L"
 // failed to match the budget alternation (the literal `l` / `L` token was
@@ -52,5 +52,31 @@ describe('classifyIntent — persona priority', () => {
   it('"best for family" → family persona', () => {
     const result = classifyIntent('best for family')
     expect(result.persona).toBe('family')
+  })
+})
+
+describe('detectHardCaptureIntent — Stage B triggers', () => {
+  it('"total kitna padega" → cost_breakdown', () => {
+    expect(detectHardCaptureIntent('total kitna padega')).toBe('cost_breakdown')
+  })
+
+  it('"compare karo Riviera vs Planet" → comparison_request', () => {
+    expect(detectHardCaptureIntent('compare karo Riviera vs Planet')).toBe('comparison_request')
+  })
+
+  it('"Goyal ka delivery record kya hai" → builder_deep_dive', () => {
+    expect(detectHardCaptureIntent('Goyal ka delivery record kya hai')).toBe('builder_deep_dive')
+  })
+
+  it('"visit book karna hai" → visit_booking_attempt', () => {
+    expect(detectHardCaptureIntent('visit book karna hai')).toBe('visit_booking_attempt')
+  })
+
+  it('"full details Sarathya bhai" → full_project_details', () => {
+    expect(detectHardCaptureIntent('full details Sarathya bhai')).toBe('full_project_details')
+  })
+
+  it('"Mumbai mein flat dikhao" → null (no hard-capture intent)', () => {
+    expect(detectHardCaptureIntent('Mumbai mein flat dikhao')).toBeNull()
   })
 })

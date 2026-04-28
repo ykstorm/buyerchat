@@ -351,6 +351,23 @@ model AuditLog {
   @@index([createdAt])
 }
 
+// Stage B hard-capture OTP storage (Agent G).
+// Code format: "<salt>:<sha256(salt:code)>". Feature-flagged dark by default
+// — only written/read when STAGE_B_ENABLED='true'.
+model OtpCode {
+  id          String    @id @default(cuid())
+  phone       String
+  code        String
+  sessionId   String?
+  attempts    Int       @default(0)
+  maxAttempts Int       @default(5)
+  expiresAt   DateTime
+  verifiedAt  DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([phone, createdAt])
+}
+
 model Embedding {
   id         String                      @id @default(cuid())
   sourceType String

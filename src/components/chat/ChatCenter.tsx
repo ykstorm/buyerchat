@@ -7,6 +7,8 @@ import { FormEvent, useRef, useEffect, useState, memo, useMemo } from 'react'
 import ReactMarkdown from 'react-markdown'
 import type { ProjectType, Artifact } from '@/lib/types/chat'
 import type { BuilderAIContext } from '@/lib/types/builder-ai-context'
+import StageBCapture from './StageBCapture'
+import { STAGE_B_TRIGGER_SCRIPTS } from '@/lib/intent-classifier'
 
 // Mobile/inline artifact renderers — same lazy strategy as ChatRightPanel.
 // Skeletons use dark-mode tokens + approximate rendered heights.
@@ -132,6 +134,18 @@ export type Message = {
     kind: 'signin'
     label: string
   }
+  // Stage B hard-capture marker (Agent G). When present, the renderer mounts
+  // <StageBCapture> below this assistant bubble. The original user message is
+  // re-fired by the parent on verified.
+  captureB?: {
+    intent:
+      | 'cost_breakdown'
+      | 'comparison_request'
+      | 'builder_deep_dive'
+      | 'visit_booking_attempt'
+      | 'full_project_details'
+    originalUserContent: string
+  }
 }
 
 /* ── Stable markdown component overrides (created once, never re-allocated) ── */
@@ -213,6 +227,8 @@ type Props = {
   userName?: string | null
   userImage?: string | null
   captureCard?: React.ReactNode
+  sessionId?: string | null
+  onStageBVerified?: (msg: Message) => void
 }
 
 // P2-CHIPS-DASHBOARD — these chips are tuned to produce CARD-emitting
@@ -233,7 +249,7 @@ const STARTERS = [
   'Honest concern wala project dikhao',
 ]
 
-export default function ChatCenter({ messages, input, handleInputChange, handleSubmit, isLoading, append, loadingSession, artifact, builders = [], showArtifact, onToggleArtifact, canGoBack, canGoForward, onArtifactBack, onArtifactForward, artifactCurrent, artifactTotal, artifactHistory, onSelectArtifact, compareToast, buyerStage, onMessageAction, userId, userName, userImage, captureCard }: Props) {
+export default function ChatCenter({ messages, input, handleInputChange, handleSubmit, isLoading, append, loadingSession, artifact, builders = [], showArtifact, onToggleArtifact, canGoBack, canGoForward, onArtifactBack, onArtifactForward, artifactCurrent, artifactTotal, artifactHistory, onSelectArtifact, compareToast, buyerStage, onMessageAction, userId, userName, userImage, captureCard, sessionId, onStageBVerified }: Props) {
   const resolveBuilder = (a: Artifact | null): BuilderAIContext | null => {
     if (!a || a.type !== 'builder_trust') return null
     if (a.builder) return a.builder
@@ -490,6 +506,14 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
                 transition={isNewAI ? { type: 'spring', damping: 25, stiffness: 400 } : undefined}
               >
                 <ChatBubble msg={msg} isGrouped={isGrouped} onAction={onMessageAction} />
+                {msg.captureB && sessionId && onStageBVerified && (
+                  <StageBCapture
+                    intent={msg.captureB.intent}
+                    message={STAGE_B_TRIGGER_SCRIPTS[msg.captureB.intent]}
+                    sessionId={sessionId}
+                    onVerified={() => onStageBVerified(msg)}
+                  />
+                )}
                 {/* Context-aware chips — only after last AI message.
                     Stagger-fade so they don't snap in while buyer is still
                     reading the AI bubble (ui-polish-and-motion §5.4). */}

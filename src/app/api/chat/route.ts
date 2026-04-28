@@ -6,7 +6,7 @@ import { buildContextPayload, buildLocationGuardList } from '@/lib/context-build
 import { buildSystemPrompt } from '@/lib/system-prompt'
 import { SYSTEM_PROMPT_V2_LEGACY } from '@/lib/system-prompt-v2-archive'
 import { retrieveChunks } from '@/lib/rag/retriever'
-import { classifyIntent } from '@/lib/intent-classifier'
+import { classifyIntent, detectHardCaptureIntent, STAGE_B_TRIGGER_SCRIPTS } from '@/lib/intent-classifier'
 import { buildDecisionCard } from '@/lib/decision-engine/decision-card-builder'
 import { checkResponse, CONTACT_LEAK_PATTERN, BUSINESS_LEAK_PATTERN, MARKDOWN_PATTERN } from '@/lib/response-checker'
 import { sanitizeAdminInput } from '@/lib/sanitize'
@@ -126,6 +126,56 @@ if (hasInjection) {
   const classified = classifyIntent(sanitizedMsg)
   const intent = classified.intent
   const persona = classified.persona
+
+  // Stage B hard-capture gate (Agent G — feature-flagged dark by default).
+  // Mama 2026-04-28 lock: do nothing unless STAGE_B_ENABLED='true'. When on,
+  // a hard-capture intent on an un-verified session short-circuits the stream
+  // and returns a JSON {type:'capture_required',intent,message}. visit_booking_
+  // attempt is detected for parity but skipped here — visits use the existing
+  // VisitBooking flow.
+  if (process.env.STAGE_B_ENABLED === 'true') {
+    const hardIntent = detectHardCaptureIntent(sanitizedMsg)
+    if (hardIntent && hardIntent !== 'visit_booking_attempt') {
+      let stageBSession = incomingSessionId
+        ? await prisma.chatSession.findUnique({
+            where: { id: incomingSessionId },
+            select: { id: true, captureStage: true },
+          }).catch(() => null)
+        : null
+      if (!stageBSession) {
+        stageBSession = await prisma.chatSession.create({
+          data: {
+            sessionId: randomUUID(),
+            userId: session?.user?.id ?? null,
+            userMessage: sanitizedMsg,
+            aiResponse: '',
+            intent,
+          },
+          select: { id: true, captureStage: true },
+        })
+      }
+      if (stageBSession.captureStage !== 'verified') {
+        try {
+          await prisma.cRMEvent.create({
+            data: {
+              sessionId: stageBSession.id,
+              kind: 'stage_b_triggered',
+              channel: 'in_app',
+              payload: { intent: hardIntent, query: sanitizedMsg.slice(0, 200) },
+            },
+          })
+        } catch (err) { console.error('[STAGE_B] CRMEvent persist failed:', err) }
+        return NextResponse.json(
+          {
+            type: 'capture_required',
+            intent: hardIntent,
+            message: STAGE_B_TRIGGER_SCRIPTS[hardIntent],
+          },
+          { headers: { 'x-session-id': stageBSession.id } }
+        )
+      }
+    }
+  }
 
   // Build context
   let context

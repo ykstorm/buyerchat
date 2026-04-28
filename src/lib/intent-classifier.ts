@@ -74,3 +74,47 @@ export function classifyIntent(query: string): ClassifiedQuery {
 
   return { intent, persona }
 }
+
+// ---------------------------------------------------------------------------
+// Stage B hard-capture intent detection (Agent G — feature-flagged dark).
+//
+// Runs ONLY when STAGE_B_ENABLED='true' in src/app/api/chat/route.ts. Returns
+// null otherwise, and the function signature is independent of QueryIntent so
+// callers can compose. visit_booking_attempt is detected for parity but does
+// NOT trigger Stage B in /api/chat (visits already use VisitBooking flow).
+
+export type HardCaptureIntent =
+  | 'cost_breakdown'
+  | 'comparison_request'
+  | 'builder_deep_dive'
+  | 'visit_booking_attempt'
+  | 'full_project_details'
+
+export function detectHardCaptureIntent(query: string): HardCaptureIntent | null {
+  const q = query.toLowerCase()
+  if (/\b(total|all[- ]?in|kitna padega|exact (?:cost|price)|breakdown|registration.*charges|stamp duty.*included|final price)\b/.test(q))
+    return 'cost_breakdown'
+  if (/\b(compare|vs|versus|difference between|kaunsa better|which is better)\b/.test(q))
+    return 'comparison_request'
+  if (/\b(delivery record|track record|past projects|builder.*history|builder.*reputation|kitne projects|reliable hai)\b/.test(q))
+    return 'builder_deep_dive'
+  if (/\b(visit|site dekh|jaana hai|book.*visit|appointment|kal.*aaun|saturday|sunday).*(visit|book|appointment)?/.test(q))
+    return 'visit_booking_attempt'
+  if (/\b(full details|complete info|sab kuch batao|everything about|all info)\b/.test(q))
+    return 'full_project_details'
+  return null
+}
+
+export const STAGE_B_TRIGGER_SCRIPTS: Record<HardCaptureIntent, string> = {
+  cost_breakdown:
+    'Exact all-in breakdown ke liye number share kar dein — calculation unlock ho jaayegi.',
+  comparison_request:
+    'Detailed comparison ke liye number share kar dein — side-by-side analysis bhej deta hoon.',
+  builder_deep_dive:
+    'Builder ke past projects + delivery record share karne ke liye number chahiye — privacy ke liye.',
+  visit_booking_attempt:
+    'Visit confirm karne ke liye number chahiye — builder ko coordinate karne ke liye.',
+  full_project_details:
+    'Full project pack ke liye number share kar dein — brochure + pricing + visit slot bhej deta hoon.',
+}
+

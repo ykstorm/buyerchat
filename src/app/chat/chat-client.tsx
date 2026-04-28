@@ -232,6 +232,28 @@ export default function ChatClient({
         }),
       })
 
+      // Stage B hard-capture (Agent G — feature-flagged dark by default).
+      // When STAGE_B_ENABLED is on and a hard-capture intent fires for an
+      // unverified session, /api/chat returns JSON instead of a stream.
+      // Render the assistant bubble with a captureB marker so ChatCenter
+      // mounts <StageBCapture> below it; on verified, refire the original
+      // user message so the now-verified buyer gets the actual answer.
+      const ctype = res.headers.get('content-type') ?? ''
+      if (res.ok && ctype.startsWith('application/json')) {
+        const data = await res.json().catch(() => null) as { type?: string; intent?: any; message?: string } | null
+        if (data?.type === 'capture_required' && data.intent && data.message) {
+          const newSessionId = res.headers.get('x-session-id')
+          if (newSessionId) setSessionId(newSessionId)
+          setMessages(prev => [...prev, {
+            id: assistantId,
+            role: 'assistant',
+            content: data.message ?? '',
+            captureB: { intent: data.intent, originalUserContent: userContent },
+          }])
+          return
+        }
+      }
+
       if (!res.ok || !res.body) {
         let userMsg = 'Something went wrong. Please try again.'
         let action: Message['action'] | undefined
@@ -701,6 +723,13 @@ export default function ChatClient({
             const callbackUrl = typeof window !== 'undefined' ? window.location.href : '/chat'
             signIn('google', { callbackUrl })
           }
+        }}
+        sessionId={sessionId}
+        onStageBVerified={(msg) => {
+          if (!msg.captureB) return
+          const original = msg.captureB.originalUserContent
+          setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, captureB: undefined } : m))
+          sendMessage(original)
         }}
         onSelectArtifact={(index) => {
           artifactIndexRef.current = index
