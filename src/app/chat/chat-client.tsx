@@ -492,6 +492,20 @@ export default function ChatClient({
     return () => window.removeEventListener('book-visit', handler)
   }, [projects, sendMessage])
 
+  // compose-message — fired by artifact CTAs (e.g. CostBreakdownCard's
+  // empty-state "Ask Balvir for an estimate" button). Auto-sends the message
+  // so the buyer doesn't have to retype/re-tap. Same pattern as book-visit.
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail as { message?: string } | undefined
+      const msg = detail?.message?.trim()
+      if (!msg) return
+      sendMessage(msg)
+    }
+    window.addEventListener('compose-message', handler)
+    return () => window.removeEventListener('compose-message', handler)
+  }, [sendMessage])
+
   const retryLast = useCallback(() => {
     if (!lastFailedMsg) return
     // Remove the last error message from the conversation

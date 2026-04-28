@@ -226,11 +226,11 @@ type Props = {
 // prose-friendly. Avoid generic "show me X" / "which is better" phrasing.
 const STARTERS = [
   '3BHK family ke liye, 85L budget Shela mein',
-  'Shela mein strong options 90L ke andar dikhao',
+  'Riviera Bliss ka all-in breakdown dikhao',
   'Riviera Bliss ka honest review chahiye',
   'Riviera Bliss aur Shaligram Pride compare karo',
   'Goyal & Co ka trust score kitna hai?',
-  'Pehli baar le raha hoon — help karo',
+  'Honest concern wala project dikhao',
 ]
 
 export default function ChatCenter({ messages, input, handleInputChange, handleSubmit, isLoading, append, loadingSession, artifact, builders = [], showArtifact, onToggleArtifact, canGoBack, canGoForward, onArtifactBack, onArtifactForward, artifactCurrent, artifactTotal, artifactHistory, onSelectArtifact, compareToast, buyerStage, onMessageAction, userId, userName, userImage, captureCard }: Props) {
@@ -286,7 +286,9 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
     scrollRafPendingRef.current = true
     requestAnimationFrame(() => {
       scrollRafPendingRef.current = false
-      bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
+      // Streaming = instant scroll (no smooth-fight against RAF mutations).
+      // Final flush + history loads = smooth.
+      bottomRef.current?.scrollIntoView({ behavior: isLoading ? 'instant' : 'smooth', block: 'end' })
     })
   }, [messages, isLoading])
 
@@ -443,7 +445,7 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
               ))}
             </div>
 
-            {/* Trust line */}
+            {/* Trust line + founder voice anchor */}
             <m.p
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -451,6 +453,15 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
               className="text-[11px] text-[#A8A29E]"
             >
               Homesty earns only when you buy. No builder pays for promotion.
+            </m.p>
+            <m.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.7 }}
+              className="text-[11px] italic mt-1.5"
+              style={{ fontFamily: 'var(--font-playfair, Georgia), serif', color: 'var(--text-muted, #A8A29E)' }}
+            >
+              — Balvir, founder
             </m.p>
           </m.div>
         </div>
@@ -479,9 +490,19 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
                 transition={isNewAI ? { type: 'spring', damping: 25, stiffness: 400 } : undefined}
               >
                 <ChatBubble msg={msg} isGrouped={isGrouped} onAction={onMessageAction} />
-                {/* Context-aware chips — only after last AI message */}
+                {/* Context-aware chips — only after last AI message.
+                    Stagger-fade so they don't snap in while buyer is still
+                    reading the AI bubble (ui-polish-and-motion §5.4). */}
                 {isLastAI && (
-                  <div className="flex flex-wrap gap-1.5 mt-2 ml-8">
+                  <m.div
+                    className="flex flex-wrap gap-1.5 mt-2 ml-8"
+                    initial={prefersReduced ? false : 'hidden'}
+                    animate="show"
+                    variants={prefersReduced ? undefined : {
+                      hidden: {},
+                      show: { transition: { staggerChildren: 0.05, delayChildren: 0.15 } },
+                    }}
+                  >
                     {(() => {
                       const lower = msg.content.toLowerCase()
                       const hasProject = lower.includes('possession') || lower.includes('sqft') || lower.includes('bhk')
@@ -503,38 +524,47 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
                       if (hasProject) return ['Visit book karna hai', 'Doosre project se compare karo', 'Risks kya hain?', 'Builder ke baare mein batao']
                       return ['Shela mein strong 3BHK options dikhao', 'Family ke liye ideal budget kya hona chahiye?', 'South Bopal ya Shela — family ke liye kaunsa?', 'Dono compare karke decide karne mein help karo']
                     })().map(chip => (
-                      <button
+                      <m.button
                         key={chip}
                         type="button"
+                        variants={prefersReduced ? undefined : {
+                          hidden: { opacity: 0, y: 4 },
+                          show: { opacity: 1, y: 0 },
+                        }}
                         onClick={() => append({ role: 'user', content: chip })}
                         className="text-[11px] px-3 py-1.5 rounded-full border hover:scale-[1.04] active:scale-[0.96] transition-transform"
                         style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)', background: 'var(--bg-surface)' }}
                       >
                         {chip}
-                      </button>
+                      </m.button>
                     ))}
-                  </div>
+                  </m.div>
                 )}
               </m.div>
             )
           })}
 
-          {/* Loading dots */}
+          {/* Typing indicator — single gold pulse with radar-ping ring.
+              Replaces the generic 3-dot bouncing every AI clone uses. Reads
+              as "the advisor is thinking" not "the API is loading".
+              Reduced motion = static gold dot, no animation. */}
           {isLoading && (
             <div className="flex justify-start items-end gap-2 mt-4">
               <div className="w-6 h-6 rounded-full bg-[#1C1917] flex items-center justify-center flex-shrink-0">
                 <span className="text-white text-[8px] font-bold">BC</span>
               </div>
               <div className="rounded-2xl rounded-bl-md px-4 py-3 shadow-[0_1px_4px_rgba(0,0,0,0.06)]" style={{ background: 'var(--bg-message-ai)', border: '1px solid var(--border)' }}>
-                <div className="flex gap-1.5 items-center">
-                  {[0, 1, 2].map(i => (
-                    <m.div
-                      key={i}
-                      className="w-1.5 h-1.5 rounded-full bg-[#C8C4BF]"
-                      animate={{ y: [0, -3, 0], opacity: [0.4, 1, 0.4] }}
-                      transition={{ duration: 0.7, repeat: Infinity, delay: i * 0.15, ease: 'easeInOut' }}
+                <div className="relative w-2 h-2">
+                  {!prefersReduced && (
+                    <m.span
+                      aria-hidden
+                      className="absolute inset-0 rounded-full"
+                      style={{ background: '#C49B50' }}
+                      animate={{ scale: [1, 2.2], opacity: [0.55, 0] }}
+                      transition={{ duration: 1.8, repeat: Infinity, ease: 'easeOut' }}
                     />
-                  ))}
+                  )}
+                  <span aria-label="Homesty AI is thinking" role="status" className="absolute inset-0 rounded-full" style={{ background: '#C49B50' }} />
                 </div>
               </div>
             </div>
@@ -601,15 +631,15 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
                 <div className="flex items-center gap-2">
                   {artifactTotal && artifactTotal > 1 && (
                     <>
-                      <button type="button" onClick={onArtifactBack} disabled={!canGoBack}
-                        className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors disabled:opacity-30"
+                      <button type="button" onClick={onArtifactBack} disabled={!canGoBack} aria-label="Previous artifact"
+                        className="w-9 h-9 rounded-lg flex items-center justify-center transition-colors disabled:opacity-30"
                         style={{ background: 'var(--bg-subtle)' }}>
-                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M7.5 9L4.5 6L7.5 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                        <svg width="14" height="14" viewBox="0 0 12 12" fill="none"><path d="M7.5 9L4.5 6L7.5 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
                       </button>
-                      <button type="button" onClick={onArtifactForward} disabled={!canGoForward}
-                        className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors disabled:opacity-30"
+                      <button type="button" onClick={onArtifactForward} disabled={!canGoForward} aria-label="Next artifact"
+                        className="w-9 h-9 rounded-lg flex items-center justify-center transition-colors disabled:opacity-30"
                         style={{ background: 'var(--bg-subtle)' }}>
-                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4.5 3L7.5 6L4.5 9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                        <svg width="14" height="14" viewBox="0 0 12 12" fill="none"><path d="M4.5 3L7.5 6L4.5 9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
                       </button>
                       <span className="text-[10px] ml-1" style={{ color: 'var(--text-muted)' }}>{artifactCurrent}/{artifactTotal}</span>
                     </>
@@ -622,10 +652,11 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
                   <button
                     type="button"
                     onClick={onToggleArtifact}
-                    className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors"
+                    aria-label="Close artifact"
+                    className="w-10 h-10 rounded-lg flex items-center justify-center transition-colors"
                     style={{ background: 'var(--bg-subtle)' }}
                   >
-                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                    <svg width="14" height="14" viewBox="0 0 12 12" fill="none">
                       <path d="M9 3L3 9M3 3L9 9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
                     </svg>
                   </button>
@@ -774,10 +805,11 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
             type="submit"
             disabled={isLoading || !input.trim()}
             whileTap={{ scale: 0.94 }}
-            className="w-10 h-10 bg-[#1C1917] text-white rounded-2xl flex items-center justify-center disabled:opacity-30 transition-opacity hover:bg-[#2C2926] flex-shrink-0"
+            aria-label="Send message"
+            className="w-10 h-10 bg-[#1C1917] text-white rounded-2xl flex items-center justify-center transition-colors hover:bg-[#2C2926] flex-shrink-0 disabled:opacity-50 disabled:bg-stone-300 disabled:text-stone-500 disabled:cursor-not-allowed"
           >
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-              <path d="M7 12V2M7 2L2.5 6.5M7 2L11.5 6.5" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M7 12V2M7 2L2.5 6.5M7 2L11.5 6.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </m.button>
         </form>
