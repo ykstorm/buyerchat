@@ -110,6 +110,7 @@ function ProjectSelector({
   onSelect,
   onRemove,
   index,
+  highlight,
 }: {
   selectedId: string | null
   allProjects: ProjectOption[]
@@ -117,6 +118,7 @@ function ProjectSelector({
   onSelect: (id: string) => void
   onRemove: () => void
   index: number
+  highlight?: boolean
 }) {
   const [isOpen, setIsOpen] = useState(false)
   const [search, setSearch] = useState("")
@@ -146,8 +148,12 @@ function ProjectSelector({
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease, delay: index * 0.08 }}
-        className="relative rounded-2xl p-4 min-h-[100px]"
-        style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}
+        className="relative rounded-2xl p-4 min-h-[100px] transition-shadow"
+        style={{
+          background: 'var(--bg-surface)',
+          border: highlight ? '1px solid #1B4F8A' : '1px solid var(--border)',
+          boxShadow: highlight ? '0 0 0 3px rgba(27,79,138,0.18)' : 'none',
+        }}
       >
         <button
           onClick={onRemove}
@@ -184,7 +190,7 @@ function ProjectSelector({
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease, delay: index * 0.08 }}
         onClick={() => setIsOpen(true)}
-        className="w-full rounded-2xl border-dashed p-4 min-h-[100px] flex flex-col items-center justify-center gap-2 transition-all cursor-pointer"
+        className="w-full rounded-2xl border-dashed p-4 min-h-[100px] flex flex-col items-center justify-center gap-2 transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-[#1B4F8A]/50 focus-visible:ring-offset-2 focus-visible:outline-none"
         style={{ border: '2px dashed var(--border)', background: 'transparent' }}
       >
         <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ border: '1px solid var(--border)' }}>
@@ -229,7 +235,7 @@ function ProjectSelector({
                       setIsOpen(false)
                       setSearch("")
                     }}
-                    className={`w-full text-left px-4 py-3 flex items-center justify-between gap-3 transition-colors ${
+                    className={`w-full text-left px-4 py-3 flex items-center justify-between gap-3 transition-colors focus-visible:ring-2 focus-visible:ring-[#1B4F8A]/50 focus-visible:ring-offset-2 focus-visible:outline-none ${
                       isSelected ? "opacity-40 cursor-not-allowed" : "cursor-pointer"
                     }`}
                   >
@@ -312,7 +318,8 @@ function ComparisonRow({
   )
 }
 
-function EmptyState() {
+function EmptyState({ count }: { count: number }) {
+  const heading = count === 1 ? '1 selected — pick one more' : 'Select projects to compare'
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -325,8 +332,10 @@ function EmptyState() {
         <div className="absolute left-5 top-3 w-14 h-10 rounded-lg" style={{ border: '2px solid var(--border)', background: 'var(--bg-base)' }} />
         <div className="absolute left-10 top-6 w-14 h-10 rounded-lg" style={{ border: '2px solid var(--border)', background: 'var(--bg-base)' }} />
       </div>
-      <h3 className="text-lg" style={{ color: 'var(--text-muted)' }}>Select projects to compare</h3>
-      <p className="text-sm mt-2" style={{ color: 'var(--text-label)' }}>Choose up to 3 projects using the selectors above</p>
+      <h3 className="text-lg" style={{ color: 'var(--text-muted)' }}>{heading}</h3>
+      <p className="text-sm mt-2 italic" style={{ color: 'var(--text-label)' }}>
+        Pick two — Homesty AI will show the honest difference.
+      </p>
     </motion.div>
   )
 }
@@ -462,6 +471,7 @@ export default function ComparePage() {
               selectedIds={activeSelectedIds}
               onSelect={(id) => handleSelect(index, id)}
               onRemove={() => handleRemove(index)}
+              highlight={activeSelectedIds.length === 1 && selectedIds[index] !== null}
             />
           ))}
         </div>
@@ -639,7 +649,7 @@ export default function ComparePage() {
             </div>
           </div>
         ) : (
-          <EmptyState />
+          <EmptyState count={activeSelectedIds.length} />
         )}
       </div>
     </div>

@@ -600,8 +600,11 @@ function EmptyShortlist({ prefersReduced }: { prefersReduced: boolean }) {
       <p style={{ fontFamily: SERIF, fontSize: 18, color: T.text, marginBottom: 6 }}>
         Koi project shortlist nahi kiya abhi
       </p>
-      <p style={{ fontSize: 12, color: T.muted, marginBottom: 20 }}>
+      <p style={{ fontSize: 12, color: T.muted, marginBottom: 8 }}>
         Tell Homesty AI what you need — get honest matches.
+      </p>
+      <p style={{ fontSize: 11, color: T.muted, fontStyle: 'italic', marginBottom: 20, opacity: 0.8 }}>
+        Save a project in chat — Homesty AI will watch it for price changes.
       </p>
       <motion.div
         animate={

@@ -328,10 +328,11 @@ function ProjectDetailClient({ project }: { project: ProjectDetail }) {
           </div>
 
           <h1 className="text-5xl md:text-6xl font-bold leading-[1.05] tracking-tight mt-4" style={{ fontFamily: 'var(--font-cormorant, "Cormorant Garamond", Georgia, serif)', color: 'var(--text-primary)' }}>
-            <span>{project.projectName}</span>
-            <span className="sr-only"> by {project.builderName} in {project.microMarket}, Ahmedabad</span>
+            {project.projectName}
+            <span className="block text-base font-normal mt-3 tracking-normal" style={{ color: 'var(--text-secondary)', fontFamily: 'system-ui, sans-serif' }}>
+              by {project.builderName} in {project.microMarket}, Ahmedabad
+            </span>
           </h1>
-          <p className="text-base mt-2" style={{ color: 'var(--text-secondary)' }}>{project.builderName}</p>
 
           <div className="mt-4 flex flex-wrap gap-2">
             {project.urgencySignals.fewUnitsLeft && project.availableUnits < 20 && (
