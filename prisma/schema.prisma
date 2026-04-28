@@ -60,6 +60,12 @@ model Project {
   sbaSqftMin              Int?
   createdAt               DateTime         @default(now())
   updatedAt               DateTime         @updatedAt
+  createdBy               String?
+  updatedBy               String?
+  version                 Int              @default(1)
+  reraVerified            Boolean          @default(false)
+  reraData                Json?
+  reraVerifiedAt          DateTime?
   builder                 Builder          @relation(fields: [builderName], references: [builderName], onDelete: Restrict)
   priceHistory            PriceHistory[]
   siteVisits              SiteVisit[]
@@ -73,6 +79,8 @@ model Project {
   @@index([decisionTag])
   @@index([constructionStatus])
   @@index([builderName])
+  @@index([updatedBy])
+  @@index([reraVerified])
 }
 
 model Builder {
@@ -92,8 +100,13 @@ model Builder {
   contactPhone        String?
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
+  createdBy           String?
+  updatedBy           String?
+  version             Int       @default(1)
   projects            Project[]
   agreementSigned     Boolean   @default(false)
+
+  @@index([updatedBy])
 }
 
 model User {
@@ -141,6 +154,7 @@ model PriceHistory {
   projectId    String
   pricePerSqft Float
   recordedAt   DateTime @default(now())
+  recordedBy   String?
   project      Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   @@index([projectId])
@@ -337,13 +351,14 @@ model MarketAlert {
 }
 
 model AuditLog {
-  id        String   @id @default(cuid())
-  action    String
-  entity    String
-  entityId  String?
-  data      Json?
-  userEmail String
-  createdAt DateTime @default(now())
+  id            String   @id @default(cuid())
+  action        String
+  entity        String
+  entityId      String?
+  data          Json?
+  userEmail     String
+  entityVersion Int?
+  createdAt     DateTime @default(now())
 
   @@index([action])
   @@index([entity])
