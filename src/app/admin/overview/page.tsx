@@ -4,6 +4,7 @@ import { formatLakh, daysBetween, getStageLabel, getUrgency, getBuyerDisplayName
 import { auth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
+import { AdminEyebrow, AdminIcon } from '@/components/admin/AdminStates'
 
 export const dynamic = 'force-dynamic'
 
@@ -172,6 +173,7 @@ export default async function OverviewPage() {
       {/* Header */}
       <div className="flex items-start justify-between mb-6">
         <div>
+          <AdminEyebrow>Overview</AdminEyebrow>
           <p className="text-[22px] font-bold text-white">{greeting}</p>
           <p className="text-[12px] mt-0.5" style={{ color: '#6B7280' }}>{dateStr}</p>
         </div>
@@ -208,7 +210,10 @@ export default async function OverviewPage() {
       {/* Alerts strip */}
       {alerts.filter(a => a.color === '#A32D2D' || a.color === '#BA7517').length > 0 && (
         <div className="mb-5 rounded-xl px-4 py-3 flex items-center gap-3 flex-wrap" style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)' }}>
-          <span className="text-[11px] font-bold" style={{ color: '#F87171' }}>🔴 {alerts.filter(a => a.color === '#A32D2D' || a.color === '#BA7517').length} items need attention</span>
+          <span className="text-[11px] font-bold flex items-center gap-1.5" style={{ color: '#F87171' }}>
+            <span className="w-1.5 h-1.5 rounded-full" style={{ background: '#F87171' }} />
+            {alerts.filter(a => a.color === '#A32D2D' || a.color === '#BA7517').length} items need attention
+          </span>
           <span className="text-[11px]" style={{ color: '#9CA3AF' }}>{alerts.filter(a => a.color !== '#0F6E56').map(a => a.title).join(' · ')}</span>
           <Link href="/admin/followup" className="ml-auto text-[11px] font-semibold px-3 py-1 rounded-lg" style={{ background: 'rgba(239,68,68,0.15)', color: '#F87171' }}>View all →</Link>
         </div>
@@ -271,7 +276,7 @@ export default async function OverviewPage() {
           </div>
           <div className="space-y-2">
             {urgentSessions.length === 0 ? (
-              <p className="text-[12px]" style={{ color: '#4B5563' }}>No urgent follow-ups</p>
+              <p className="text-[12px] italic py-2" style={{ fontFamily: 'var(--font-playfair, Georgia), serif', color: '#6B7280' }}>No urgent follow-ups — buyers stayed warm.</p>
             ) : urgentSessions.slice(0, 5).map(s => {
               const { label: urgencyLabel, color: urgencyColor } = getUrgency(s.lastMessageAt)
               const isRed = urgencyColor === 'red'
@@ -308,7 +313,7 @@ export default async function OverviewPage() {
           </div>
           <div className="space-y-1.5">
             {pipelineSessions.length === 0 ? (
-              <p className="text-[12px]" style={{ color: '#4B5563' }}>No active pipeline</p>
+              <p className="text-[12px] italic py-2" style={{ fontFamily: 'var(--font-playfair, Georgia), serif', color: '#6B7280' }}>Pipeline is empty — first hot buyer lands soon.</p>
             ) : pipelineSessions.slice(0, 6).map(s => {
               const buyerName = getBuyerDisplayName(s, 24)
               return (
@@ -342,31 +347,31 @@ export default async function OverviewPage() {
             <span className="text-[10px]" style={{ color: 'var(--text-muted)' }} suppressHydrationWarning>{new Date().toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' })}</span>
           </div>
           <div className="space-y-2">
-            {[
+            {([
               urgentSessions.length > 0 && {
-                icon: '🔴', text: `Contact ${urgentSessions.length} urgent buyer${urgentSessions.length > 1 ? 's' : ''} today`, href: '/admin/followup', color: '#F87171'
+                icon: 'alert' as const, text: `Contact ${urgentSessions.length} urgent buyer${urgentSessions.length > 1 ? 's' : ''} today`, href: '/admin/followup', color: '#F87171'
               },
               postVisitSilenceCount > 0 && {
-                icon: '⏰', text: `${postVisitSilenceCount} post-visit buyer${postVisitSilenceCount > 1 ? 's' : ''} need 48h follow-up`, href: '/admin/followup', color: '#FBBF24'
+                icon: 'clock' as const, text: `${postVisitSilenceCount} post-visit buyer${postVisitSilenceCount > 1 ? 's' : ''} need 48h follow-up`, href: '/admin/followup', color: '#FBBF24'
               },
               scoringQueueCount > 0 && {
-                icon: '📋', text: `Score ${scoringQueueCount} project${scoringQueueCount > 1 ? 's' : ''} — buyers seeing ₹0 prices`, href: '/admin/projects', color: '#FBBF24'
+                icon: 'note' as const, text: `Score ${scoringQueueCount} project${scoringQueueCount > 1 ? 's' : ''} — buyers seeing ₹0 prices`, href: '/admin/projects', color: '#FBBF24'
               },
               pendingVisitCount > 0 && {
-                icon: '🏗', text: `${pendingVisitCount} site visit${pendingVisitCount > 1 ? 's' : ''} upcoming — send builder brief`, href: '/admin/visits', color: '#60A5FA'
+                icon: 'crane' as const, text: `${pendingVisitCount} site visit${pendingVisitCount > 1 ? 's' : ''} upcoming — send builder brief`, href: '/admin/visits', color: '#60A5FA'
               },
               reraAlertCount > 0 && {
-                icon: '⚠️', text: `${reraAlertCount} RERA deadline${reraAlertCount > 1 ? 's' : ''} within 90 days`, href: '/admin/intelligence', color: '#F87171'
+                icon: 'shield' as const, text: `${reraAlertCount} RERA deadline${reraAlertCount > 1 ? 's' : ''} within 90 days`, href: '/admin/intelligence', color: '#F87171'
               },
-            ].filter(Boolean).map((action: any, i) => (
+            ].filter(Boolean) as { icon: 'alert' | 'clock' | 'note' | 'crane' | 'shield'; text: string; href: string; color: string }[]).map((action, i) => (
               <Link key={i} href={action.href} className="flex items-center gap-2.5 rounded-lg px-3 py-2.5 transition-colors hover:bg-white/5" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' }}>
-                <span className="text-[14px]">{action.icon}</span>
+                <span style={{ color: action.color }}><AdminIcon kind={action.icon} size={14} /></span>
                 <span className="text-[11px]" style={{ color: action.color }}>{action.text}</span>
                 <span className="ml-auto text-[10px]" style={{ color: '#4B5563' }}>→</span>
               </Link>
             ))}
             {urgentSessions.length === 0 && postVisitSilenceCount === 0 && scoringQueueCount === 0 && (
-              <p className="text-[12px] text-center py-4" style={{ color: '#4B5563' }}>All clear — no urgent actions today ✓</p>
+              <p className="text-[12px] text-center py-4 italic" style={{ fontFamily: 'var(--font-playfair, Georgia), serif', color: '#6B7280' }}>All clear — no urgent actions today.</p>
             )}
           </div>
         </div>

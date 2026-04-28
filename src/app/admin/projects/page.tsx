@@ -4,6 +4,7 @@ import { auth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import MatchedBuyersButton from '@/components/admin/MatchedBuyersButton'
+import { AdminEmptyState, AdminEyebrow } from '@/components/admin/AdminStates'
 import { getAdminCache, setAdminCache } from '@/lib/admin-cache'
 
 export const dynamic = 'force-dynamic'
@@ -93,6 +94,7 @@ export default async function ProjectsPage({
     <div style={{ background: '#0A0F1E', minHeight: '100vh' }}>
       <div className="flex items-center justify-between mb-5">
         <div>
+          <AdminEyebrow>Listings</AdminEyebrow>
           <h1 className="text-[18px] font-bold text-white">Projects</h1>
           <p className="text-[12px] mt-0.5" style={{ color: '#6B7280' }}>{projects.length} total · {projects.filter(p => p.isActive).length} active</p>
         </div>
@@ -179,7 +181,15 @@ export default async function ProjectsPage({
                 )
               })}
               {projects.length === 0 && (
-                <tr><td colSpan={9} className="py-8 text-center text-[12px]" style={{ color: '#4B5563' }}>No projects yet.</td></tr>
+                <tr><td colSpan={9}>
+                  <AdminEmptyState
+                    icon="building"
+                    title="No projects yet — yet."
+                    body="Add your first listing and Mama can start scoring it."
+                    ctaLabel="Add a project"
+                    ctaHref="/admin/projects/new"
+                  />
+                </td></tr>
               )}
             </tbody>
           </table>

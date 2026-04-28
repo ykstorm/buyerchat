@@ -4,6 +4,7 @@ import { DarkBadge } from '@/components/admin/DarkCard'
 import { auth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
+import { AdminEmptyState, AdminEyebrow } from '@/components/admin/AdminStates'
 
 export const dynamic = 'force-dynamic'
 
@@ -43,6 +44,7 @@ export default async function BuildersPage() {
     <div style={{ background: '#0A0F1E', minHeight: '100vh' }}>
       <div className="flex items-center justify-between mb-5">
         <div>
+          <AdminEyebrow>Registry</AdminEyebrow>
           <h1 className="text-[18px] font-bold text-white">Builder Registry</h1>
           <p className="text-[12px] mt-0.5" style={{ color: '#6B7280' }}>{builders.length} builders · commission tracking · agreement status</p>
         </div>
@@ -85,8 +87,14 @@ export default async function BuildersPage() {
             )
           })}
           {builders.length === 0 && (
-            <div className="rounded-xl p-4 text-center" style={{ background: '#111827', border: '1px solid rgba(255,255,255,0.07)' }}>
-              <p className="text-[12px]" style={{ color: '#4B5563' }}>No builders yet.</p>
+            <div className="rounded-xl" style={{ background: '#111827', border: '1px solid rgba(255,255,255,0.07)' }}>
+              <AdminEmptyState
+                icon="crane"
+                title="No builders registered."
+                body="Add a builder before linking projects."
+                ctaLabel="Add a builder"
+                ctaHref="/admin/builders/new"
+              />
             </div>
           )}
         </div>
@@ -171,7 +179,7 @@ export default async function BuildersPage() {
                         </div>
                       ))}
                       {(!builder.projects || builder.projects.length === 0) && (
-                        <p className="text-[11px]" style={{ color: '#4B5563' }}>No projects yet.</p>
+                        <p className="text-[11px] italic" style={{ fontFamily: 'var(--font-playfair, Georgia), serif', color: '#6B7280' }}>No projects under this builder yet.</p>
                       )}
                     </div>
                   </div>

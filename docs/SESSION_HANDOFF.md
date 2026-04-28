@@ -5,7 +5,7 @@
 
 ## Last updated
 
-2026-04-28 08:10 IST — Agent D: Shela locality SEO page + per-project OG
+2026-04-28 — Path A admin cosmetic revamp + handoff hygiene (in main shell while Batch 2 E/F/G run)
 
 ## What just shipped (most recent first)
 
@@ -66,7 +66,12 @@ stay local.
 
 ## Open decisions (operator pending)
 
-- **None blocking.** META-2 was a pure-infra sprint with no decisions.
+- **RERA fetch (Phase 3).** Mama 2026-04-28: manual entry stays canonical
+  for Phase 1-2 (already shipped in `8f3ad98` — admin RERA-manual fallback
+  + price-needed pill). AWS Mumbai (ap-south-1) instance routing only RERA
+  portal requests is deferred to Phase 3 (post first-close). Cost framed
+  as "minimal" but not warranted until platform earns. **Do NOT propose
+  RERA scrapers, geographic routing, or AWS infra in current sprints.**
 
 ## Known issues / workarounds
 
@@ -76,7 +81,7 @@ stay local.
 
 ## Verification state (last `npm run verify` baseline)
 
-- Tests: **159/159** passing (no test changes — both bugs are UI/CSS hygiene)
+- Tests: **162/162** passing (post 95c8c81 cards + 99e5c49 + fee4e6e; baseline ratcheted up from 159)
 - Build: **clean**. /chat 49.9 → 50.1 kB route / 300 → 301 kB first-load (+0.2 kB route from visualViewport listener). /admin/projects/new 6.77 kB route / 223 kB (down ~1.6 kB from removing the editable pricing form). /admin/projects/[id] 8.63 kB route / 225 kB (down ~1 kB from same).
 - Lint: clean on touched files (pre-existing warnings on untouched files OK per discipline §9)
 - Schema: `prisma validate` passes

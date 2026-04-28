@@ -3,8 +3,8 @@ import { daysBetween, formatLakh, getPersonaLabel, getStageLabel, getBuyerDispla
 import { DarkMetricCard, DarkCard, DarkBadge } from '@/components/admin/DarkCard'
 import { auth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
-import Link from 'next/link'
 import DraftMessageButton from '@/components/admin/DraftMessageButton'
+import { AdminEmptyState, AdminEyebrow, AdminIcon } from '@/components/admin/AdminStates'
 
 export const dynamic = 'force-dynamic'
 
@@ -75,6 +75,7 @@ export default async function FollowUpPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-5">
         <div>
+          <AdminEyebrow>Outreach</AdminEyebrow>
           <h1 className="text-[18px] font-bold text-white">Follow-Up Dashboard</h1>
           <p className="text-[12px] mt-0.5" style={{ color: '#6B7280' }}>
             {now.toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}
@@ -97,13 +98,17 @@ export default async function FollowUpPage() {
       <div className="flex gap-3 mb-5 flex-wrap">
         {postVisitSessions.length > 0 && (
           <div className="flex-1 rounded-xl px-4 py-3" style={{ background: 'rgba(248,113,113,0.08)', border: '1px solid rgba(248,113,113,0.2)' }}>
-            <p className="text-[12px] font-semibold" style={{ color: '#F87171' }}>🚨 {postVisitSessions.length} post-visit silence</p>
+            <p className="text-[12px] font-semibold flex items-center gap-1.5" style={{ color: '#F87171' }}>
+              <AdminIcon kind="alert" size={12} />{postVisitSessions.length} post-visit silence
+            </p>
             <p className="text-[11px] mt-0.5" style={{ color: '#9CA3AF' }}>Post-visit decode needed. Capture emotion before buyer goes cold.</p>
           </div>
         )}
         {qualifiedSessions.length > 0 && (
           <div className="flex-1 rounded-xl px-4 py-3" style={{ background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.2)' }}>
-            <p className="text-[12px] font-semibold" style={{ color: '#FBBF24' }}>⚡ {qualifiedSessions.length} qualified buyers</p>
+            <p className="text-[12px] font-semibold flex items-center gap-1.5" style={{ color: '#FBBF24' }}>
+              <AdminIcon kind="spark" size={12} />{qualifiedSessions.length} qualified buyers
+            </p>
             <p className="text-[11px] mt-0.5" style={{ color: '#9CA3AF' }}>Send shortlist within 24h — highest conversion window.</p>
           </div>
         )}
@@ -114,7 +119,9 @@ export default async function FollowUpPage() {
         <div className="lg:col-span-2 space-y-4">
           {urgent.length > 0 && (
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-wider mb-2" style={{ color: '#F87171' }}>🔴 Urgent — contact today ({urgent.length})</p>
+              <p className="text-[11px] font-semibold uppercase tracking-wider mb-2 flex items-center gap-1.5" style={{ color: '#F87171' }}>
+                <span className="w-1.5 h-1.5 rounded-full" style={{ background: '#F87171' }} />Urgent — contact today ({urgent.length})
+              </p>
               <div className="space-y-2">
                 {urgent.map(session => {
                   const buyerName = getBuyerDisplayName(session, 30)
@@ -146,7 +153,9 @@ export default async function FollowUpPage() {
 
           {high.length > 0 && (
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-wider mb-2" style={{ color: '#FBBF24' }}>🟡 High Priority ({high.length})</p>
+              <p className="text-[11px] font-semibold uppercase tracking-wider mb-2 flex items-center gap-1.5" style={{ color: '#FBBF24' }}>
+                <span className="w-1.5 h-1.5 rounded-full" style={{ background: '#FBBF24' }} />High Priority ({high.length})
+              </p>
               <div className="space-y-2">
                 {high.map(session => {
                   const buyerName = getBuyerDisplayName(session, 30)
@@ -240,8 +249,12 @@ export default async function FollowUpPage() {
           )}
 
           {sessions.length === 0 && (
-            <div className="rounded-2xl p-8 text-center" style={{ background: '#111827', border: '1px solid rgba(255,255,255,0.07)' }}>
-              <p className="text-[13px]" style={{ color: '#6B7280' }}>No buyers in follow-up queue.</p>
+            <div className="rounded-2xl" style={{ background: '#111827', border: '1px solid rgba(255,255,255,0.07)' }}>
+              <AdminEmptyState
+                icon="check-circle"
+                title="All clear — nothing to chase."
+                body="No buyer sessions need follow-up right now. Check back when the next batch goes silent."
+              />
             </div>
           )}
         </div>

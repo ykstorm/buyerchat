@@ -3,6 +3,7 @@ import { daysBetween, formatLakh, getPersonaLabel, getStageLabel, getSessionQual
 import { auth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
+import { AdminEmptyState, AdminEyebrow } from '@/components/admin/AdminStates'
 
 export const dynamic = 'force-dynamic'
 
@@ -151,6 +152,7 @@ export default async function BuyersPage({
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div>
+          <AdminEyebrow>CRM</AdminEyebrow>
           <h1 className="text-[18px] font-bold text-white">Buyers / CRM</h1>
           <p className="text-[12px] mt-0.5" style={{ color: '#6B7280' }}>{totalActive} active · intent tracking · journey stage</p>
         </div>
@@ -273,7 +275,13 @@ export default async function BuyersPage({
                     )
                   })}
                   {sessions.length === 0 && (
-                    <tr><td colSpan={9} className="py-6 text-center text-[12px]" style={{ color: '#4B5563' }}>No buyers yet.</td></tr>
+                    <tr><td colSpan={9}>
+                      <AdminEmptyState
+                        icon="users"
+                        title="No buyer sessions yet."
+                        body="The CRM fills as buyers chat. Share /chat with the first cohort."
+                      />
+                    </td></tr>
                   )}
                 </tbody>
               </table>
@@ -301,7 +309,13 @@ export default async function BuyersPage({
               <p className="text-[12px] font-medium text-white">{chatSessions.length} conversations</p>
             </div>
             <div className="overflow-y-auto" style={{ maxHeight: '72vh' }}>
-              {chatSessions.length === 0 && <p className="text-[12px] p-4" style={{ color: '#4B5563' }}>Click any session to view full conversation</p>}
+              {chatSessions.length === 0 && (
+                <AdminEmptyState
+                  icon="inbox"
+                  title="No conversations to review."
+                  body="Sessions appear here once buyers start chatting."
+                />
+              )}
               {chatSessions.map(s => {
                 const firstMsg = s.messages?.[0]
                 const isSelected = s.id === selectedSessionId

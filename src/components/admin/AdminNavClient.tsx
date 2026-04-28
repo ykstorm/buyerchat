@@ -3,23 +3,26 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useState, useEffect } from 'react'
+import { AdminIcon } from '@/components/admin/AdminStates'
 
-const NAV_ITEMS = [
-  { href: '/admin',             icon: '📊', label: 'Dash' },
-  { href: '/admin/projects',    icon: '🏢', label: 'Projects' },
-  { href: '/admin/buyers',      icon: '👥', label: 'Buyers' },
-  { href: '/admin/builders',    icon: '🏗️', label: 'Builders' },
-  { href: '/admin/followup',    icon: '📞', label: 'Follow' },
-  { href: '/admin/revenue',     icon: '💰', label: 'Revenue' },
-  { href: '/admin/intelligence',icon: '🧠', label: 'Intel' },
-  { href: '/admin/visits',      icon: '📅', label: 'Visits' },
-  { href: '/admin/settings',    icon: '⚙️', label: 'Settings' },
+type AdminIconKind = 'gauge' | 'building' | 'users' | 'crane' | 'phone' | 'wallet' | 'brain' | 'calendar' | 'gear'
+
+const NAV_ITEMS: { href: string; icon: AdminIconKind; label: string }[] = [
+  { href: '/admin',             icon: 'gauge',    label: 'Dash' },
+  { href: '/admin/projects',    icon: 'building', label: 'Projects' },
+  { href: '/admin/buyers',      icon: 'users',    label: 'Buyers' },
+  { href: '/admin/builders',    icon: 'crane',    label: 'Builders' },
+  { href: '/admin/followup',    icon: 'phone',    label: 'Follow' },
+  { href: '/admin/revenue',     icon: 'wallet',   label: 'Revenue' },
+  { href: '/admin/intelligence',icon: 'brain',    label: 'Intel' },
+  { href: '/admin/visits',      icon: 'calendar', label: 'Visits' },
+  { href: '/admin/settings',    icon: 'gear',     label: 'Settings' },
 ]
 
 const TOP_GROUP = NAV_ITEMS.slice(0, 4)
 const BOTTOM_GROUP = NAV_ITEMS.slice(4)
 
-export default function AdminNavClient({ userName }: { userName: string }) {
+export default function AdminNavClient({ userName: _userName }: { userName: string }) {
   const pathname = usePathname()
   const [mobileOpen, setMobileOpen] = useState(false)
 
@@ -32,14 +35,14 @@ export default function AdminNavClient({ userName }: { userName: string }) {
       <Link
         href={item.href}
         onClick={() => setMobileOpen(false)}
+        aria-label={item.label}
+        aria-current={active ? 'page' : undefined}
         className={`w-11 h-11 rounded-[10px] flex flex-col items-center justify-center gap-0.5 transition-colors ${
-          active
-            ? 'bg-[#1A5EA8]'
-            : 'hover:bg-white/[0.11]'
+          active ? 'bg-[#1A5EA8] text-white' : 'text-white/70 hover:bg-white/[0.11] hover:text-white'
         }`}
       >
-        <span className="text-[18px] leading-none">{item.icon}</span>
-        <span className="text-[8px] font-medium text-white/70 leading-none">{item.label}</span>
+        <AdminIcon kind={item.icon} size={16} />
+        <span className="text-[8px] font-medium leading-none">{item.label}</span>
       </Link>
     )
   }
