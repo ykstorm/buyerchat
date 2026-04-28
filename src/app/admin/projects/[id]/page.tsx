@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import PdfStreamProgress from '@/components/admin/PdfStreamProgress'
 import RERAManualEntry, { type RERAManualPayload } from '@/components/admin/RERAManualEntry'
+import RERAVerifyPill from '@/components/admin/RERAVerifyPill'
 
 interface ProjectForm {
   projectName: string
@@ -438,6 +439,9 @@ export default function ProjectEditPage() {
                   <p className="font-medium mb-0.5">RERA portal unavailable</p>
                   <p>{reraNotice}</p>
                 </div>
+              )}
+              {!isNew && id && form.reraNumber && (
+                <RERAVerifyPill projectId={id} reraNumber={form.reraNumber} />
               )}
               <RERAManualEntry
                 onApply={(d: RERAManualPayload) => {
