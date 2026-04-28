@@ -52,11 +52,60 @@ export default function ChatClient({
   // sessions/[id] GET refresh keeps signed-in users in sync after reload.
   const [captureStage, setCaptureStage] = useState<string | null>(null)
   const [captureSubmitted, setCaptureSubmitted] = useState(false)
+  // captureStageLoaded gates StageACapture rendering until we've checked the
+  // DB at least once for this session. Without this, the gate evaluates with
+  // a stale captureStage===null between the assistant message landing and the
+  // /api/chat-sessions GET resolving (~100-300ms), so the card flashes on
+  // every message. Reset to false whenever sessionId changes (new chat).
+  const [captureStageLoaded, setCaptureStageLoaded] = useState(false)
   const artifactHistoryRef = useRef<Artifact[]>([])
   const artifactIndexRef = useRef<number>(-1)
   const sessionLoadingRef = useRef(false)
 
   useEffect(() => { if (artifact) setShowArtifact(true) }, [artifact])
+
+  // Capture-card flash fix — pre-fetch captureStage when sessionId is set,
+  // not in the message-send finally block. Also rehydrates captureSubmitted
+  // from sessionStorage so a mid-session reload (without ?session= in URL)
+  // doesn't re-trigger capture for a buyer who already submitted/skipped.
+  // Fail-closed: captureStageLoaded flips true even on fetch failure so the
+  // card eventually renders for genuinely-uncaptured anonymous sessions.
+  useEffect(() => {
+    if (!sessionId) {
+      setCaptureStageLoaded(false)
+      return
+    }
+    let cancelled = false
+
+    if (typeof window !== 'undefined') {
+      try {
+        const cached = window.sessionStorage.getItem(`buyerchat:capturedone:${sessionId}`)
+        if (cached === '1') setCaptureSubmitted(true)
+      } catch { /* no-op */ }
+    }
+
+    fetch(`/api/chat-sessions/${sessionId}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (cancelled) return
+        if (data?.captureStage) {
+          setCaptureStage(data.captureStage)
+          if (
+            data.captureStage === 'soft' ||
+            data.captureStage === 'verified' ||
+            data.captureStage === 'skipped'
+          ) {
+            setCaptureSubmitted(true)
+          }
+        }
+      })
+      .catch(() => { /* fail-closed below */ })
+      .finally(() => {
+        if (!cancelled) setCaptureStageLoaded(true)
+      })
+
+    return () => { cancelled = true }
+  }, [sessionId])
 
   // P2-MOBILE-PRICING — iOS Safari keyboard handling.
   // h-dvh on the chat surface is supposed to track the dynamic viewport
@@ -580,6 +629,7 @@ export default function ChatClient({
     setShowArtifact(true)
     setCaptureStage(null)
     setCaptureSubmitted(false)
+    setCaptureStageLoaded(false)
     router.replace('/chat')
   }, [router])
 
@@ -740,6 +790,7 @@ export default function ChatClient({
         }}
         captureCard={
           sessionId &&
+          captureStageLoaded &&
           !captureSubmitted &&
           captureStage !== 'soft' &&
           captureStage !== 'verified' &&
@@ -747,7 +798,17 @@ export default function ChatClient({
           artifactHistory.length >= 1 ? (
             <StageACapture
               sessionId={sessionId}
-              onComplete={() => setCaptureSubmitted(true)}
+              onComplete={() => {
+                setCaptureSubmitted(true)
+                if (typeof window !== 'undefined' && sessionId) {
+                  try {
+                    window.sessionStorage.setItem(
+                      `buyerchat:capturedone:${sessionId}`,
+                      '1'
+                    )
+                  } catch { /* no-op */ }
+                }
+              }}
             />
           ) : null
         }
