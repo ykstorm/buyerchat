@@ -425,5 +425,138 @@ end-user-facing bundle drift.
   observability finds a flicker UX, swap to a server-rendered initial
   value passed as a prop.
 
+---
+
+## Day 6 — 2026-04-29 — `p1-audit-fields-day6`
+
+**Branch base:** `2b308b5` (Day 5 head on `p1-audit-fields-day5`).
+
+**Verify baseline at start:** 203/203 tests, build clean.
+
+### What landed
+
+- `src/app/api/healthcheck/route.ts` (NEW) — public, unauthenticated
+  GET. Returns 200 `{ status, commit, uptime, timestamp }` on
+  `prisma.$queryRaw\`SELECT 1\`` success; 503
+  `{ status: 'degraded', reason: 'db_unreachable' }` on failure.
+  Comments document the no-Sentry-on-success and no-auth contract.
+  `runtime: 'nodejs'` so Prisma works (default would be edge for some
+  Next configs).
+- `src/app/api/healthcheck/route.test.ts` (NEW) — 2 tests: happy path
+  (200 + status ok + uptime/timestamp shape, $queryRaw called once);
+  degraded path ($queryRaw rejects → 503).
+- `Dockerfile` — single additive line. Before `CMD ["node", "server.js"]`
+  added:
+  ```dockerfile
+  HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
+    CMD wget -qO- http://localhost:3000/api/healthcheck || exit 1
+  ```
+  No other changes — multi-stage structure, non-root uid 1001, standalone
+  output all preserved. `wget` ships in busybox via `node:20-alpine`.
+- `.github/workflows/docker.yml` (NEW) — sibling to `ci.yml` (untouched).
+  Triggers on push to `main` and `v*` tags. Pinned major-version actions
+  (checkout@v4, setup-buildx@v3, login@v3, metadata@v5, build-push@v6).
+  Tags emitted: `type=ref event=branch` (latest-on-main), `type=ref
+  event=tag` (semver), `type=sha format=short`. Image lands at
+  `ghcr.io/ykstorm/buyerchat:latest` + `ghcr.io/ykstorm/buyerchat:sha-<short>`.
+  Concurrency group cancels in-flight on rapid push; 30-min timeout.
+  Permissions scoped to `contents: read, packages: write`.
+- `src/lib/with-sentry.ts` (NEW) — higher-order route wrapper, ~25 LOC
+  of actual logic. Catches thrown errors, calls `Sentry.captureException`
+  with `tags: { module: 'with-sentry', route }` plus `extra: { url }`,
+  returns `NextResponse.json({ error, requestId }, { status: 500 })`.
+  Permissive `(...args: any[]) => Promise<Response>` handler shape so it
+  works against any Next.js route signature; eslint-disabled inline at
+  the two `any` sites.
+- `src/lib/with-sentry.test.ts` (NEW) — 2 tests: pass-through (handler
+  returns Response → wrapper passes through, Sentry not called); error
+  capture (thrown error → Sentry called with right tags, 500 + JSON
+  carries requestId).
+- `src/app/api/admin/projects/bulk-upload/route.ts` — bulkUploadHandler
+  defined as inner async function, then `export const POST = withSentry(
+  bulkUploadHandler, { route: 'admin/projects/bulk-upload' })`. The
+  inner handler's existing top-level try/catch is preserved for
+  known-shape errors; the wrapper is the outer net for unexpected
+  throws. PoC scope per AGENT_DISCIPLINE §15 — full rollout deferred to
+  MASTER_FIX_LIST D1.
+- `docs/observability.md` (NEW) — operator runbook. Architecture
+  diagram, five layers of bug detection (PART 0 → response-checker →
+  Sentry+PII → AuditLog → healthcheck), Sentry tag convention table,
+  withSentry rollout plan, healthcheck contract, anti-patterns,
+  numbers. Footnote at end: "All numbers reference commit
+  `<DAY-6-SHA>` … Update on every edit."
+
+### Prisma `$queryRaw\`SELECT 1\`` worked first try?
+
+Yes. The Neon HTTP adapter (`PrismaNeonHttp` in `src/lib/prisma.ts:4`)
+handles `$queryRaw` as a single round-trip — no session needed, no
+adapter adjustment. The healthcheck unit test mocks `$queryRaw` directly
+so the route is exercised in isolation; integration confirmation will
+land when the first GHCR-built container boots in CI.
+
+### Type-check fixup applied during verify
+
+First verify run failed with TS2554 on `with-sentry.test.ts` because
+the `RouteHandler` constraint inferred `T` as zero-arg from the test's
+`vi.fn(async () => Response)`, which then made the wrapped fn reject
+the `new Request(...)` arg. Fixed by:
+1. Loosening `RouteHandler` to `(...args: any[]) => Promise<Response>`
+   (eslint-disabled with explanatory comment).
+2. Typing the test handlers as `async (_req: Request) => …` so T
+   carries the right arg shape.
+
+Second verify run was green: 207/207 tests, build clean, schema valid.
+No retry on Neon adapter — the only fix was TypeScript inference.
+
+### Verify
+
+End-state: **207/207 tests** (203 → 207, +4). Build clean. /chat
+bundle stable at 217 kB First Load. No bundle drift on /admin/projects/
+bulk-upload (the wrapper adds <1 kB).
+
+### Discipline checklist applied
+
+- §1 (CSP / external domains) — n/a (same-origin healthcheck; GHCR is a
+  registry not a runtime endpoint)
+- §2 (env vars) — none new (`VERCEL_GIT_COMMIT_SHA` is an existing
+  Vercel-injected env, no `.env.example` change needed)
+- §3 (Neon HTTP `$transaction`) — healthcheck uses `$queryRaw`, not
+  `$transaction`. Compliant.
+- §4 (duplicate-surface) — n/a (no overlapping admin surface; observability
+  doc is the first runbook of its kind in this repo)
+- §5 (client/server boundary) — healthcheck has no client component;
+  withSentry is server-only
+- §6 (timeouts) — Docker HEALTHCHECK timeout 3s; healthcheck route
+  itself awaits one `$queryRaw` round-trip (typically <100ms warm,
+  <1s cold)
+- §7 (schema write provenance) — no schema writes
+- §8 (response-checker) — n/a (not an AI surface)
+- §9 (verify gates) — applied; 207/207
+- §10 (report-back format) — applied
+- §11 (sub-agents) — none used
+- §12 (CI gates) — pre-commit ran tests; new docker.yml will run on push
+- §13 (session handoff) — sprint-scoped HANDOFF updated; top-level
+  `docs/SESSION_HANDOFF.md` untouched
+- §14 (verdict format) — applied in chat report
+- §15 (autonomous decisions) — three judgment calls at ≥80% confidence:
+  (a) PoC withSentry on bulk-upload only — rest deferred; (b) preserved
+  the inner handler's existing try/catch (defense-in-depth, not
+  redundant); (c) Dockerfile addition is one line, no rewrite of
+  multi-stage structure or non-root setup.
+- §16 (retro) — Day 7 only (P1-R2 sprint retrospective drops there)
+
+### Open call for Day 7
+
+- Final verify on a clean checkout.
+- Sprint retrospective in `docs/retros/p1-r2-audit-fields.md` per
+  AGENT_DISCIPLINE §16.
+- Blog post draft (already queued — see Day 6 prompt's reference to
+  homesty.ai blog post Day 7).
+- First GHA `docker.yml` run validation: confirm image landed at
+  `ghcr.io/ykstorm/buyerchat:latest` after the Day 6 push to the
+  feature branch (workflow only fires on `main` push; the Day 6 PR
+  merge to main is what triggers the first build).
+
+
 
 

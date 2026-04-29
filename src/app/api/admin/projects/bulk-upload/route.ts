@@ -6,6 +6,7 @@ import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { rateLimit } from '@/lib/rate-limit'
 import { auditWrite } from '@/lib/audit-write'
+import { withSentry } from '@/lib/with-sentry'
 
 export const runtime = 'nodejs'
 export const maxDuration = 60
@@ -131,7 +132,7 @@ interface PreviewCreate {
   builderName: string
 }
 
-export async function POST(req: NextRequest) {
+async function bulkUploadHandler(req: NextRequest) {
   try {
     const session = await auth()
     const email = session?.user?.email?.toLowerCase()
@@ -345,3 +346,12 @@ export async function POST(req: NextRequest) {
     )
   }
 }
+
+// withSentry PoC (Day 6). Inner handler retains its existing top-level
+// try/catch for known-shape errors (rate-limit, body cap, regex). The
+// wrapper is the outer net for unexpected throws — captures with
+// route='admin/projects/bulk-upload' so on-call can slice by tag.
+// Full rollout to other routes deferred to MASTER_FIX_LIST D1.
+export const POST = withSentry(bulkUploadHandler, {
+  route: 'admin/projects/bulk-upload',
+})
