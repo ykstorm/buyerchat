@@ -34,6 +34,12 @@ const baseCtx = {
   dataAsOf: '2026-04-24',
 }
 
+// Sprint 1 (2026-04-29): PART 5/6/7 + EXAMPLE 18 + RULE B body are now
+// conditionally injected based on STAGE_B_ENABLED. Tests that assert the
+// flag-on (legacy) copy use this ctx; tests that assert the flag-off (current
+// production state) copy use baseCtx directly.
+const flagOnCtx = { ...baseCtx, stageBEnabled: true }
+
 describe('v3 system prompt — PART invariants', () => {
   it('PART 0 ABSOLUTE RULES: appears before Master Formula and lists Rules A-F', () => {
     const prompt = buildSystemPrompt(baseCtx)
@@ -52,8 +58,8 @@ describe('v3 system prompt — PART invariants', () => {
     expect(prompt).toContain('RULE F — CARD CONTRACT')
   })
 
-  it('PART 16 few-shots: EXAMPLE 17 + 18 appear BEFORE Example 1', () => {
-    const prompt = buildSystemPrompt(baseCtx)
+  it('PART 16 few-shots: EXAMPLE 17 + 18 appear BEFORE Example 1 (flag-on)', () => {
+    const prompt = buildSystemPrompt(flagOnCtx)
     const ex17 = prompt.indexOf('EXAMPLE 17 — Hinglish budget+config')
     const ex18 = prompt.indexOf('EXAMPLE 18 — Visit-booking name+phone')
     const ex1 = prompt.indexOf('EXAMPLE 1 — Family buyer opening')
@@ -64,8 +70,8 @@ describe('v3 system prompt — PART invariants', () => {
     expect(ex18).toBeLessThan(ex1)
   })
 
-  it('PART 7: visit-checklist no longer says "parking allocation" as a thing to confirm', () => {
-    const prompt = buildSystemPrompt(baseCtx)
+  it('PART 7 (flag-on): visit-checklist no longer says "parking allocation" as a thing to confirm', () => {
+    const prompt = buildSystemPrompt(flagOnCtx)
     // The phrase "parking allocation confirm karna" was the source of the
     // Sentry "Parking Allocation" HALLUCINATION event (the model read the
     // visit checklist as an amenities list). Replaced by the safer phrasing.
@@ -94,8 +100,8 @@ describe('v3 system prompt — PART invariants', () => {
     expect(prompt).toContain('MAXIMUM 2 projects per response')
   })
 
-  it('PART 7: lists the 4-step visit booking flow', () => {
-    const prompt = buildSystemPrompt(baseCtx)
+  it('PART 7 (flag-on): lists the 4-step visit booking flow', () => {
+    const prompt = buildSystemPrompt(flagOnCtx)
     expect(prompt).toContain('Step 1 — Micro-commitment')
     expect(prompt).toContain('Step 2 — Personalized slot')
     // Step 3 changed from "OTP verification" to "HOLDING MESSAGE" on
@@ -105,8 +111,8 @@ describe('v3 system prompt — PART invariants', () => {
     expect(prompt).toContain('Step 4 — Confirmation')
   })
 
-  it('PART 7: bans OTP simulation in visit booking', () => {
-    const prompt = buildSystemPrompt(baseCtx)
+  it('PART 7 (flag-on): bans OTP simulation in visit booking', () => {
+    const prompt = buildSystemPrompt(flagOnCtx)
     // The strengthened PART 8.5 rule #2 must list specific banned phrases.
     expect(prompt).toContain('OTP bheja hai')
     expect(prompt).toContain('Kuch problem hui — dubara try karein')
@@ -164,5 +170,54 @@ describe('v3 system prompt — PART invariants', () => {
     expect(prompt).toContain('FABRICATED_STAT')
     expect(prompt).toContain('FABRICATED_PRICE')
     expect(prompt).toContain('FAKE_VISIT_CLAIM')
+  })
+})
+
+// Sprint 1 (2026-04-29): STAGE_B_ENABLED flag-gating coverage.
+// PART 5/6/7 + EXAMPLE 18 + RULE B body should NOT contain Stage B trigger
+// scripts when stageBEnabled=false (default). When stageBEnabled=true, the
+// flag-on body MUST be intact so flipping the env var later is a no-op for
+// the prompt layer.
+describe('Stage B flag-aware prompt sections (Sprint 1)', () => {
+  it('flag-OFF (default): omits Stage B trigger scripts and "request note ho gaya" template', () => {
+    const prompt = buildSystemPrompt(baseCtx)
+    // The verbatim trigger scripts hardcoded into PART 5 (lines 320-339 pre-Sprint-1)
+    expect(prompt).not.toContain('Mobile number share karein — calculation unlock ho jaayegi')
+    expect(prompt).not.toContain('calculation unlock ho jaayegi')
+    expect(prompt).not.toContain('mobile number chahiye')
+    // PART 7 Step 3 holding-message template that the AI parroted in Image 6
+    expect(prompt).not.toContain('[Buyer name] ka visit request note ho gaya')
+    expect(prompt).not.toContain('Preferred slot: [Day, Time range]')
+    // EXAMPLE 18 flag-on canonical bad-output mimicry (line 1013 pre-Sprint-1)
+    expect(prompt).not.toContain('Lakshyaraj ka visit request note ho gaya. Project: The Planet')
+  })
+
+  it('flag-OFF (default): includes flag-off replacement copy + ❌ inverted EXAMPLE 18', () => {
+    const prompt = buildSystemPrompt(baseCtx)
+    // PART 5 flag-off explicitly bans phone-asking-in-prose
+    expect(prompt).toContain('Stage A (soft capture, no OTP) is the only capture flow active')
+    expect(prompt).toContain('NEVER ask buyers for phone/mobile/OTP')
+    // PART 7 flag-off names the visit_booking artifact as the only mechanism
+    expect(prompt).toContain('PART 7 — VISIT BOOKING (artifact-only, no in-prose phone capture)')
+    expect(prompt).toContain('visit_booking artifact')
+    // EXAMPLE 18 flag-off shows the bad pattern as ❌ with the corrected ✓ response
+    expect(prompt).toContain('NEVER OUTPUT THIS SHAPE')
+    expect(prompt).toContain('CORRECT WHEN STAGE B IS OFF')
+    expect(prompt).toContain('Aapne naam aur number share kiya')
+    // RULE B's body should be the flag-off variant
+    expect(prompt).toContain('RULE B — VISIT BOOKING (Stage B is OFF)')
+  })
+
+  it('flag-ON: includes Stage B trigger scripts (recovery path for future flag flip)', () => {
+    const prompt = buildSystemPrompt(flagOnCtx)
+    // The flag-on body MUST still contain the legacy trigger scripts so that
+    // when Mama flips STAGE_B_ENABLED=true later, no second sprint is needed.
+    expect(prompt).toContain('Mobile number share karein — calculation unlock ho jaayegi')
+    expect(prompt).toContain('PART 5 — CAPTURE STRATEGY')
+    expect(prompt).toContain('PART 7 — VISIT BOOKING COMPLETE FLOW (4 steps)')
+    // PART 7 Step 3 template restored verbatim
+    expect(prompt).toContain('[Buyer name] ka visit request note ho gaya')
+    // EXAMPLE 18 flag-on shows the legitimate holding-message form
+    expect(prompt).toContain('Lakshyaraj ka visit request note ho gaya. Project: The Planet')
   })
 })

@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import {
   checkResponse,
   CONTACT_LEAK_PATTERN,
@@ -543,6 +543,72 @@ describe('FAKE_VISIT_CLAIM check (P1-S1)', () => {
       cq()
     )
     expect(res.violations.some(v => v.startsWith('FAKE_VISIT_CLAIM'))).toBe(false)
+  })
+})
+
+// Sprint 1 (2026-04-29): widened FAKE_VISIT_CLAIM + new PHONE_REQUEST_IN_PROSE
+// rule. With STAGE_B_ENABLED=false (current production state), the AI must
+// not parrot PART 5/6/7 trigger scripts in prose. These tests assert the
+// exact Image 6 hallucination strings now flag the corresponding rule.
+describe('Sprint 1 — Image 6 fabrication coverage', () => {
+  beforeEach(() => {
+    delete process.env.STAGE_B_ENABLED
+  })
+  afterEach(() => {
+    delete process.env.STAGE_B_ENABLED
+  })
+
+  it('FAKE_VISIT_CLAIM (flag-off) flags Image 6 exact hallucination', () => {
+    const text =
+      'Aapka visit request note ho gaya. Project: The Planet. Preferred slot: Sunday 11 AM.'
+    const res = checkResponse(text, [], cq())
+    expect(res.violations.some(v => v.startsWith('FAKE_VISIT_CLAIM'))).toBe(true)
+  })
+
+  it('FAKE_VISIT_CLAIM (flag-off) flags "request note ho gaya" without artifact', () => {
+    const text = 'Lakshyaraj ka visit request note ho gaya — confirm shortly.'
+    const res = checkResponse(text, [], cq())
+    expect(res.violations.some(v => v.startsWith('FAKE_VISIT_CLAIM'))).toBe(true)
+  })
+
+  it('FAKE_VISIT_CLAIM (flag-on) is narrower — "request note ho gaya" is allowed legitimate phrase', () => {
+    process.env.STAGE_B_ENABLED = 'true'
+    const text = 'Lakshyaraj ka visit request note ho gaya — confirm shortly.'
+    const res = checkResponse(text, [], cq())
+    // With Stage B on, "request note ho gaya" is the legitimate PART 7 Step 3
+    // holding message — no HST- token expected at this point.
+    expect(res.violations.some(v => v.startsWith('FAKE_VISIT_CLAIM'))).toBe(false)
+  })
+
+  it('FAKE_VISIT_CLAIM still respects HST- token escape hatch (flag-off)', () => {
+    const text =
+      'Visit booked ✓\n<!--CARD:{"type":"visit_confirmation","projectId":"a","token":"HST-9999"}-->'
+    const res = checkResponse(text, [], cq())
+    expect(res.violations.some(v => v.startsWith('FAKE_VISIT_CLAIM'))).toBe(false)
+  })
+
+  it('PHONE_REQUEST_IN_PROSE flags "Mobile number share karein — calculation unlock"', () => {
+    const text =
+      'Exact all-in breakdown ke liye mobile number share karein — calculation unlock ho jaayegi.'
+    const res = checkResponse(text, [], cq())
+    expect(res.violations.some(v => v.startsWith('PHONE_REQUEST_IN_PROSE'))).toBe(true)
+  })
+
+  it('PHONE_REQUEST_IN_PROSE is disabled when STAGE_B_ENABLED=true', () => {
+    process.env.STAGE_B_ENABLED = 'true'
+    const text =
+      'Exact all-in breakdown ke liye mobile number share karein — calculation unlock ho jaayegi.'
+    const res = checkResponse(text, [], cq())
+    expect(res.violations.some(v => v.startsWith('PHONE_REQUEST_IN_PROSE'))).toBe(false)
+  })
+
+  it('clean recommendation (no phone-ask, no fake claim) does NOT flag either rule', () => {
+    const text =
+      'Aapke budget aur Shela family requirement ke hisaab se do strong options match karte hain. Visit karna chahenge ya pehle builder ke baare mein aur jaanna hai?\n' +
+      '<!--CARD:{"type":"project_card","projectId":"a"}-->'
+    const res = checkResponse(text, [], cq())
+    expect(res.violations.some(v => v.startsWith('FAKE_VISIT_CLAIM'))).toBe(false)
+    expect(res.violations.some(v => v.startsWith('PHONE_REQUEST_IN_PROSE'))).toBe(false)
   })
 })
 

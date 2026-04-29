@@ -541,17 +541,22 @@ export function checkResponse(
     }
   }
 
-  // CHECK 17 — FAKE_VISIT_CLAIM (audit-only, P1-S1).
+  // CHECK 17 — FAKE_VISIT_CLAIM (audit-only, P1-S1 + Sprint 1 widening).
   // PART 8.5 rule 9: never claim a visit is booked/confirmed/scheduled in
   // prose unless a VISIT_CONFIRMATION artifact with an HST-XXXX token has
   // been emitted in the SAME response. Pre-OTP/verify, only soft phrasing
   // ("visit start karte hain", "slot check karte hain") is allowed.
   //
-  // Text-only inspection: artifacts ship inline as HTML comments in the
-  // streamed text, so the marker `<!--CARD:{"type":"visit_confirmation"...`
-  // with `"token":"HST-...` is sufficient evidence the artifact was emitted.
-  // No signature change to checkResponse() needed.
-  const FAKE_VISIT_CLAIM_PATTERN = /(visit|slot)\s+(book(?:ed)?|confirm(?:ed)?|scheduled|locked|done)/i
+  // Sprint 1 (2026-04-29): pattern is gated on STAGE_B_ENABLED. When Stage B
+  // is dark in production (current state), "visit request note ho gaya" /
+  // "Preferred slot:" are FABRICATION markers — Image 6 root pattern. When
+  // Stage B is on, those same phrases are the legitimate PART 7 Step 3
+  // holding message, so we fall back to the narrower pre-Sprint-1 regex
+  // that only catches verbs ("booked", "confirmed", etc.).
+  const STAGE_B_ENABLED = process.env.STAGE_B_ENABLED === 'true'
+  const FAKE_VISIT_CLAIM_PATTERN = STAGE_B_ENABLED
+    ? /(visit|slot)\s+(book(?:ed)?|confirm(?:ed)?|scheduled|locked|done)/i
+    : /(visit|slot)\s+(book(?:ed)?|confirm(?:ed)?|scheduled|locked|done)|visit\s+request\s+note\s+ho\s+gaya|request\s+note\s+ho\s+gaya|preferred\s+slot\s*:/i
   const claimMatch = aiResponse.match(FAKE_VISIT_CLAIM_PATTERN)
   if (claimMatch) {
     const visitConfirmationMarker = /<!--CARD:\{[^}]*"type":\s*"visit_confirmation"[^}]*"token":\s*"HST-/i
@@ -563,6 +568,33 @@ export function checkResponse(
         Sentry.captureMessage('[FAKE_VISIT_CLAIM] Visit-confirmation language without visit_confirmation artifact', {
           level: 'warning',
           tags: { audit_violation: 'true', rule: 'FAKE_VISIT_CLAIM', match: phrase },
+        })
+      } catch {
+        // Sentry init may be absent in test/local env — never throw from the checker.
+      }
+    }
+  }
+
+  // CHECK 18 — PHONE_REQUEST_IN_PROSE (audit-only, Sprint 1, 2026-04-29).
+  // When Stage B is dark, the AI must not ask for phone/mobile in its text.
+  // Capture is StageACapture's responsibility (UI card), not the AI's prose.
+  // Catches Image 6 root cause directly: "Mobile number share karein —
+  // calculation unlock ho jaayegi" verbatim from system-prompt.ts:323.
+  // When STAGE_B_ENABLED=true, this rule is disabled — Stage B's gate
+  // handles phone collection through the dedicated capture card flow.
+  if (!STAGE_B_ENABLED) {
+    const PHONE_PROSE_PATTERN =
+      /mobile\s+number\s+share|number\s+share\s+kar|phone\s+share|number\s+chahiye|mobile\s+chahiye|calculation\s+unlock|OTP\s+(bheja|enter|verify|aaya)|verify\s+karein|share\s+kar\s+dein/i
+    const phoneMatch = aiResponse.match(PHONE_PROSE_PATTERN)
+    if (phoneMatch) {
+      const phrase = phoneMatch[0].length > 80
+        ? phoneMatch[0].slice(0, 77) + '...'
+        : phoneMatch[0]
+      violations.push(`PHONE_REQUEST_IN_PROSE: "${phrase}" (AI asking for phone in text while STAGE_B_ENABLED=false)`)
+      try {
+        Sentry.captureMessage('[PHONE_REQUEST_IN_PROSE] AI requesting phone in prose with Stage B dark', {
+          level: 'warning',
+          tags: { audit_violation: 'true', rule: 'PHONE_REQUEST_IN_PROSE', match: phrase },
         })
       } catch {
         // Sentry init may be absent in test/local env — never throw from the checker.

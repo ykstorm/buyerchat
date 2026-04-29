@@ -310,7 +310,15 @@ if (hasInjection) {
 
   const result = streamText({
     model: openai('gpt-4o'),
-    system: promptBuilder({ ...context, locationGuardList }, decisionCard, finalMemory, retrieved, persona),
+    // Sprint 1 (2026-04-29): pass STAGE_B_ENABLED into the prompt builder so
+    // PART 5/6/7 + EXAMPLE 18 + RULE B render their flag-off variants when
+    // the OTP infrastructure is dark. Independent of Agent G's Stage B gate
+    // earlier in this handler — that one short-circuits the stream when the
+    // flag is on; this one just controls which prompt sections the model sees.
+    system: promptBuilder(
+      { ...context, locationGuardList, stageBEnabled: process.env.STAGE_B_ENABLED === 'true' },
+      decisionCard, finalMemory, retrieved, persona
+    ),
     messages: cappedMessages,
     temperature: 0.3,
     maxOutputTokens: 500,
