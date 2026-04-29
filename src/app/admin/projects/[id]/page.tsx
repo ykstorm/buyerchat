@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import PdfStreamProgress from '@/components/admin/PdfStreamProgress'
 import RERAManualEntry, { type RERAManualPayload } from '@/components/admin/RERAManualEntry'
+import RERAVerifyPill from '@/components/admin/RERAVerifyPill'
 
 interface ProjectForm {
   projectName: string
@@ -439,7 +440,11 @@ export default function ProjectEditPage() {
                   <p>{reraNotice}</p>
                 </div>
               )}
+              {!isNew && id && form.reraNumber && (
+                <RERAVerifyPill projectId={id} reraNumber={form.reraNumber} />
+              )}
               <RERAManualEntry
+                projectId={!isNew && id ? id : undefined}
                 onApply={(d: RERAManualPayload) => {
                   set('reraNumber', d.reraNumber)
                   if (d.status) {

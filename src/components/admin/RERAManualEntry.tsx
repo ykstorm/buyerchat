@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 
 export interface RERAManualPayload {
   reraNumber: string
@@ -13,12 +14,20 @@ export interface RERAManualPayload {
 
 interface Props {
   onApply: (data: RERAManualPayload) => void
+  // Optional. When set (edit page only), Apply also flips reraVerified=true
+  // with source='manual' via /api/rera-fetch and refreshes the parent page
+  // so the verification pill turns green. On /admin/projects/new (no id yet)
+  // this is omitted and only the form-fill behavior runs.
+  projectId?: string
 }
 
 const STATUSES = ['Active', 'Expired', 'Pending', 'Withdrawn']
 
-export default function RERAManualEntry({ onApply }: Props) {
+export default function RERAManualEntry({ onApply, projectId }: Props) {
+  const router = useRouter()
   const [open, setOpen] = useState(false)
+  const [persisting, setPersisting] = useState(false)
+  const [persistError, setPersistError] = useState<string | null>(null)
   const [form, setForm] = useState<RERAManualPayload>({
     reraNumber: '',
     status: 'Active',
@@ -33,9 +42,34 @@ export default function RERAManualEntry({ onApply }: Props) {
     value: RERAManualPayload[K],
   ) => setForm((p) => ({ ...p, [field]: value }))
 
-  const handleApply = () => {
+  const handleApply = async () => {
     if (!form.reraNumber.trim()) return
     onApply(form)
+    if (!projectId) return
+    setPersisting(true)
+    setPersistError(null)
+    try {
+      const raw = JSON.stringify(form)
+      const res = await fetch('/api/rera-fetch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          reraNumber: form.reraNumber,
+          projectId,
+          manualPayload: raw,
+        }),
+      })
+      const json = await res.json().catch(() => ({}))
+      if (!res.ok || !json?.success) {
+        setPersistError(json?.error ?? `HTTP ${res.status}`)
+        return
+      }
+      router.refresh()
+    } catch (e) {
+      setPersistError((e as Error).message)
+    } finally {
+      setPersisting(false)
+    }
   }
 
   return (
@@ -180,15 +214,24 @@ export default function RERAManualEntry({ onApply }: Props) {
             />
           </div>
 
+          {persistError && (
+            <p className="text-[11px]" style={{ color: '#F5C76E' }}>
+              {persistError}
+            </p>
+          )}
           <div className="flex justify-end pt-1">
             <button
               type="button"
               onClick={handleApply}
-              disabled={!form.reraNumber.trim()}
+              disabled={!form.reraNumber.trim() || persisting}
               className="text-[11px] font-medium px-4 py-1.5 rounded-lg transition-colors disabled:opacity-40"
               style={{ background: '#185FA5', color: 'white' }}
             >
-              Apply to form
+              {persisting
+                ? 'Verifying…'
+                : projectId
+                  ? 'Apply & mark verified'
+                  : 'Apply to form'}
             </button>
           </div>
         </div>
