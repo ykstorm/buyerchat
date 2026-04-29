@@ -3,6 +3,7 @@ import type React from 'react'
 
 import { m, AnimatePresence, useReducedMotion } from 'framer-motion'
 import dynamic from 'next/dynamic'
+import Link from 'next/link'
 import { FormEvent, useRef, useEffect, useState, memo, useMemo } from 'react'
 import ReactMarkdown from 'react-markdown'
 import type { ProjectType, Artifact } from '@/lib/types/chat'
@@ -762,13 +763,26 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
         )}
       </AnimatePresence>
 
-      {/* Top-right user chip removed — Navbar (when present) and the sidebar
-          footer are the canonical sign-in/sign-out surfaces. Eliminating the
-          chat-surface pill kills the duplicate-signin CTA for anonymous users
-          on /chat (and the redundant avatar for signed-in users). The
-          sidebar footer prose ("Sign in from the top bar to save chats") and
-          the in-stream signin action (e.g. 401 recovery via onMessageAction)
-          remain untouched. */}
+      {/* Sprint 4 (2026-04-30) — restored muted top-right "Sign in" link
+          for anonymous /chat users. Sprint C deleted the original pill on
+          the assumption Navbar + sidebar footer would carry the affordance,
+          but Navbar.tsx HIDE_PREFIXES excludes /chat and the sidebar footer
+          was demoted to non-clickable text in the same sprint, leaving zero
+          clickable sign-in for anonymous users. This restores it without
+          re-introducing the duplicate-signin CTA — the link is anonymous-
+          gated, hidden once userId is present (signed-in surface remains
+          the sidebar avatar/sign-out row). Style mirrors Sprint 3's deleted
+          landing element (text-[12px], muted, no decoration). */}
+      {!userId && (
+        <Link
+          href="/auth/signin"
+          aria-label="Sign in to save your chats"
+          className="absolute top-3 right-3 z-40 text-[12px] transition-opacity hover:opacity-80"
+          style={{ color: '#888', textDecoration: 'none' }}
+        >
+          Sign in
+        </Link>
+      )}
 
       {/* Artifact history button — top right of chat */}
       {artifactHistory && artifactHistory.length > 0 && messages.length > 0 && !showArtifact && (

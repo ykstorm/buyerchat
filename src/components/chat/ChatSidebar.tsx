@@ -453,12 +453,22 @@ const sidebar = (
             </div>
           </div>
         ) : (
-          // C1 (Sprint C): demoted from <Link> to non-clickable muted text.
-          // ChatCenter top-right pill is the single clickable sign-in for /chat.
-          // See docs/diagnostics/i40-deep-audit.md §I + §O.
-          <p style={{ color: 'var(--text-muted)', fontSize: '11px', fontStyle: 'italic' }}>
-            Sign in from the top bar to save chats
-          </p>
+          // Sprint 4 (2026-04-30): re-promoted to inline clickable Link.
+          // The Sprint C demotion assumed ChatCenter's top-right pill carried
+          // the sign-in affordance — but that pill was also removed in Sprint
+          // C, leaving anonymous users with zero clickable sign-in path on
+          // /chat. ChatCenter now renders an anonymous-only Sign-in link top-
+          // right (Sprint 4 restoration); this footer link is redundant-on-
+          // purpose so the affordance is reachable from either surface.
+          <Link
+            href="/auth/signin"
+            className="block text-[11px] transition-colors"
+            style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}
+            onMouseEnter={e => (e.currentTarget.style.color = 'var(--text-primary)')}
+            onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-muted)')}
+          >
+            Sign in to save your chats →
+          </Link>
         )}
       </div>
     </div>

@@ -171,6 +171,19 @@ describe('v3 system prompt — PART invariants', () => {
     expect(prompt).toContain('FABRICATED_PRICE')
     expect(prompt).toContain('FAKE_VISIT_CLAIM')
   })
+
+  // Sprint 4 (2026-04-30): lock #7 strengthened with explicit ban on
+  // cross-project price contamination (Image 1 root cause — AI substituted
+  // Vishwanath Sarathya West's ₹4,000/sqft for The Planet's missing data).
+  it('PART 15 lock #7: bans cross-project price contamination (Sprint 4)', () => {
+    const prompt = buildSystemPrompt(baseCtx)
+    // The new clause must mention the specific contamination sources
+    expect(prompt).toMatch(/cross-project price contamination/i)
+    expect(prompt).toMatch(/comparison set, RAG retrieved chunks, or another project/i)
+    // The illustrative example anchors the rule for the model
+    expect(prompt).toContain('Vishwanath Sarathya West')
+    expect(prompt).toMatch(/each project's pricing stands\s*alone/i)
+  })
 })
 
 // Sprint 1 (2026-04-29): STAGE_B_ENABLED flag-gating coverage.

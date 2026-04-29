@@ -664,3 +664,45 @@ describe('OTP_FABRICATION check (P2-CRITICAL-7 Bug #1)', () => {
     expect(res.violations.some(v => v.startsWith('OTP_FABRICATION'))).toBe(false)
   })
 })
+
+describe('PRICE_FABRICATION check (Sprint 4, 2026-04-30)', () => {
+  // Image 1 root cause: AI invented exact ₹/sqft + total + EMI + interest for
+  // "The Planet" while the cost-breakdown widget showed "Pricing being verified."
+  // Cross-contamination from Vishwanath Sarathya West's verified ₹4,000/sqft
+  // (in RAG context) substituted as placeholder. PART 15 lock #7 forbids this
+  // in prompt; CHECK 19 catches it programmatically.
+  const knownNames = ['The Planet', 'Vishwanath Sarathya West']
+
+  it('flags ₹/sqft near unverified project name (Image 1 string)', () => {
+    const text = 'The Planet 3BHK ka basic rate ₹4,000/sqft hai based on Shela rates.'
+    const res = checkResponse(text, knownNames, cq(), undefined, [], ['The Planet'])
+    expect(res.violations.some(v => v.startsWith('PRICE_FABRICATION'))).toBe(true)
+  })
+
+  it('flags EMI + interest near unverified project name (Image 1 EMI string)', () => {
+    const text = 'The Planet pe EMI around ₹48k/month for 20 years comes out reasonable.'
+    const res = checkResponse(text, knownNames, cq(), undefined, [], ['The Planet'])
+    expect(res.violations.some(v => v.startsWith('PRICE_FABRICATION'))).toBe(true)
+  })
+
+  it('does NOT fire when verified project quotes its own price', () => {
+    // Vishwanath Sarathya West has minPrice > 0, so it is NOT in the unverified
+    // list. Quoting its rate is legitimate.
+    const text = 'Vishwanath Sarathya West ka rate ₹4,000/sqft hai — verified pricing.'
+    const res = checkResponse(text, knownNames, cq(), undefined, [], ['The Planet'])
+    expect(res.violations.some(v => v.startsWith('PRICE_FABRICATION'))).toBe(false)
+  })
+
+  it('does NOT fire on general market commentary not anchored to an unverified project', () => {
+    // No unverified project name within 200 chars of the price band — should pass.
+    const text = 'Shela mein 3BHK generally ₹4,000-5,800/sqft range mein milte hain — area dependent.'
+    const res = checkResponse(text, knownNames, cq(), undefined, [], ['The Planet'])
+    expect(res.violations.some(v => v.startsWith('PRICE_FABRICATION'))).toBe(false)
+  })
+
+  it('does NOT fire on the correct honest deflection (no numbers)', () => {
+    const text = 'The Planet ka exact pricing abhi confirm ho raha hai — cost sheet aane ke baad share karunga.'
+    const res = checkResponse(text, knownNames, cq(), undefined, [], ['The Planet'])
+    expect(res.violations.some(v => v.startsWith('PRICE_FABRICATION'))).toBe(false)
+  })
+})

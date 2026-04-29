@@ -430,12 +430,20 @@ if (hasInjection) {
               .filter((b: unknown): b is string => typeof b === 'string' && b.trim().length > 0)
           )
         )
+        // Sprint 4 — projects with minPrice === 0 / null are "pricing under
+        // verification". CHECK 19 PRICE_FABRICATION flags numeric price near
+        // these names in prose (Image 1 cross-contamination from RAG).
+        const unverifiedProjectNames = (context.projects as any[])
+          .filter(p => !(p.minPrice && p.minPrice > 0))
+          .map(p => p.name)
+          .filter((n: unknown): n is string => typeof n === 'string' && n.trim().length > 0)
         const { passed, violations } = checkResponse(
           text,
           projectNames,
           classified,
           sanitizedMsg,
-          knownBuilderNames
+          knownBuilderNames,
+          unverifiedProjectNames
         )
 
         // I26 — forward every audit violation to Sentry as a 'warning' event

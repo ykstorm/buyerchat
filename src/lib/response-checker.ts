@@ -184,7 +184,11 @@ export function checkResponse(
   knownProjectNames: string[],
   classified: ClassifiedQuery,
   buyerMessage?: string,
-  knownBuilderNames: string[] = []
+  knownBuilderNames: string[] = [],
+  // Sprint 4 (2026-04-30): names of projects whose minPrice === 0 / pricing
+  // unverified. Used by CHECK 19 PRICE_FABRICATION to flag cross-project
+  // numeric contamination (Image 1 root cause).
+  unverifiedProjectNames: string[] = []
 ): CheckResult {
   const violations: string[] = []
   const lower = aiResponse.toLowerCase()
@@ -598,6 +602,57 @@ export function checkResponse(
         })
       } catch {
         // Sentry init may be absent in test/local env — never throw from the checker.
+      }
+    }
+  }
+
+  // CHECK 19 — PRICE_FABRICATION (audit-only, Sprint 4, 2026-04-30).
+  // PART 15 lock #7 forbids stating numeric ₹/sqft, totals, EMI, or interest
+  // for projects with minPrice === 0 / pricePerSqft missing. The prompt rule
+  // existed but was ignored in prod (Image 1: AI quoted ₹4,000/sqft + ₹73.5L
+  // total + ₹48k EMI + 8.75% for "The Planet" — all numbers cross-contaminated
+  // from Vishwanath Sarathya West's verified pricing in RAG).
+  //
+  // Detection: for each unverified project name, if it appears in the response
+  // AND a numeric price pattern appears within 200 chars of that name, flag.
+  // The 200-char window narrows false positives on general market commentary
+  // ("Shela mein 3BHK ₹4,000-5,800/sqft milte hain") that doesn't anchor a
+  // number to a specific unverified project. Audit-only — Sentry warn.
+  if (unverifiedProjectNames.length > 0) {
+    const NUMERIC_PRICE_PATTERN =
+      /₹\s*\d[\d,]*\s*(?:\/sqft|\/sq\.?\s*ft|L|Cr|lakh|crore|k\/month|k per month|%)|\d+\.?\d*\s*%/i
+    for (const projectName of unverifiedProjectNames) {
+      if (!projectName || !projectName.trim()) continue
+      const escaped = projectName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+      const namePattern = new RegExp(escaped, 'i')
+      const nameMatch = aiResponse.match(namePattern)
+      if (!nameMatch || nameMatch.index === undefined) continue
+      const nameIndex = nameMatch.index
+      const window200 = aiResponse.slice(
+        Math.max(0, nameIndex - 100),
+        Math.min(aiResponse.length, nameIndex + projectName.length + 200)
+      )
+      const priceMatch = window200.match(NUMERIC_PRICE_PATTERN)
+      if (priceMatch) {
+        const phrase = priceMatch[0].length > 60
+          ? priceMatch[0].slice(0, 57) + '...'
+          : priceMatch[0]
+        violations.push(
+          `PRICE_FABRICATION: numeric price "${phrase}" within 200 chars of "${projectName}" (PROJECT_JSON.minPrice=0 — should not state numeric figures)`
+        )
+        try {
+          Sentry.captureMessage('[PRICE_FABRICATION] AI quoted price for unverified project', {
+            level: 'warning',
+            tags: {
+              audit_violation: 'true',
+              rule: 'PRICE_FABRICATION',
+              project: projectName,
+              match: phrase,
+            },
+          })
+        } catch {
+          // Sentry init may be absent in test/local env — never throw from the checker.
+        }
       }
     }
   }
