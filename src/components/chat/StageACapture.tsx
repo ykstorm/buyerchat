@@ -112,19 +112,13 @@ export default function StageACapture({ sessionId, onComplete }: Props) {
         color: 'var(--text-primary)',
       }}
     >
-      <p className="text-[13px] font-semibold">Save with Homesty AI</p>
+      <p className="text-[13px] font-semibold">Stay in touch — save your shortlist</p>
       <p
         className="text-[12.5px] mt-1.5 leading-relaxed"
         style={{ color: 'var(--text-secondary)' }}
       >
-        Number share karein toh yeh shortlist save ho jaayegi.
-      </p>
-      <p
-        className="text-[12px] mt-1.5 leading-relaxed"
-        style={{ color: 'var(--text-muted)' }}
-      >
-        Future mein price update, possession change, ya better unit availability
-        aaye toh Homesty AI yahin se continue karega.
+        Aapki shortlist save ho jaayegi. Homesty AI WhatsApp pe price drops aur
+        new options bhejega — kabhi spam nahi.
       </p>
 
       <div className="mt-3 space-y-2">
@@ -209,7 +203,7 @@ export default function StageACapture({ sessionId, onComplete }: Props) {
             color: 'var(--bg-surface)',
           }}
         >
-          {saving ? 'Saving…' : 'Save with Homesty AI'}
+          {saving ? 'Saving…' : 'Save shortlist'}
         </m.button>
         <button
           type="button"

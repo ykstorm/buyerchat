@@ -1,6 +1,5 @@
 'use client'
 import { useEffect, useState } from 'react'
-import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 
 // Brand 2.0 minimalist landing — locked spec.
@@ -52,7 +51,7 @@ export default function HomePage() {
         fontFamily: 'var(--font-dm-sans), system-ui, sans-serif',
       }}
     >
-      {/* ── Top right: theme toggle + sign in ── */}
+      {/* ── Top right: theme toggle (sign-in lives on post-engagement surfaces only — Sprint 3) ── */}
       <div className="absolute right-6 top-6 flex items-center gap-4">
         <button
           type="button"
@@ -79,13 +78,6 @@ export default function HomePage() {
             </svg>
           )}
         </button>
-        <Link
-          href="/auth/signin"
-          className="text-[12px] transition-opacity hover:opacity-80"
-          style={{ color: '#888', textDecoration: 'none' }}
-        >
-          Sign in
-        </Link>
       </div>
 
       {/* ── Centered content column ── */}
@@ -185,32 +177,12 @@ export default function HomePage() {
         </p>
       </div>
 
-      {/* ── Footer ── */}
+      {/* ── Footer (Sprint 3 — dead-link spans removed; restraint over suggestion).
+          /privacy will return as a real link when SPRINT-9 (DPDP) ships. ── */}
       <footer
-        className="absolute inset-x-0 bottom-6 flex flex-col items-center gap-2 px-6 text-center"
+        className="absolute inset-x-0 bottom-6 flex justify-center px-6 text-center"
         style={{ fontSize: '12px', color: '#888' }}
       >
-        {/* Footer links — /how-it-works, /about, /privacy, /contact pages do
-            not exist yet (Phase 3 content surfaces). Rendered as non-clickable
-            spans so buyers don't 404 from the landing page. Privacy is the
-            most-asked-for; create it first when content pages land. */}
-        <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
-          <span style={{ color: '#888', cursor: 'not-allowed', opacity: 0.6 }}>
-            How it works
-          </span>
-          <span aria-hidden="true">·</span>
-          <span style={{ color: '#888', cursor: 'not-allowed', opacity: 0.6 }}>
-            About
-          </span>
-          <span aria-hidden="true">·</span>
-          <span style={{ color: '#888', cursor: 'not-allowed', opacity: 0.6 }}>
-            Privacy
-          </span>
-          <span aria-hidden="true">·</span>
-          <span style={{ color: '#888', cursor: 'not-allowed', opacity: 0.6 }}>
-            Contact
-          </span>
-        </div>
         <span>© 2026 Homesty AI Technology LLP</span>
       </footer>
 
