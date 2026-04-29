@@ -17,14 +17,14 @@ const SLUGS = {
   'shela': { name: 'Shela', microMarket: 'Shela' },
 } as const
 
-export function generateStaticParams() {
-  return Object.keys(SLUGS).map(slug => ({ slug }))
-}
-
-// Reject unknown slugs at the routing layer — without this, a dev request
-// for /localities/anything renders the not-found UI but returns HTTP 200,
-// which would let crawlers index a soft-404.
-export const dynamicParams = false
+// Render at request time, not build time. The previous setup (generateStaticParams +
+// dynamicParams=false) tried to prerender each slug at build, which required a
+// reachable DATABASE_URL. CI uses a dummy URL so the prerender Prisma fetch threw
+// `NeonDbError: fetch failed` and crashed the build (regressed since d5e2d15).
+// Force-dynamic keeps the SEO surface — Next.js still server-renders HTML on every
+// request — and the unknown-slug gate below still returns a true 404 at request
+// time so crawlers don't index soft-404s.
+export const dynamic = 'force-dynamic'
 
 export default async function LocalityPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
