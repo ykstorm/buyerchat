@@ -202,7 +202,7 @@ describe('Stage B flag-aware prompt sections (Sprint 1)', () => {
     expect(prompt).not.toContain('[Buyer name] ka visit request note ho gaya')
     expect(prompt).not.toContain('Preferred slot: [Day, Time range]')
     // EXAMPLE 18 flag-on canonical bad-output mimicry (line 1013 pre-Sprint-1)
-    expect(prompt).not.toContain('Lakshyaraj ka visit request note ho gaya. Project: The Planet')
+    expect(prompt).not.toContain('Rohit Patel ka visit request note ho gaya. Project: The Planet')
   })
 
   it('flag-OFF (default): includes flag-off replacement copy + ❌ inverted EXAMPLE 18', () => {
@@ -231,6 +231,6 @@ describe('Stage B flag-aware prompt sections (Sprint 1)', () => {
     // PART 7 Step 3 template restored verbatim
     expect(prompt).toContain('[Buyer name] ka visit request note ho gaya')
     // EXAMPLE 18 flag-on shows the legitimate holding-message form
-    expect(prompt).toContain('Lakshyaraj ka visit request note ho gaya. Project: The Planet')
+    expect(prompt).toContain('Rohit Patel ka visit request note ho gaya. Project: The Planet')
   })
 })

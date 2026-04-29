@@ -462,7 +462,9 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
               ))}
             </div>
 
-            {/* Trust line + founder voice anchor */}
+            {/* Sprint 5 (2026-04-30): brand-bible scrub — founder voice anchor
+                removed. Homesty AI is positioned as a pure AI entity; no human
+                signature surfaces on buyer surfaces. Trust line stays. */}
             <m.p
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -470,15 +472,6 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
               className="text-[11px] text-[#A8A29E]"
             >
               Homesty earns only when you buy. No builder pays for promotion.
-            </m.p>
-            <m.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.7 }}
-              className="text-[11px] italic mt-1.5"
-              style={{ fontFamily: 'var(--font-playfair, Georgia), serif', color: 'var(--text-muted, #A8A29E)' }}
-            >
-              — Balvir, founder
             </m.p>
           </m.div>
         </div>

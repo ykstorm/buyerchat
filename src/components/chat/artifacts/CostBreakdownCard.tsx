@@ -102,12 +102,12 @@ export default function CostBreakdownCard({ project }: { project: ProjectForCost
             type="button"
             whileTap={prefersReduced ? undefined : { scale: 0.97 }}
             onClick={() => window.dispatchEvent(new CustomEvent('compose-message', {
-              detail: { message: `What's the estimated all-in for ${project.projectName}?` }
+              detail: { message: `${project.projectName} ka pricing kab tak available hoga?` }
             }))}
             className={`mt-1 px-4 py-2 rounded-xl text-[12px] font-semibold text-white ${FOCUS_RING}`}
             style={{ background: '#0F6E56' }}
           >
-            Ask Balvir for an estimate →
+            Request an estimate →
           </m.button>
         </div>
       </m.div>

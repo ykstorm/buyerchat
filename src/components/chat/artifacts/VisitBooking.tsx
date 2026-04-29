@@ -258,7 +258,7 @@ export function VisitBooking({ projectId, projectName }: VisitBookingProps) {
             {([
               { icon: 'note' as const, text: 'Note down this token before leaving' },
               { icon: 'gate' as const, text: 'Builder will verify at the site gate' },
-              { icon: 'phone' as const, text: 'Balvir will coordinate your visit' },
+              { icon: 'phone' as const, text: 'Homesty AI will coordinate your visit' },
               { icon: 'time' as const, text: 'Arrive 5 min early' },
             ]).map(tip => (
               <p key={tip.text} className="text-[12px] flex items-center gap-2" style={{ color: 'var(--text-secondary)' }}>

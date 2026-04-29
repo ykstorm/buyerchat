@@ -566,14 +566,14 @@ describe('Sprint 1 — Image 6 fabrication coverage', () => {
   })
 
   it('FAKE_VISIT_CLAIM (flag-off) flags "request note ho gaya" without artifact', () => {
-    const text = 'Lakshyaraj ka visit request note ho gaya — confirm shortly.'
+    const text = 'Rohit Patel ka visit request note ho gaya — confirm shortly.'
     const res = checkResponse(text, [], cq())
     expect(res.violations.some(v => v.startsWith('FAKE_VISIT_CLAIM'))).toBe(true)
   })
 
   it('FAKE_VISIT_CLAIM (flag-on) is narrower — "request note ho gaya" is allowed legitimate phrase', () => {
     process.env.STAGE_B_ENABLED = 'true'
-    const text = 'Lakshyaraj ka visit request note ho gaya — confirm shortly.'
+    const text = 'Rohit Patel ka visit request note ho gaya — confirm shortly.'
     const res = checkResponse(text, [], cq())
     // With Stage B on, "request note ho gaya" is the legitimate PART 7 Step 3
     // holding message — no HST- token expected at this point.
@@ -658,7 +658,7 @@ describe('OTP_FABRICATION check (P2-CRITICAL-7 Bug #1)', () => {
     // framing and just acknowledges the request. This is the ONLY response shape
     // allowed when buyer types name+phone.
     const text =
-      'Lakshyaraj ka visit request note ho gaya. Project: The Planet. Preferred slot: Sunday 11 AM.\n\n' +
+      'Rohit Patel ka visit request note ho gaya. Project: The Planet. Preferred slot: Sunday 11 AM.\n\n' +
       'Homesty AI team aapko WhatsApp pe shortly confirm karega. Tab tak site pe directly koi commitment mat karein.'
     const res = checkResponse(text, [], cq())
     expect(res.violations.some(v => v.startsWith('OTP_FABRICATION'))).toBe(false)

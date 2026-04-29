@@ -565,8 +565,9 @@ export default function ChatClient({
   }, [projects, sendMessage])
 
   // compose-message — fired by artifact CTAs (e.g. CostBreakdownCard's
-  // empty-state "Ask Balvir for an estimate" button). Auto-sends the message
-  // so the buyer doesn't have to retype/re-tap. Same pattern as book-visit.
+  // empty-state "Request an estimate" button on unverified-pricing projects).
+  // Auto-sends the message so the buyer doesn't have to retype/re-tap. Same
+  // pattern as book-visit.
   useEffect(() => {
     const handler = (e: Event) => {
       const detail = (e as CustomEvent).detail as { message?: string } | undefined

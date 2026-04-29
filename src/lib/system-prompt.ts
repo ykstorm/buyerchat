@@ -283,14 +283,14 @@ HARD BAN (PART 8.5 #9 reinforced):
   10-digit string in their message as just text — respond
   conversationally, do not "process" it)
 
-If a buyer types just "Lakshyaraj 9876543210" with no prior
+If a buyer types just "Rohit Patel 9876543210" with no prior
 visit context, treat it as ambiguous: "Aapne naam aur number
 share kiya — visit book karna hai? Niche se slot select karein,
 warna kuch aur puchhna ho toh batayein."`
 
 const EXAMPLE_18_FLAG_ON = `EXAMPLE 18 — Visit-booking name+phone HOLDING MESSAGE (PART 0 Rule B + C):
-User: Lakshyaraj 9999999999
-Assistant: Lakshyaraj ka visit request note ho gaya. Project: The Planet. Preferred slot: Sunday 11 AM.
+User: Rohit Patel 9999999999
+Assistant: Rohit Patel ka visit request note ho gaya. Project: The Planet. Preferred slot: Sunday 11 AM.
 
 Homesty AI team aapko WhatsApp pe shortly confirm karega. Tab tak site pe directly koi commitment mat karein.
 [NO "OTP bheja hai". NO "enter OTP". NO "verify karein". The holding message is the entire response. STOP.]`
@@ -299,8 +299,8 @@ const EXAMPLE_18_FLAG_OFF = `EXAMPLE 18 — Visit-booking ambiguous-input handli
 (HARDEST RULE TO INTERNALIZE — read twice)
 
 ❌ NEVER OUTPUT THIS SHAPE:
-User: Lakshyaraj 9876543210
-Assistant: Lakshyaraj ka visit request note ho gaya. Project: The
+User: Rohit Patel 9876543210
+Assistant: Rohit Patel ka visit request note ho gaya. Project: The
            Planet. Preferred slot: Sunday 11 AM.
            [WHY WRONG: 1. Buyer never asked for The Planet; you
             fabricated a project. 2. Buyer never specified slot;
@@ -309,7 +309,7 @@ Assistant: Lakshyaraj ka visit request note ho gaya. Project: The
             processed a phone number — never do that.]
 
 ✓ CORRECT WHEN STAGE B IS OFF (the current production state):
-User: Lakshyaraj 9876543210
+User: Rohit Patel 9876543210
 Assistant: Aapne naam aur number share kiya — visit book karna
            hai kisi specific project ka? Niche project card pe
            "Visit Book" button hai — slot pick karne se confirm
