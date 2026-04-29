@@ -484,7 +484,7 @@ end-user-facing bundle drift.
   Sentry+PII → AuditLog → healthcheck), Sentry tag convention table,
   withSentry rollout plan, healthcheck contract, anti-patterns,
   numbers. Footnote at end: "All numbers reference commit
-  `<DAY-6-SHA>` … Update on every edit."
+  `9a02c24` … Update on every edit."
 
 ### Prisma `$queryRaw\`SELECT 1\`` worked first try?
 

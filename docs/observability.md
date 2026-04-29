@@ -1,7 +1,7 @@
 # Observability — Operator Runbook
 
 > **Footnote:** All numbers and code references in this writeup match
-> commit `<DAY-6-SHA>` of the homesty.ai repo at 2026-04-29. Update
+> commit `9a02c24` of the homesty.ai repo at 2026-04-29. Update
 > this footnote on every edit.
 
 This is the working runbook for on-call. It describes the five layers
@@ -216,7 +216,7 @@ is signal — not a flaky-on-cold-start false positive.
 
 ## Numbers
 
-- **207 tests passing** as of `<DAY-6-SHA>`. Sprint baseline 162; +45
+- **207 tests passing** as of `9a02c24`. Sprint baseline 162; +45
   in P1-R2 sprint Days 2-6.
 - **0 P0/P1 Sentry classes open** as of 2026-04-29. The 5 historical
   classes resolved in `docs/diagnostics/sentry-resolution-log-2026-04-26.md`.

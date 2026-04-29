@@ -10,7 +10,60 @@
 
 ## Last updated
 
-2026-04-29 — Day 5 (`p1-audit-fields-day5`)
+2026-04-29 — Day 6 (`p1-audit-fields-day6`)
+
+---
+
+## Day 6 — 2026-04-29 — `9a02c24` — GHCR push GHA + healthcheck + Dockerfile HEALTHCHECK + withSentry PoC
+
+**Status:** [OK] — shipped on `p1-audit-fields-day6` off `2b308b5` (Day 5 head).
+
+**What landed:**
+
+- `.github/workflows/docker.yml` (NEW) — sibling to `ci.yml`. Triggers
+  on `main` push + `v*` tags. Builds the existing multi-stage Dockerfile
+  and pushes to `ghcr.io/ykstorm/buyerchat:{latest, sha-<short>, <semver>}`
+  via pinned-major actions (checkout@v4, buildx@v3, login@v3, metadata@v5,
+  build-push@v6). `permissions: { contents: read, packages: write }`.
+  GitHub Actions cache layer (`type=gha, mode=max`) for re-build speed.
+- `Dockerfile` — single additive line before `CMD`:
+  `HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3
+  CMD wget -qO- http://localhost:3000/api/healthcheck || exit 1`. Nothing
+  else changed.
+- `src/app/api/healthcheck/route.ts` (NEW) — public, unauthenticated
+  GET. Single `prisma.$queryRaw\`SELECT 1\`` round-trip. 200 ok JSON
+  on success (`status, commit, uptime, timestamp`); 503 degraded JSON
+  on DB failure. No Sentry breadcrumb on success (anti-flood), no auth
+  (LB compatibility), `runtime: 'nodejs'` for Prisma.
+- `src/lib/with-sentry.ts` (NEW) — HOC wrapping Next.js route handlers
+  with try/catch + `Sentry.captureException(tags: { module:
+  'with-sentry', route })` + 500 JSON with `requestId`. Permissive
+  `(...args: any[])` handler shape so it works against any route
+  signature. Applied to `/api/admin/projects/bulk-upload` only (PoC) —
+  full rollout deferred to `MASTER_FIX_LIST` D1.
+- `docs/observability.md` (NEW) — operator runbook. Architecture
+  diagram, 5-layer bug detection writeup, Sentry tag convention table,
+  withSentry rollout plan, healthcheck contract, anti-patterns. All
+  metrics cited with commit SHAs. Footnote at end is pegged to
+  `9a02c24` and must be updated on every future edit.
+- 4 new tests: 2 healthcheck (happy + degraded), 2 with-sentry
+  (pass-through + error capture).
+
+**Prisma `$queryRaw\`SELECT 1\`` first try:** Yes — no Neon-HTTP adapter
+adjustment needed. The existing `PrismaNeonHttp` (`src/lib/prisma.ts:4`)
+handles `$queryRaw` as a single round-trip without session state.
+
+**Verify:** **207/207 tests** (203 → 207, +4). Build clean. /chat
+bundle stable at 217 kB. Pre-commit ran tests. One in-loop type-check
+fixup applied during verify (`RouteHandler` constraint relaxed to
+`(...args: any[])` so test handlers typed as `(_req: Request) => …`
+infer T correctly); second verify run was green.
+
+**Discipline checklist applied:** §1 (no new external hosts; GHCR is a
+registry not a runtime), §2, §3 (`$queryRaw` not `$transaction`), §4
+(observability runbook is first of its kind, no overlapping surface),
+§5, §6 (3s Docker timeout, 10s grace), §9, §10, §11, §12, §13, §14,
+§15. §7, §8, §16 — n/a.
 
 ---
 
@@ -241,46 +294,47 @@ is a sibling admin route), 175/175 tests, schema valid. **Test count:
 
 ---
 
-## Day 6 queue — Healthcheck + GHCR + observability scaffolding
+## Day 7 queue — Sprint retrospective + final verify + blog post draft
 
-**Goal:** harden the deploy + observability surface so future agents
-can debug from logs and metrics rather than from ad-hoc reproductions.
-This sprint is mostly infra glue — small per-item changes, broad reach.
+**Goal:** close P1-R2 with a clean handoff. Day 1-6 produced the
+audit-fields machinery, the operator-trust surfaces, and the
+observability scaffolding. Day 7 documents the sprint and validates the
+Day 6 docker.yml run on `main`.
 
-1. **Healthcheck endpoint:** `GET /api/healthcheck` returns
-   `{ status: 'ok', commit: process.env.VERCEL_GIT_COMMIT_SHA, db: <ms> }`
-   with a single `prisma.$queryRaw\`SELECT 1\`` round-trip. 5s timeout
-   ceiling. Public endpoint (no auth) but rate-limited to deter abuse.
+1. **Sprint retrospective** at `docs/retros/p1-r2-audit-fields.md` per
+   AGENT_DISCIPLINE §16 (multi-day sprints get a retro at the end). Two
+   sections: "What worked / what surprised" and "What to do differently
+   next time". Source every claim to a commit SHA from this sprint —
+   162 → 207 tests (+45), 6 commits across 6 days, 1 deletion (the
+   217-line duplicate scraper), 1 deletion (the orphan BuilderForm),
+   Block E4 closed across both write paths, auditWrite spans 4 actions
+   (`bulk_import`, `verify_rera`, `create`, plus the implicit `update`
+   when other surfaces adopt it).
 
-2. **GHCR push GHA workflow:** `.github/workflows/ghcr.yml` builds the
-   multi-stage Dockerfile and pushes `ghcr.io/ykstorm/buyerchat:{sha,latest}`
-   on every push to `main`. Re-uses the existing CI build artifact when
-   possible to avoid double-building. Vercel deploy stays the primary
-   prod path; GHCR is for CD parity + future on-prem scenarios.
+2. **Final verify on a clean checkout.** `git clean -nxd` first to
+   inspect untracked, then `npm ci && npm run verify` from a fresh
+   `node_modules`. Confirms the lock file is honest about install order.
 
-3. **Dockerfile HEALTHCHECK directive:** Add `HEALTHCHECK --interval=30s
-   --timeout=5s --start-period=20s --retries=3 CMD curl -f
-   http://localhost:3000/api/healthcheck || exit 1`. Container
-   orchestrators get a real readiness signal.
+3. **Blog post draft (homesty.ai)** — first-person operator narrative
+   covering the five layers of bug detection (now backed by
+   `docs/observability.md`). Out of repo scope per usual; coordinate
+   with operator on copy.
 
-4. **`withSentry` route wrapper PoC:**
-   `src/lib/with-sentry-route.ts` — higher-order function wrapping
-   POST/GET handlers with try/catch + `Sentry.captureException` +
-   consistent `tags: { module: <route-path> }`. Apply to
-   `/api/rera-fetch`, `/api/admin/projects/bulk-upload`,
-   `/api/admin/builders` as the first three migrations. Other routes
-   left for Day 7+.
+4. **GHA `docker.yml` validation:** the workflow only fires on `main`
+   pushes. Day 6's PR (`p1-audit-fields-day6` → `main`) merge will
+   trigger the first build. After merge, confirm:
+   - https://github.com/ykstorm/buyerchat/actions for the docker run
+     status (green or paste failing step output verbatim).
+   - `ghcr.io/ykstorm/buyerchat:latest` exists and is pullable.
+   - First registry-side image tag includes the merge commit's
+     short-sha.
+   If GHA fails on missing `packages: write` permission, operator must
+   enable Actions write packages permission in repo settings — same
+   anti-requirement as Day 6.
 
-5. **`docs/observability.md`:** Capture the route → Sentry tag
-   mapping (so on-call can `tag:module=admin-builders` to slice
-   issues), the `auditWrite` Sentry tag conventions, and the
-   healthcheck SLO target. Operator-facing runbook, not a design doc.
-
-6. **Tests:**
-   - `/api/healthcheck` happy path + `prisma.$queryRaw` failure → 503.
-   - `withSentry` wrapper unit suite: thrown error → captureException
-     with the right tag + 500 response.
-   - Targets test count 203 → ≥208.
+5. **No code changes expected.** Day 7 is documentation and validation.
+   If a regression surfaces during final verify, that's a new sprint, not
+   a Day 7 patch.
 
 ---
 
@@ -293,6 +347,7 @@ This sprint is mostly infra glue — small per-item changes, broad reach.
 | 3   | `379c03f` | 175/175 | clean | +5 from bulk-upload suite |
 | 4   | `508eb09` | 181/181 | clean | +6 from rera-fetch suite (cache HIT/MISS, force, GEO_BLOCK, regex, deletion lock-in) |
 | 5   | `4718b67` | 203/203 | clean | +22 (15 reducer + 5 builders POST + 2 rera-fetch manualPayload) |
+| 6   | `9a02c24` | 207/207 | clean | +4 (2 healthcheck + 2 with-sentry); GHCR push GHA + Dockerfile HEALTHCHECK + observability.md runbook |
 
 ---
 
