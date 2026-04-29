@@ -184,6 +184,37 @@ describe('v3 system prompt — PART invariants', () => {
     expect(prompt).toContain('Vishwanath Sarathya West')
     expect(prompt).toMatch(/each project's pricing stands\s*alone/i)
   })
+
+  // Sprint 5.5 (2026-04-30): EXAMPLE 21 added to PART 16 — amenity queries
+  // must answer in flowing comma-prose, never markdown bullets. Universal
+  // (renders regardless of stageBEnabled).
+  it('PART 16 EXAMPLE 21: amenity comma-prose pattern present (flag-off)', () => {
+    const prompt = buildSystemPrompt(baseCtx)
+    expect(prompt).toContain('EXAMPLE 21')
+    expect(prompt).toContain('pool, gym, kids play area')
+    expect(prompt).toContain('WRONG SHAPES')
+  })
+  it('PART 16 EXAMPLE 21: amenity comma-prose pattern present (flag-on)', () => {
+    const prompt = buildSystemPrompt(flagOnCtx)
+    expect(prompt).toContain('EXAMPLE 21')
+    expect(prompt).toContain('pool, gym, kids play area')
+    expect(prompt).toContain('WRONG SHAPES')
+  })
+
+  // Sprint 5.5 (2026-04-30): PART 7 Step 1.5 added — imprecise time input
+  // must be confirmed-back, not echoed verbatim and not fabricated into a
+  // precise slot. Both flag-on (Step 1.5 between Steps 1 and 2) and flag-off
+  // (paragraph at end of artifact-only flow) variants enforce the rule.
+  it('PART 7 Step 1.5: imprecise time confirm-back rule present (flag-on)', () => {
+    const prompt = buildSystemPrompt(flagOnCtx)
+    expect(prompt).toContain('subah 9 11')
+    expect(prompt).toMatch(/Wait for buyer's confirmation/i)
+  })
+  it('PART 7 imprecise time handling: confirm-back rule present (flag-off)', () => {
+    const prompt = buildSystemPrompt(baseCtx)
+    expect(prompt).toContain('subah 9 11')
+    expect(prompt).toMatch(/confirm-back/i)
+  })
 })
 
 // Sprint 1 (2026-04-29): STAGE_B_ENABLED flag-gating coverage.
