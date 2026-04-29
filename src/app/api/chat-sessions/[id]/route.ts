@@ -60,6 +60,7 @@ export async function GET(
       select: {
         buyerStage: true,
         captureStage: true,
+        artifactHistory: true,
         messages: {
           orderBy: { createdAt: 'asc' },
           select: { role: true, content: true },
@@ -75,6 +76,12 @@ export async function GET(
       messages: chatSession.messages,
       buyerStage: chatSession.buyerStage,
       captureStage: chatSession.captureStage,
+      // Sprint 2 (2026-04-29) — surface persisted artifacts. Hydration
+      // happens client-side in chat-client.tsx via lib/artifact-hydrate.ts
+      // by joining IDs against the loaded projects/builders arrays.
+      artifactHistory: Array.isArray(chatSession.artifactHistory)
+        ? (chatSession.artifactHistory as unknown[])
+        : [],
     })
   } catch (err) {
     console.error('chat-sessions/[id] GET error:', err)

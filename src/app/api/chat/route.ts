@@ -10,6 +10,7 @@ import { classifyIntent, detectHardCaptureIntent, STAGE_B_TRIGGER_SCRIPTS } from
 import { buildDecisionCard } from '@/lib/decision-engine/decision-card-builder'
 import { checkResponse, CONTACT_LEAK_PATTERN, BUSINESS_LEAK_PATTERN, MARKDOWN_PATTERN } from '@/lib/response-checker'
 import { sanitizeAdminInput } from '@/lib/sanitize'
+import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth'
 import { Resend } from 'resend'
@@ -493,6 +494,45 @@ if (hasInjection) {
             tokensUsed: usage.totalTokens,
           }
         })
+
+        // Sprint 2 (2026-04-29) — persist artifact history. Parse CARD blocks
+        // from the assistant response into PersistedArtifact rows; append to
+        // ChatSession.artifactHistory so a session refresh rehydrates the
+        // right panel without keyword-matching prose. Malformed CARD JSON is
+        // logged and skipped — never aborts the response.
+        try {
+          const cardRegex = /<!--CARD:(.*?)-->/g
+          const newArtifacts: Array<Record<string, unknown>> = []
+          for (const m of text.matchAll(cardRegex)) {
+            try {
+              const payload = JSON.parse(m[1])
+              if (payload && typeof payload === 'object' && typeof payload.type === 'string') {
+                newArtifacts.push({ ...payload, emittedAt: new Date().toISOString() })
+              }
+            } catch {
+              Sentry.captureMessage('[ARTIFACT_PERSIST] Malformed CARD JSON skipped', {
+                level: 'warning',
+                tags: { rule: 'ARTIFACT_PERSIST', sessionId: savedSession.id },
+              })
+            }
+          }
+          if (newArtifacts.length > 0) {
+            const cur = await prisma.chatSession.findUnique({
+              where: { id: savedSession.id },
+              select: { artifactHistory: true },
+            })
+            const existing = Array.isArray(cur?.artifactHistory)
+              ? (cur!.artifactHistory as unknown[])
+              : []
+            const merged = [...existing, ...newArtifacts]
+            await prisma.chatSession.update({
+              where: { id: savedSession.id },
+              data: { artifactHistory: merged as unknown as Prisma.InputJsonValue },
+            })
+          }
+        } catch (err) {
+          console.error('artifactHistory persist error:', err)
+        }
     
         // Extract buyer signals and update session metadata
         const budgetMatch = sanitizedMsg.match(/(\d+)\s*(lakh|L|Cr|crore)/i)

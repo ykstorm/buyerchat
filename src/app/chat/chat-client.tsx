@@ -8,8 +8,9 @@ import { LazyMotion, domAnimation } from 'framer-motion'
 import ChatCenter, { type Message } from '@/components/chat/ChatCenter'
 import ChatRightPanel from '@/components/chat/ChatRightPanel'
 import StageACapture from '@/components/chat/StageACapture'
-import type { ProjectType, ArtifactType, Artifact } from '@/lib/types/chat'
+import type { ProjectType, ArtifactType, Artifact, PersistedArtifact } from '@/lib/types/chat'
 import type { BuilderAIContext } from '@/lib/types/builder-ai-context'
+import { hydrateArtifacts } from '@/lib/artifact-hydrate'
 
 // Sidebar stays lazy — closed by default, its framer-motion swipe logic
 // (useMotionValue/animate) is idle until the user opens it. RightPanel is
@@ -693,19 +694,13 @@ export default function ChatClient({
         setMessages(loaded)
         setSessionId(urlSessionId)
         if (data.session?.buyerStage) setBuyerStage(data.session.buyerStage)
-        // Reconstruct full artifact history from all assistant messages
-        const restoredHistory: Artifact[] = []
-        const seenIds = new Set<string>()
-        for (const msg of loaded) {
-          if (msg.role !== 'assistant') continue
-          const lower = msg.content.toLowerCase()
-          for (const p of projects) {
-            if (lower.includes(p.projectName.toLowerCase()) && !seenIds.has(p.id)) {
-              seenIds.add(p.id)
-              restoredHistory.push({ type: 'project_card', data: p })
-            }
-          }
-        }
+        // Sprint 2 (2026-04-29) — restore artifact history from DB. Replaces
+        // the prior keyword-match scan which only handled project_card and
+        // missed casual/abbreviated names. PersistedArtifact[] is hydrated
+        // against the loaded projects + builders arrays — deleted projects
+        // silently drop, all 6 artifact types supported.
+        const persisted = (data.artifactHistory ?? []) as PersistedArtifact[]
+        const restoredHistory = hydrateArtifacts(persisted, projects, builders)
         if (restoredHistory.length > 0) {
           artifactHistoryRef.current = restoredHistory
           artifactIndexRef.current = restoredHistory.length - 1

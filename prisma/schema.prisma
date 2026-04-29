@@ -267,6 +267,12 @@ model ChatSession {
   capturedName         String?
   captureStage         String?
   capturedAt           DateTime?
+  // Sprint 2 (2026-04-29) — persisted artifact history. Shape:
+  // PersistedArtifact[] — each entry is the parsed CARD payload + an
+  // emittedAt timestamp. Hydrated client-side via lib/artifact-hydrate.ts
+  // by joining IDs against the loaded projects/builders arrays. Null
+  // for old sessions; new sessions append on every assistant turn.
+  artifactHistory      Json?
   messages             ChatMessageLog[]
   deals                Deal[]
 
