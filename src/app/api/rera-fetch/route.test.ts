@@ -204,3 +204,56 @@ describe('rera-verify duplicate scraper — deletion lock-in', () => {
     expect(existsSync(path)).toBe(false)
   })
 })
+
+describe('rera-fetch — manualPayload (operator paste, no scrape)', () => {
+  it('skips puppeteer and persists with source=manual when projectId provided', async () => {
+    mPrisma.project.update.mockResolvedValue({ id: 'proj-1' })
+    mAuditWrite.mockResolvedValue(2)
+
+    const res = await POST(
+      makeRequest({
+        reraNumber: VALID_RERA,
+        projectId: 'proj-1',
+        manualPayload: '{"reraNumber":"PR/...","status":"Active"}',
+      }),
+    )
+
+    expect(res.status).toBe(200)
+    const body = await res.json()
+    expect(body).toMatchObject({ success: true, source: 'manual' })
+
+    expect(mockLaunch).not.toHaveBeenCalled()
+    expect(mPrisma.project.findUnique).not.toHaveBeenCalled()
+    expect(mPrisma.project.update).toHaveBeenCalledTimes(1)
+    expect(mPrisma.project.update.mock.calls[0][0].data.reraVerified).toBe(true)
+    // operator + raw captured in reraData blob (per AGENT_DISCIPLINE §7)
+    const reraData = mPrisma.project.update.mock.calls[0][0].data.reraData
+    expect(reraData.source).toBe('manual')
+    expect(reraData.scrapedFields).toMatchObject({ operator: ADMIN_EMAIL })
+
+    expect(mAuditWrite).toHaveBeenCalledWith(
+      expect.objectContaining({
+        entity: 'Project',
+        entityId: 'proj-1',
+        action: 'verify_rera',
+        actor: ADMIN_EMAIL,
+      }),
+    )
+  })
+
+  it('returns 400 when manualPayload is provided without projectId', async () => {
+    const res = await POST(
+      makeRequest({
+        reraNumber: VALID_RERA,
+        manualPayload: '{"foo":"bar"}',
+      }),
+    )
+
+    expect(res.status).toBe(400)
+    const body = await res.json()
+    expect(body.error).toMatch(/projectId is required/i)
+    expect(mockLaunch).not.toHaveBeenCalled()
+    expect(mPrisma.project.update).not.toHaveBeenCalled()
+    expect(mAuditWrite).not.toHaveBeenCalled()
+  })
+})

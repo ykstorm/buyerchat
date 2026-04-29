@@ -26,11 +26,12 @@ interface RequestBody {
   reraNumber?: string
   projectId?: string
   force?: boolean
+  manualPayload?: string
 }
 
 async function persistVerification(
   projectId: string,
-  source: 'puppeteer' | 'claude' | 'raw',
+  source: 'puppeteer' | 'claude' | 'raw' | 'manual',
   data: ScrapedFields | Record<string, unknown>,
   rawText: string | null,
   actor: string,
@@ -88,6 +89,29 @@ export async function POST(req: NextRequest) {
 
   const projectId = body.projectId
   const force = body.force === true
+  const manualPayload = body.manualPayload
+
+  // Manual-entry verify path — operator pasted RERA portal data, no scrape
+  // attempt. Skips puppeteer entirely. Day 5: added so geo-blocked operators
+  // (Vercel SIN-1 -> gujrera 403) still get a verifiable trust marker on
+  // Project rows. Per AGENT_DISCIPLINE §7, the actor email is captured in
+  // both the reraData blob and the audit log.
+  if (typeof manualPayload === 'string' && manualPayload.trim().length > 0) {
+    if (!projectId) {
+      return NextResponse.json(
+        { error: 'projectId is required when manualPayload is provided' },
+        { status: 400 },
+      )
+    }
+    await persistVerification(
+      projectId,
+      'manual',
+      { operator: email, raw: manualPayload },
+      manualPayload,
+      email,
+    )
+    return NextResponse.json({ success: true, source: 'manual' })
+  }
 
   if (projectId && !force) {
     const cached = await prisma.project.findUnique({

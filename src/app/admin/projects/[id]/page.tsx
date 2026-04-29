@@ -444,6 +444,7 @@ export default function ProjectEditPage() {
                 <RERAVerifyPill projectId={id} reraNumber={form.reraNumber} />
               )}
               <RERAManualEntry
+                projectId={!isNew && id ? id : undefined}
                 onApply={(d: RERAManualPayload) => {
                   set('reraNumber', d.reraNumber)
                   if (d.status) {

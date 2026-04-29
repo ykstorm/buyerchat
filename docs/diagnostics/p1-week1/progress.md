@@ -261,4 +261,169 @@ is ~140 LOC of inline JSX). Schema valid.
   `reraData = { source: 'manual', operator: email, raw: <pasted> }` via
   `auditWrite`. Out of Day 4 scope per the prompt.
 
+---
+
+## Day 5 — 2026-04-29 — `p1-audit-fields-day5`
+
+**Branch base:** `be81034` (Day 4 head on `p1-audit-fields-day4`).
+
+**Verify baseline at start:** 181/181 tests, build clean.
+
+### What landed
+
+- **Builder onboarding wizard (4-step).** Replaces the old
+  `/admin/builders/new` 99-line single-page form (`page.tsx`) and the
+  orphan 249-line `BuilderForm.tsx` (never imported, dead code as of
+  Day 4). New surface:
+  - `src/app/admin/builders/new/page.tsx` — server component, admin
+    auth gate, redirect non-admin to `/admin`. Passes `adminEmail` as
+    a typed prop (AGENT_DISCIPLINE §5).
+  - `src/app/admin/builders/new/builder-wizard.tsx` — client wizard.
+    Stepper (1→4), Back/Next/Create buttons, dispatches into the
+    pure reducer below.
+  - `src/components/admin/builder-wizard/wizard-reducer.ts` — pure
+    `useReducer` state machine. Actions: `SET_IDENTITY` /
+    `SET_SCORE` (auto-clamps to per-field max) / `SET_CONTACT` /
+    `NEXT_STEP` (validates current step before advancing) /
+    `PREV_STEP` / `START_SUBMIT` / `SUBMIT_OK` / `SUBMIT_FAIL` /
+    `RESET`. No React, no fetch, no prisma — fully unit-testable.
+  - `src/components/admin/builder-wizard/wizard-reducer.test.ts` —
+    15 reducer tests: navigation (advance, regress, validation gate,
+    boundary), score clamping (over-max, negative), totalTrustScore
+    sum, displayGrade thresholds (A/B/C/D/F), validation step 1/3,
+    submit lifecycle (OK + FAIL + RESET).
+
+- **Step 3 surfaces "AI never sees these" chip** on `contactEmail` /
+  `contactPhone` per `src/lib/types/builder-ai-context.ts` exclusion
+  list (`contactPhone`, `contactEmail`, `commissionRatePct`,
+  `partnerStatus` are deliberately stripped from AI context). Amber
+  warning chip rendered above the contact inputs.
+
+- **`POST /api/admin/builders` extended:**
+  - Rate-limit `builder-create:${email}:${ip}` at 5/min
+    (looser than bulk-upload because it's a single-row write but
+    still bounded). 429 + `Retry-After: 60`.
+  - Sets `createdBy: email` at create time. `version` defaults to 1.
+  - **Genesis `auditWrite({ entity: 'Builder', action: 'create' })`**
+    after the create. Same semantics as Day 3 bulk-import: the audit
+    log shows `entityVersion: 2` + `action: 'create'`, which is the
+    canonical "first appeared as a create event" tag for audit-replay
+    tools.
+  - **Prisma `P2002` (unique violation on `builderName`) → 409** with
+    a friendly message instead of bubbling as 500.
+  - Removed the legacy `logAdminAction(...)` call — `auditWrite`
+    replaces it for this surface (it writes the same `AuditLog` row
+    plus a versioned update + Sentry tags). Other routes still use
+    `logAdminAction` and are unchanged.
+  - `Sentry.captureException` on the catch-all 500 path with
+    `tags: { module: 'admin-builders' }`.
+
+- **`POST /api/admin/builders/route.test.ts`** — 5 tests:
+  1. Happy path → 201; create called with `createdBy: ADMIN_EMAIL`
+     and `totalTrustScore: 82`; `auditWrite` called once with
+     `{ entity: 'Builder', action: 'create', actor: ADMIN_EMAIL }`.
+  2. P2002 unique violation → 409 with `error: /already exists/i`;
+     `auditWrite` not called.
+  3. `deliveryScore: 999` (over max 30) → 400; create not called.
+  4. Non-admin caller → 401.
+  5. `rateLimit → false` → 429 with `Retry-After: 60`, called with
+     key `builder-create:${email}:${ip}`, limit 5, window 60_000.
+
+- **RERAManualEntry verify-flip (deferred from Day 4):**
+  - `/api/rera-fetch` extended with optional `manualPayload?: string`.
+    When present + `projectId` provided: skips puppeteer entirely,
+    persists `reraVerified: true`, `reraData: { source: 'manual',
+    fetchedAt, scrapedFields: { operator: email, raw: payload },
+    rawTextSample }`, `reraVerifiedAt: now()`, then
+    `auditWrite({ action: 'verify_rera' })`. Returns
+    `{ success: true, source: 'manual' }`.
+  - `manualPayload` without `projectId` → 400 (the manual-flip is
+    only meaningful when binding to a Project row).
+  - `RERAManualEntry.tsx` takes a new optional `projectId?: string`
+    prop. When present, the "Apply" button POSTs the manualPayload
+    after firing `onApply()` form-fill, then `router.refresh()`.
+    When absent (`/admin/projects/new` flow), behavior unchanged —
+    just fills form fields. Button label switches:
+    `"Apply to form"` (no projectId) ↔ `"Apply & mark verified"`
+    (projectId set).
+  - `/admin/projects/[id]/page.tsx` call site updated to pass
+    `projectId={!isNew && id ? id : undefined}` so the wizard at
+    `/new` is unaffected.
+
+- **`/api/rera-fetch/route.test.ts`** — extended with 2 new tests:
+  1. `manualPayload` + `projectId` → skips puppeteer, persists
+     `reraVerified: true` with `source: 'manual'` and `operator: email`
+     captured in the blob; `auditWrite` called with `verify_rera`.
+  2. `manualPayload` without `projectId` → 400 with
+     `error: /projectId is required/i`.
+
+### §4 duplicate-surface grep result
+
+`grep -rn "BuilderForm" src/` returned hits only inside
+`src/app/admin/builders/new/BuilderForm.tsx` itself (definition + DEFAULT
++ default export). **Zero call sites import BuilderForm** — confirmed
+orphan. The active 99-line `page.tsx` rendered its own inline form. Both
+files deleted; `page.tsx` rewritten as the server component that mounts
+the new wizard. No new sibling routes, no orphans.
+
+### Verify
+
+End-state: **203/203 tests** (181 → 203, +22). Build clean. /chat bundle
+stable at 217 kB First Load. /admin/builders/new picks up the wizard
+component (~330 LOC) but is a server-rendered admin route — no
+end-user-facing bundle drift.
+
+### Discipline checklist applied
+
+- §1 (CSP / external domains) — n/a (no new external hosts; same-origin
+  POSTs only)
+- §2 (env vars) — none new
+- §3 (Neon HTTP `$transaction`) — `auditWrite` continues array-form
+  internally; new builders route does not call `$transaction` directly.
+- §4 (duplicate-surface) — orphan `BuilderForm.tsx` deleted; legacy
+  inline `page.tsx` form replaced with the new wizard. Single canonical
+  builder-create surface.
+- §5 (client/server boundary) — `BuilderWizard` takes `adminEmail` as a
+  typed prop from the server `page.tsx`. The wizard does NOT call
+  `useParams()` or `useSession()`. The reducer is server-render-safe
+  (pure function).
+- §6 (timeouts) — n/a (single-create, no streams)
+- §7 (schema write provenance) — `createdBy` stamped on Builder; first
+  audit row at `entityVersion: 2` with `action: 'create'`. Manual-entry
+  RERA path captures `operator: email` in `reraData.scrapedFields` and
+  the same actor in `auditWrite`. Geo-block path remains untouched
+  (Day 1 Q5).
+- §8 (response-checker) — n/a (not an AI surface; **contact fields
+  remain excluded from BuilderAIContext** per the type guard at
+  `src/lib/types/builder-ai-context.ts:15`. The amber chip in Step 3
+  surfaces this to the operator visually.)
+- §9 (verify gates) — applied; 203/203, build clean
+- §10 (report-back format) — applied
+- §11 (sub-agents) — none used
+- §12 (CI gates) — pre-commit ran tests
+- §13 (session handoff) — sprint-scoped HANDOFF updated; top-level
+  `docs/SESSION_HANDOFF.md` untouched
+- §14 (verdict format) — applied in chat report
+- §15 (autonomous decisions) — three judgment calls at ≥80% confidence:
+  (a) deleted `BuilderForm.tsx` outright instead of repurposing —
+  zero callers, dead code per AGENT_DISCIPLINE §4 housekeeping;
+  (b) replaced the legacy `logAdminAction` call with `auditWrite` on
+  the builders route only (other routes untouched) so the audit trail
+  is uniform within the P1-R2 sprint touched paths;
+  (c) RERAManualEntry button label flips to `"Apply & mark verified"`
+  only when `projectId` is set — so operators on `/new` (no project
+  id yet) don't see misleading verify language.
+- §16 (retro) — Day 7 only
+
+### Open call for Day 6+
+
+- `withSentry` route wrapper PoC + healthcheck endpoint (Day 6 queue
+  entry).
+- `RERAVerifyPill` currently fetches its own state from
+  `/api/admin/projects/${id}` on mount. After Day 5's manual-entry flip
+  + `router.refresh()`, the pill re-mounts and re-fetches. If post-Day-6
+  observability finds a flicker UX, swap to a server-rendered initial
+  value passed as a prop.
+
+
 
