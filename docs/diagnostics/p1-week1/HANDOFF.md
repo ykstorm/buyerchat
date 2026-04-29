@@ -10,7 +10,65 @@
 
 ## Last updated
 
-2026-04-29 — Day 4 (`p1-audit-fields-day4`)
+2026-04-29 — Day 5 (`p1-audit-fields-day5`)
+
+---
+
+## Day 5 — 2026-04-29 — `4718b67` — Builder onboarding wizard + RERA manual-entry verify-flip
+
+**Status:** [OK] — shipped on `p1-audit-fields-day5` off `be81034` (Day 4 head).
+
+**What landed:**
+
+- `/admin/builders/new` is now a 4-step wizard (Identity → Trust Scores
+  → Contact → Review). Server `page.tsx` gates auth and passes
+  `adminEmail` as a prop; client `builder-wizard.tsx` dispatches into
+  a pure `useReducer` state machine.
+- 15 unit tests on the reducer in isolation. No React, no fetch, no
+  prisma — fully testable as a state-transition function.
+- **Step 3 surfaces an amber "AI never sees these — internal CRM
+  only" chip** above the contact-email / contact-phone inputs,
+  matching the `BuilderAIContext` exclusion in
+  `src/lib/types/builder-ai-context.ts:15`.
+- Deleted orphan `BuilderForm.tsx` (249 lines, never imported) and
+  the legacy 99-line inline form. Single canonical builder-create
+  surface.
+- `POST /api/admin/builders` now:
+  - Rate-limits `builder-create:${email}:${ip}` at 5/min (429 +
+    `Retry-After: 60`).
+  - Stamps `createdBy: email` at create.
+  - Fires the genesis `auditWrite({ entity: 'Builder', action:
+    'create' })` post-create. AuditLog row lands at
+    `entityVersion: 2` — same semantics as Day 3 bulk-import.
+  - Surfaces Prisma `P2002` (unique `builderName` violation) as
+    409 instead of bubbling 500.
+  - Replaces legacy `logAdminAction(...)` with `auditWrite(...)`
+    on this surface only (other routes untouched — minimum-disruption).
+- **RERAManualEntry verify-flip (deferred from Day 4) — landed:**
+  `/api/rera-fetch` extended with `manualPayload?: string`. When
+  present + `projectId`, it skips puppeteer, persists
+  `reraVerified: true` + `reraData: { source: 'manual',
+  scrapedFields: { operator: email, raw }, ... }` +
+  `reraVerifiedAt: now()`, then `auditWrite({ action: 'verify_rera' })`.
+  `manualPayload` without `projectId` → 400. `RERAManualEntry.tsx`
+  takes a new `projectId?: string` prop; when set, Apply also POSTs
+  the manualPayload + `router.refresh()`. Button label switches:
+  `"Apply to form"` ↔ `"Apply & mark verified"`.
+
+**Tests:** 5 new builders route tests (happy path + auditWrite shape,
+P2002 → 409, Zod → 400, non-admin → 401, rate-limit → 429), 15
+reducer tests, 2 new rera-fetch tests (manualPayload skip+persist,
+missing-projectId 400). Total +22 (181 → 203).
+
+**Verify:** **203/203 tests** (181 → 203, +22). Build clean. /chat
+bundle stable at 217 kB. Pre-commit ran tests.
+
+**Discipline checklist applied:** §3 (auditWrite array-form), §4
+(orphan + legacy form deleted, single surface), §5 (prop pass-through),
+§7 (createdBy + auditWrite on Builder; manual-entry captures
+operator+raw in reraData), §8 (BuilderAIContext exclusion preserved
++ surfaced visually in Step 3), §9, §10, §11, §12, §13, §14, §15.
+§1, §2, §6, §16 — n/a.
 
 ---
 
@@ -183,48 +241,46 @@ is a sibling admin route), 175/175 tests, schema valid. **Test count:
 
 ---
 
-## Day 5 queue — Builder Onboarding Wizard (4-step)
+## Day 6 queue — Healthcheck + GHCR + observability scaffolding
 
-**Goal:** ship a `/admin/builders/new` (and `/admin/builders/[id]/edit`)
-wizard surface that captures Builder rows with operator-trust provenance
-and audit-logged version bumps. Day 4 closed the project-side cache; Day
-5 brings parity to the builder-side admin flow and starts wiring
-provenance fields on free-text content.
+**Goal:** harden the deploy + observability surface so future agents
+can debug from logs and metrics rather than from ad-hoc reproductions.
+This sprint is mostly infra glue — small per-item changes, broad reach.
 
-1. **Wizard UX (4 steps):**
-   - Step 1: identity + brand (`builderName`, `brandName`, optional
-     `partnerStatus`, `commissionRatePct`).
-   - Step 2: trust scores 5×0–20 (`deliveryScore`, `reraScore`,
-     `qualityScore`, `financialScore`, `responsivenessScore`) with the
-     auto-grade computation already used in
-     `src/app/admin/builders/[id]/page.tsx`.
-   - Step 3: contact (`contactEmail`, `contactPhone` — these are
-     intentionally **excluded from AI context** per
-     `src/lib/types/builder-ai-context.ts` — wizard must surface a
-     warning chip "AI never sees this").
-   - Step 4: review + create. Save fires `prisma.builder.create` (sets
-     `createdBy: email`, `version: 1`) followed by the canonical
-     `auditWrite({ entity: 'Builder', action: 'create' })` to start the
-     audit trail at version 2 (matches Day 3 bulk-upload semantics).
+1. **Healthcheck endpoint:** `GET /api/healthcheck` returns
+   `{ status: 'ok', commit: process.env.VERCEL_GIT_COMMIT_SHA, db: <ms> }`
+   with a single `prisma.$queryRaw\`SELECT 1\`` round-trip. 5s timeout
+   ceiling. Public endpoint (no auth) but rate-limited to deter abuse.
 
-2. **Manual-entry → reraVerified flip (deferred from Day 4):**
-   - `RERAManualEntry.tsx` currently fills form fields client-side but
-     does NOT persist a manual verification marker. Wire it to call
-     `/api/rera-fetch` with a new optional `manualPayload` body field
-     (or a sibling `/api/rera-verify-manual` route) that flips
-     `reraVerified=true` with `reraData = { source: 'manual', operator:
-     email, raw: <pasted> }` and `reraVerifiedAt = now()` via the
-     existing `auditWrite` helper (action `verify_rera`).
+2. **GHCR push GHA workflow:** `.github/workflows/ghcr.yml` builds the
+   multi-stage Dockerfile and pushes `ghcr.io/ykstorm/buyerchat:{sha,latest}`
+   on every push to `main`. Re-uses the existing CI build artifact when
+   possible to avoid double-building. Vercel deploy stays the primary
+   prod path; GHCR is for CD parity + future on-prem scenarios.
 
-3. **Tests:**
-   - 4-step navigation (Next/Back state machine) with a small unit suite
-     against the wizard's `useReducer` reducer — pure-function tests, no
-     prisma mocks.
-   - Builder create POST: `auditWrite` called once with `action: 'create'`,
-     actor email captured, `entityVersion: 2`.
-   - Manual-entry path: POST flips `reraVerified` + records `source:
-     'manual'` in `reraData`. Geo-block path remains untouched.
-   - Targets test count 181 → ≥185.
+3. **Dockerfile HEALTHCHECK directive:** Add `HEALTHCHECK --interval=30s
+   --timeout=5s --start-period=20s --retries=3 CMD curl -f
+   http://localhost:3000/api/healthcheck || exit 1`. Container
+   orchestrators get a real readiness signal.
+
+4. **`withSentry` route wrapper PoC:**
+   `src/lib/with-sentry-route.ts` — higher-order function wrapping
+   POST/GET handlers with try/catch + `Sentry.captureException` +
+   consistent `tags: { module: <route-path> }`. Apply to
+   `/api/rera-fetch`, `/api/admin/projects/bulk-upload`,
+   `/api/admin/builders` as the first three migrations. Other routes
+   left for Day 7+.
+
+5. **`docs/observability.md`:** Capture the route → Sentry tag
+   mapping (so on-call can `tag:module=admin-builders` to slice
+   issues), the `auditWrite` Sentry tag conventions, and the
+   healthcheck SLO target. Operator-facing runbook, not a design doc.
+
+6. **Tests:**
+   - `/api/healthcheck` happy path + `prisma.$queryRaw` failure → 503.
+   - `withSentry` wrapper unit suite: thrown error → captureException
+     with the right tag + 500 response.
+   - Targets test count 203 → ≥208.
 
 ---
 
@@ -236,6 +292,7 @@ provenance fields on free-text content.
 | 2   | `2604474` | 170/170 | clean | +8 from auditWrite suite |
 | 3   | `379c03f` | 175/175 | clean | +5 from bulk-upload suite |
 | 4   | `508eb09` | 181/181 | clean | +6 from rera-fetch suite (cache HIT/MISS, force, GEO_BLOCK, regex, deletion lock-in) |
+| 5   | `4718b67` | 203/203 | clean | +22 (15 reducer + 5 builders POST + 2 rera-fetch manualPayload) |
 
 ---
 
