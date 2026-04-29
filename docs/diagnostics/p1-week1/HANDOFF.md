@@ -8,9 +8,82 @@
 > includes the day's commit SHA, end-state test count, and the queue for
 > the next day.
 
+## Sprint summary (P1-R2 Week 1 closed)
+
+- **Total commits:** 13 — six feature commits (Day 1-6) + six HANDOFF
+  doc commits + one Day-7 docs commit (this one).
+- **Total LOC delta:** ~3,500 lines added / ~700 deleted across the
+  sprint (per per-day commit reports — exact figures in the Day-N
+  entries below).
+- **Tests:** 162 → 207 (+45 across six implementation days).
+- **New files (~22):** `src/lib/audit-write.ts` + test, `src/lib/with-sentry.ts` + test,
+  `src/lib/grade.ts` (existing, used by builders route),
+  `src/components/admin/RERAVerifyPill.tsx`,
+  `src/components/admin/builder-wizard/wizard-reducer.ts` + test,
+  `src/app/admin/projects/bulk-upload/page.tsx`,
+  `src/app/admin/projects/bulk-upload/bulk-upload-form.tsx`,
+  `src/app/admin/builders/new/page.tsx` (rewritten),
+  `src/app/admin/builders/new/builder-wizard.tsx`,
+  `src/app/api/admin/projects/bulk-upload/route.ts` + test,
+  `src/app/api/admin/builders/route.test.ts`,
+  `src/app/api/healthcheck/route.ts` + test,
+  `src/app/api/rera-fetch/route.test.ts`,
+  `.github/workflows/docker.yml`,
+  `prisma/migrations/20260428200000_add_audit_fields_and_rera_cache/migration.sql`.
+- **Deletions:** 2 — orphan `BuilderForm.tsx` (Day 5) and duplicate
+  `/api/admin/rera-verify` scraper (Day 4).
+- **New docs:** `docs/diagnostics/p1-week1/findings.md`, `task_plan.md`,
+  `progress.md`, `HANDOFF.md` (this file), `final-verify.txt`,
+  `docs/observability.md`, `docs/blog/part-0-absolute-rules.md`,
+  `docs/retros/p1-week1.md`.
+- **Block E4 closed** across both write paths.
+- **`auditWrite` actions in production:** `bulk_import`, `verify_rera`
+  (scrape + manual), `create`. Implicit `update` available.
+
+## Next sprint
+
+P1-R2 sprint **closed**. Portfolio next is **Project 2 (WellVerse polish + dockerize)** —
+~4-6 hours estimated, kicks off 2026-04-30. P3 (DevOps Pipeline)
+follows.
+
 ## Last updated
 
-2026-04-29 — Day 6 (`p1-audit-fields-day6`)
+2026-04-29 — Day 7 (`p1-audit-fields-day7`) — sprint closed
+
+---
+
+## Day 7 — 2026-04-29 — `<DAY-7-SHA>` — Blog + retrospective + final verify (sprint close)
+
+**Status:** [OK] — sprint closed on `p1-audit-fields-day7` off `2856ad5` (Day 6 docs head).
+
+**What landed:**
+
+- `docs/blog/part-0-absolute-rules.md` (NEW, 1817 words) — public-facing
+  writeup. Five sections: hook (real fake-OTP incident, accurately
+  retold), diagnosis (positional weight + long-context drift),
+  structural fix (PART 0 + FINAL REMINDER + audit-only regex + few-shot
+  + commit-history receipts), result (8+ classes closed, 0 P0/P1 open,
+  162→207 tests), deeper lesson (5-step pattern that works), 5-layer
+  architecture summary, what-didn't-fix (response-checker still
+  audit-only, 13 PART 8.5 rules without regex counterparts). Every
+  metric SHA-sourced; footnote pegged to Day-7 SHA.
+- `docs/retros/p1-week1.md` (NEW) — per AGENT_DISCIPLINE.md §16. Two
+  paragraphs: what worked / what surprised, what to do differently.
+  Numbers section at end with the same SHA-sourced metrics.
+- `docs/diagnostics/p1-week1/HANDOFF.md` — this section + the new
+  Sprint summary block prepended at the top + "Next sprint" pointer
+  to Project 2 (WellVerse).
+- `docs/diagnostics/p1-week1/final-verify.txt` (NEW) — captured stdout
+  of the final `npm run verify` run for the record.
+
+**No code changes.** Pure documentation + validation day per
+prompt's anti-requirement.
+
+**Verify:** **207/207 tests, build clean, schema valid** — captured to
+`final-verify.txt`. Test count holds from Day 6.
+
+**Discipline checklist applied:** §9, §10, §13, §14, §16. Others n/a
+(no code changes).
 
 ---
 
@@ -348,6 +421,7 @@ Day 6 docker.yml run on `main`.
 | 4   | `508eb09` | 181/181 | clean | +6 from rera-fetch suite (cache HIT/MISS, force, GEO_BLOCK, regex, deletion lock-in) |
 | 5   | `4718b67` | 203/203 | clean | +22 (15 reducer + 5 builders POST + 2 rera-fetch manualPayload) |
 | 6   | `9a02c24` | 207/207 | clean | +4 (2 healthcheck + 2 with-sentry); GHCR push GHA + Dockerfile HEALTHCHECK + observability.md runbook |
+| 7   | `<DAY-7-SHA>` | 207/207 | clean | docs only — blog post (1817 words) + retro + final-verify capture; sprint closed |
 
 ---
 
