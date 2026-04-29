@@ -52,7 +52,7 @@ follows.
 
 ---
 
-## Day 7 — 2026-04-29 — `<DAY-7-SHA>` — Blog + retrospective + final verify (sprint close)
+## Day 7 — 2026-04-29 — `ec1e10c` — Blog + retrospective + final verify (sprint close)
 
 **Status:** [OK] — sprint closed on `p1-audit-fields-day7` off `2856ad5` (Day 6 docs head).
 
@@ -421,7 +421,7 @@ Day 6 docker.yml run on `main`.
 | 4   | `508eb09` | 181/181 | clean | +6 from rera-fetch suite (cache HIT/MISS, force, GEO_BLOCK, regex, deletion lock-in) |
 | 5   | `4718b67` | 203/203 | clean | +22 (15 reducer + 5 builders POST + 2 rera-fetch manualPayload) |
 | 6   | `9a02c24` | 207/207 | clean | +4 (2 healthcheck + 2 with-sentry); GHCR push GHA + Dockerfile HEALTHCHECK + observability.md runbook |
-| 7   | `<DAY-7-SHA>` | 207/207 | clean | docs only — blog post (1817 words) + retro + final-verify capture; sprint closed |
+| 7   | `ec1e10c` | 207/207 | clean | docs only — blog post (1817 words) + retro + final-verify capture; sprint closed |
 
 ---
 

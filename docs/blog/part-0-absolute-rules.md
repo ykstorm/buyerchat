@@ -237,6 +237,6 @@ Reply on the homesty.ai blog or open an issue against the repo.
 
 ---
 
-*All numbers in this writeup reference commit `<DAY-7-SHA>` of
+*All numbers in this writeup reference commit `ec1e10c` of
 github.com/ykstorm/buyerchat at 2026-04-29. Update SHA + date when
 republished externally.*
