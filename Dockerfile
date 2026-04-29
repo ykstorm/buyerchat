@@ -15,6 +15,20 @@ COPY package*.json ./
 COPY prisma ./prisma
 RUN npm ci
 COPY . .
+ENV DATABASE_URL=postgres://test:test@localhost:5432/test \
+    DIRECT_URL=postgres://test:test@localhost:5432/test \
+    NEXTAUTH_SECRET=dummy-build-secret-min-32-chars-long-x \
+    AUTH_SECRET=dummy-build-secret-min-32-chars-long-x \
+    OPENAI_API_KEY=sk-dummy-for-build \
+    ADMIN_EMAIL=ci@example.com \
+    GOOGLE_CLIENT_ID=dummy \
+    GOOGLE_CLIENT_SECRET=dummy \
+    RESEND_API_KEY=dummy \
+    FROM_EMAIL=ci@example.com \
+    CLOUDINARY_CLOUD_NAME=dummy \
+    CLOUDINARY_API_KEY=dummy \
+    CLOUDINARY_API_SECRET=dummy \
+    VERIFY_METHOD=none
 RUN npx prisma generate && npm run build
 
 FROM node:20-alpine AS runner
