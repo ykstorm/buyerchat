@@ -11,6 +11,7 @@ import StageACapture from '@/components/chat/StageACapture'
 import type { ProjectType, ArtifactType, Artifact, PersistedArtifact } from '@/lib/types/chat'
 import type { BuilderAIContext } from '@/lib/types/builder-ai-context'
 import { hydrateArtifacts } from '@/lib/artifact-hydrate'
+import { shouldRenderStageACapture } from '@/lib/stage-a-capture'
 
 // Sidebar stays lazy — closed by default, its framer-motion swipe logic
 // (useMotionValue/animate) is idle until the user opens it. RightPanel is
@@ -785,13 +786,22 @@ export default function ChatClient({
           setShowArtifact(true)
         }}
         captureCard={
-          sessionId &&
-          captureStageLoaded &&
-          !captureSubmitted &&
-          captureStage !== 'soft' &&
-          captureStage !== 'verified' &&
-          captureStage !== 'skipped' &&
-          artifactHistory.length >= 1 ? (
+          // Sprint 7-fix (2026-04-30, Model A): suppress StageACapture for
+          // signed-in users. See shouldRenderStageACapture (src/lib/stage-a-
+          // capture.ts) for the gate predicate — extracted to a pure function
+          // so the rule is testable + auditable in one place. Sprint 7.5
+          // confirmed: anonymous buyers benefit from soft capture (Mama
+          // follows up via the captured phone), signed-in buyers don't
+          // (NextAuth row already carries name/email — asking again creates
+          // the "save = my account" comms model mismatch).
+          shouldRenderStageACapture({
+            userId,
+            sessionId,
+            captureStageLoaded,
+            captureSubmitted,
+            captureStage,
+            artifactCount: artifactHistory.length,
+          }) ? (
             <StageACapture
               sessionId={sessionId}
               onComplete={() => {

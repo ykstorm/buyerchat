@@ -237,6 +237,30 @@ if (hasInjection) {
     })
   }
 
+  // Sprint 7-fix (2026-04-30, Model A): idempotent skipped-on-bind for
+  // signed-in users. When a signed-in buyer's session has no captureStage,
+  // mark it 'skipped' — the StageACapture render gate now suppresses the
+  // card for signed-in users (chat-client.tsx:!userId guard), so any null
+  // captureStage on a userId-bound row is dead-state ambiguity. Setting
+  // 'skipped' closes the row's narrative explicitly. Idempotent — won't
+  // overwrite 'soft'/'verified'/'skipped'. Anonymous sessions untouched.
+  if (
+    session?.user?.id &&
+    chatSession.userId === session.user.id &&
+    !chatSession.captureStage
+  ) {
+    try {
+      await prisma.chatSession.update({
+        where: { id: chatSession.id },
+        data: { captureStage: 'skipped' },
+      })
+      chatSession.captureStage = 'skipped'
+    } catch (err) {
+      // Non-blocking — capture state is observability-grade, not load-bearing.
+      console.error('[capture-skip-on-bind] update failed:', err)
+    }
+  }
+
   // Fetch buyer history for return memory
   let buyerMemory: string | null = null
   if (session?.user?.id && !incomingSessionId) {

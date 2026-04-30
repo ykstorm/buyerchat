@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest'
-import { isValidIndianMobile, PHONE_REGEX, TEST_PATTERNS } from './stage-a-capture'
+import {
+  isValidIndianMobile,
+  PHONE_REGEX,
+  TEST_PATTERNS,
+  shouldRenderStageACapture,
+  type StageAGateInput,
+} from './stage-a-capture'
 
 describe('isValidIndianMobile', () => {
   it('accepts a normal 10-digit mobile starting with 6/7/8/9', () => {
@@ -37,5 +43,60 @@ describe('isValidIndianMobile', () => {
 describe('PHONE_REGEX shape', () => {
   it('matches exactly 10 digits, first digit 6-9', () => {
     expect(PHONE_REGEX.source).toBe('^[6-9]\\d{9}$')
+  })
+})
+
+describe('shouldRenderStageACapture (Sprint 7-fix render gate)', () => {
+  // Baseline: every gate condition met for a fresh anonymous buyer who has
+  // seen 1+ artifact and never engaged the card. Helper builds variants.
+  const baseAnonymous: StageAGateInput = {
+    userId: null,
+    sessionId: 'cmtest1234',
+    captureStageLoaded: true,
+    captureSubmitted: false,
+    captureStage: null,
+    artifactCount: 1,
+  }
+
+  it('renders for anonymous buyer with all conditions met (regression guard)', () => {
+    expect(shouldRenderStageACapture(baseAnonymous)).toBe(true)
+  })
+
+  it('Model A: suppresses for signed-in buyer with otherwise identical state', () => {
+    expect(shouldRenderStageACapture({ ...baseAnonymous, userId: 'user-abc' })).toBe(false)
+  })
+
+  it('suppresses while sessionId is null', () => {
+    expect(shouldRenderStageACapture({ ...baseAnonymous, sessionId: null })).toBe(false)
+  })
+
+  it('suppresses while captureStageLoaded is false (flash-prevention)', () => {
+    expect(shouldRenderStageACapture({ ...baseAnonymous, captureStageLoaded: false })).toBe(false)
+  })
+
+  it('suppresses after captureSubmitted', () => {
+    expect(shouldRenderStageACapture({ ...baseAnonymous, captureSubmitted: true })).toBe(false)
+  })
+
+  it('suppresses for each terminal captureStage value', () => {
+    for (const stage of ['soft', 'verified', 'skipped'] as const) {
+      expect(shouldRenderStageACapture({ ...baseAnonymous, captureStage: stage })).toBe(false)
+    }
+  })
+
+  it('suppresses before any artifact has rendered', () => {
+    expect(shouldRenderStageACapture({ ...baseAnonymous, artifactCount: 0 })).toBe(false)
+  })
+
+  it('signed-in suppression beats every other condition (Model A precedence)', () => {
+    // Even if all other render conditions look "ready," signed-in always wins.
+    expect(shouldRenderStageACapture({
+      userId: 'user-abc',
+      sessionId: 'cmtest1234',
+      captureStageLoaded: true,
+      captureSubmitted: false,
+      captureStage: null,
+      artifactCount: 5,
+    })).toBe(false)
   })
 })
