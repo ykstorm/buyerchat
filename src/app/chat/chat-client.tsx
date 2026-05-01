@@ -463,6 +463,22 @@ export default function ChatClient({
             console.warn('[ARTIFACT] unresolved', card)
             artifact = { type: 'project_card', data: fallbackProject(card.projectName) }
           }
+        } else if (card.type === 'visit_booking' && card.projectId) {
+          // Sprint 9 (2026-05-02): the live-stream dispatcher previously omitted
+          // visit_booking. AI emits the CARD per PART 7 flag-off rule, route
+          // persists it to artifactHistory, hydrateArtifacts handles it on
+          // refresh — but during a live stream the right panel stayed empty
+          // because no `setArtifactHistory` call ever fired for this type.
+          // Same join pattern as visit_prompt; right panel already renders
+          // {type:'visit_booking', data:project} via ChatRightPanel's existing
+          // artifact.type === 'visit_booking' switch arm.
+          const project = projects.find(p => p.id === card.projectId)
+          if (project) {
+            artifact = { type: 'visit_booking', data: project }
+          } else {
+            console.warn('[ARTIFACT] unresolved', card)
+            artifact = { type: 'project_card', data: fallbackProject(card.projectName) }
+          }
         } else if (card.type === 'builder_trust' && card.builderName) {
           const needle = card.builderName.toLowerCase()
           // Prefer explicit builders list; fall back to project-name substring match for legacy CARDs.
