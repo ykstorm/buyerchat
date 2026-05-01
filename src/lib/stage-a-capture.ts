@@ -35,7 +35,14 @@ export interface StageAGateInput {
   artifactCount: number
 }
 
-export function shouldRenderStageACapture(input: StageAGateInput): boolean {
+// User-defined type guard: when this returns true, callers know
+// `input.sessionId` is a non-null string. Sprint 7-fix-A (2026-05-02)
+// fixes Vercel CI TS2322 — the prior `boolean` return type didn't
+// narrow sessionId inside the JSX block, so <StageACapture sessionId=...>
+// rejected the `string | null` against its `string` prop.
+export function shouldRenderStageACapture(
+  input: StageAGateInput
+): input is StageAGateInput & { sessionId: string } {
   if (input.userId) return false
   if (!input.sessionId) return false
   if (!input.captureStageLoaded) return false

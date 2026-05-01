@@ -785,7 +785,7 @@ export default function ChatClient({
           setCurrentArtifact(selected)
           setShowArtifact(true)
         }}
-        captureCard={
+        captureCard={(() => {
           // Sprint 7-fix (2026-04-30, Model A): suppress StageACapture for
           // signed-in users. See shouldRenderStageACapture (src/lib/stage-a-
           // capture.ts) for the gate predicate — extracted to a pure function
@@ -794,30 +794,41 @@ export default function ChatClient({
           // follows up via the captured phone), signed-in buyers don't
           // (NextAuth row already carries name/email — asking again creates
           // the "save = my account" comms model mismatch).
-          shouldRenderStageACapture({
+          //
+          // Sprint 7-fix-A (2026-05-02): IIFE + const-bound input so the
+          // type-guard predicate narrows gateInput.sessionId from
+          // `string | null` to `string` inside the true branch. Without
+          // this, Vercel CI rejected <StageACapture sessionId={...}> because
+          // the prop demands `string` and TS couldn't follow a function-call
+          // boolean back through the outer scope.
+          const gateInput = {
             userId,
             sessionId,
             captureStageLoaded,
             captureSubmitted,
             captureStage,
             artifactCount: artifactHistory.length,
-          }) ? (
+          }
+          if (!shouldRenderStageACapture(gateInput)) return null
+          // gateInput.sessionId is now narrowed to `string` by the type guard.
+          const narrowedSessionId = gateInput.sessionId
+          return (
             <StageACapture
-              sessionId={sessionId}
+              sessionId={narrowedSessionId}
               onComplete={() => {
                 setCaptureSubmitted(true)
-                if (typeof window !== 'undefined' && sessionId) {
+                if (typeof window !== 'undefined') {
                   try {
                     window.sessionStorage.setItem(
-                      `buyerchat:capturedone:${sessionId}`,
+                      `buyerchat:capturedone:${narrowedSessionId}`,
                       '1'
                     )
                   } catch { /* no-op */ }
                 }
               }}
             />
-          ) : null
-        }
+          )
+        })()}
       />
 
       <ChatRightPanel
