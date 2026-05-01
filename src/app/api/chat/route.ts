@@ -9,6 +9,7 @@ import { retrieveChunks } from '@/lib/rag/retriever'
 import { classifyIntent, detectHardCaptureIntent, STAGE_B_TRIGGER_SCRIPTS } from '@/lib/intent-classifier'
 import { buildDecisionCard } from '@/lib/decision-engine/decision-card-builder'
 import { checkResponse, CONTACT_LEAK_PATTERN, BUSINESS_LEAK_PATTERN, MARKDOWN_PATTERN } from '@/lib/response-checker'
+import { isBareKeywordInput, bareKeywordClarification } from '@/lib/bare-keyword-clarify'
 import { sanitizeAdminInput } from '@/lib/sanitize'
 import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
@@ -18,7 +19,14 @@ import { randomUUID } from 'crypto'
 import { z } from 'zod'
 import * as Sentry from '@sentry/nextjs'
 
-const STREAM_ABORT_FALLBACK = 'Dekho, kuch problem hui. Dubara try karein.'
+// Sprint 8 (2026-05-02) — sharpened from the legacy generic
+// "Dekho, kuch problem hui. Dubara try karein." Now gives the buyer
+// an actionable next step instead of a dead-end. Bare-keyword inputs
+// (the common cause of unfocused-stream aborts) are short-circuited
+// earlier via isBareKeywordInput → bareKeywordClarification, so this
+// fallback only fires for genuine leak/markdown/error aborts.
+const STREAM_ABORT_FALLBACK =
+  'Response complete nahi hua — sawaal thoda specific batayein (e.g., project ka naam ya exact requirement). Dubara try karein.'
 // P2-CRITICAL-8 Bug #3 — separate buyer-facing fallback for genuine stream
 // errors (timeout, OpenAI 5xx, network blip). Distinct from leak/markdown
 // abort fallback so the operator can tell them apart in Sentry.
@@ -121,6 +129,28 @@ if (hasInjection) {
 
   // Sanitize user message
   const sanitizedMsg = sanitizeAdminInput(latestMsg)
+
+  // Sprint 8 (2026-05-02) — bare-keyword pre-check. Buyers occasionally send a
+  // single-word vague intent without a target ("slot", "book", "visit", "yes",
+  // "ok", "haan", "confirm", "do it"). Pre-Sprint-8, those reached the model,
+  // tripped onError mid-stream, and the buyer got the generic
+  // "Dekho, kuch problem hui. Dubara try karein." fallback with no signal what
+  // was missing. Now we short-circuit before model invocation and reply with a
+  // clarification that echoes the input + names the missing context. Sentry
+  // signal preserved (logged with audit_violation tag for observability — the
+  // event is benign but worth tracking rate).
+  if (isBareKeywordInput(sanitizedMsg)) {
+    try {
+      Sentry.captureMessage('[BARE_KEYWORD_INPUT] Short-circuited before model', {
+        level: 'info',
+        tags: { audit_violation: 'false', rule: 'BARE_KEYWORD_INPUT' },
+      })
+    } catch { /* Sentry init may be absent in test/local env. */ }
+    const reply = bareKeywordClarification(sanitizedMsg)
+    return new Response(reply, {
+      headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+    })
+  }
 
   // Classify intent + persona in one pass. Persona feeds PART 18 of the
   // system prompt and an investor-specific rule in response-checker.

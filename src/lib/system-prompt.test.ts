@@ -215,6 +215,38 @@ describe('v3 system prompt — PART invariants', () => {
     expect(prompt).toContain('subah 9 11')
     expect(prompt).toMatch(/confirm-back/i)
   })
+
+  // Sprint 8 (2026-05-02): EXAMPLE 22 added to PART 16 — locality amenity
+  // queries (aas-paas / nearby) must answer in flowing comma-prose, never
+  // markdown bullets. Universal (renders regardless of stageBEnabled).
+  it('PART 16 EXAMPLE 22: locality amenity comma-prose pattern present (flag-off)', () => {
+    const prompt = buildSystemPrompt(baseCtx)
+    expect(prompt).toContain('EXAMPLE 22')
+    expect(prompt).toContain('aas-paas')
+    expect(prompt).toMatch(/locality query/i)
+  })
+  it('PART 16 EXAMPLE 22: locality amenity comma-prose pattern present (flag-on)', () => {
+    const prompt = buildSystemPrompt(flagOnCtx)
+    expect(prompt).toContain('EXAMPLE 22')
+    expect(prompt).toContain('aas-paas')
+  })
+
+  // Sprint 8 (2026-05-02): PART 7 Step 0 added — project-name validation
+  // before the visit-booking flow advances. Unknown project names ("venus
+  // group properties") must trigger a clarification ask, not the holding-
+  // message flow. Both flag variants enforce.
+  it('PART 7 Step 0: project-name validation rule present (flag-on)', () => {
+    const prompt = buildSystemPrompt(flagOnCtx)
+    expect(prompt).toContain('Step 0')
+    expect(prompt).toMatch(/Project-name validation/i)
+    expect(prompt).toContain('venus group properties')
+  })
+  it('PART 7 Step 0: project-name validation rule present (flag-off)', () => {
+    const prompt = buildSystemPrompt(baseCtx)
+    expect(prompt).toContain('Step 0')
+    expect(prompt).toMatch(/Project-name validation/i)
+    expect(prompt).toContain('venus group properties')
+  })
 })
 
 // Sprint 1 (2026-04-29): STAGE_B_ENABLED flag-gating coverage.
