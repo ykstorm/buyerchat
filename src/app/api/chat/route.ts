@@ -10,6 +10,11 @@ import { classifyIntent, detectHardCaptureIntent, STAGE_B_TRIGGER_SCRIPTS } from
 import { buildDecisionCard } from '@/lib/decision-engine/decision-card-builder'
 import { checkResponse, CONTACT_LEAK_PATTERN, BUSINESS_LEAK_PATTERN, MARKDOWN_PATTERN } from '@/lib/response-checker'
 import { isBareKeywordInput, bareKeywordClarification } from '@/lib/bare-keyword-clarify'
+import {
+  selectStreamFallback,
+  classifyStreamError,
+  type StreamErrorKind,
+} from '@/lib/stream-fallback'
 import { sanitizeAdminInput } from '@/lib/sanitize'
 import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
@@ -19,22 +24,19 @@ import { randomUUID } from 'crypto'
 import { z } from 'zod'
 import * as Sentry from '@sentry/nextjs'
 
-// Sprint 8 (2026-05-02) — sharpened from the legacy generic
-// "Dekho, kuch problem hui. Dubara try karein." Now gives the buyer
-// an actionable next step instead of a dead-end. Bare-keyword inputs
-// (the common cause of unfocused-stream aborts) are short-circuited
-// earlier via isBareKeywordInput → bareKeywordClarification, so this
-// fallback only fires for genuine leak/markdown/error aborts.
-const STREAM_ABORT_FALLBACK =
-  'Response complete nahi hua — sawaal thoda specific batayein (e.g., project ka naam ya exact requirement). Dubara try karein.'
-// P2-CRITICAL-8 Bug #3 — separate buyer-facing fallback for genuine stream
-// errors (timeout, OpenAI 5xx, network blip). Distinct from leak/markdown
-// abort fallback so the operator can tell them apart in Sentry.
-const STREAM_TIMEOUT_FALLBACK =
-  'Response thoda slow ho raha hai — sawaal dubara puchein ya thoda specific batayein.'
+// Sprint 11 (2026-05-02) — fallback constants moved to '@/lib/stream-fallback'.
+// route.ts now imports STREAM_*_FALLBACK from there and selects the right one
+// via selectStreamFallback() so the message map is unit-testable. New kinds
+// added: 'empty' (model returned 0 tokens) and 'upstream' (OpenAI 4xx/5xx).
 const CONTACT_LEAK_ABORT_MSG = 'Contact information leak detected'
 const BUSINESS_LEAK_ABORT_MSG = 'Business information leak detected'
 const MARKDOWN_ABORT_MSG = 'Markdown formatting detected'
+
+// Sprint 11 — explicit maxDuration. The streamText abortSignal at 25s is
+// the real ceiling, but Vercel's per-route default differs by tier. Setting
+// 30s gives the abortSignal headroom on Pro and avoids surprise clipping.
+// Hobby tier caps at 10s and ignores values above that — see vercel.com/docs.
+export const maxDuration = 30
 
 const ChatRequestSchema = z.object({
   messages: z.array(z.object({
@@ -216,9 +218,13 @@ if (hasInjection) {
   // RAG retrieval — non-blocking: retriever has built-in 600ms timeout,
   // 0.30 cosine-similarity floor, and returns [] on any failure (including
   // unapplied migration / missing pgvector). Chat flow continues on empty.
+  // Sprint 11 — time the retrieval so onError can correlate stream aborts
+  // with slow/zero-chunk RAG calls in Sentry breadcrumbs.
+  const ragStart = performance.now()
   const retrieved = await retrieveChunks(sanitizedMsg, 6).catch(() => [])
+  const ragRetrievalMs = Math.round(performance.now() - ragStart)
   if (retrieved.length > 0) {
-    console.log(`[RAG] Retrieved ${retrieved.length} chunks`)
+    console.log(`[RAG] Retrieved ${retrieved.length} chunks in ${ragRetrievalMs}ms`)
   }
 
   // Amenity GUARD_LIST — runs a scoped LocationData lookup when the buyer's
@@ -341,7 +347,11 @@ if (hasInjection) {
   // instead of an empty body. Without this, Sentry's onError fires AND the
   // wrapper's reader.read() throws, double-counting the same incident.
   let streamHadError = false
-  let streamErrorKind: 'leak' | 'markdown' | 'timeout' | 'unknown' | null = null
+  let streamErrorKind: StreamErrorKind = null
+  // Sprint 11 — track whether onChunk ever fired with a text-delta. False
+  // at error time means the model returned zero tokens (empty stream),
+  // which we now distinguish from generic 'unknown' aborts.
+  let firstTokenReceived = false
   // Separate flag for markdown abort — same behavior (fallback + skip persist)
   // but a distinct Sentry tag so admins can distinguish format drift from
   // the stricter contact/business leak aborts.
@@ -386,6 +396,9 @@ if (hasInjection) {
     abortSignal: AbortSignal.timeout(25_000),
     onChunk: async ({ chunk }) => {
       if (chunk.type === 'text-delta') {
+        // Sprint 11 — flip on first text-delta so onError can tell whether
+        // the model produced any tokens before failing.
+        firstTokenReceived = true
         // In AI SDK v6 the text-delta shape carries the string on `text`.
         // Keep the fallback to `delta` guarded in case the runtime shape
         // differs from the typings.
@@ -418,27 +431,36 @@ if (hasInjection) {
       const isLeakAbort =
         message === CONTACT_LEAK_ABORT_MSG || message === BUSINESS_LEAK_ABORT_MSG
       const isMarkdownAbort = message === MARKDOWN_ABORT_MSG
-      // P2-CRITICAL-8 Bug #3 — recognise AbortSignal timeouts so the wrapper
-      // can serve the Hinglish "thoda slow" fallback. AbortError name is
-      // emitted by AbortSignal.timeout when the deadline fires.
-      const isTimeout =
-        (error instanceof Error && error.name === 'AbortError') ||
-        message.toLowerCase().includes('aborted') ||
-        message.toLowerCase().includes('timeout')
+      // Sprint 11 — leak/markdown abort messages are thrown by us inside
+      // onChunk; everything else routes through classifyStreamError so
+      // timeout / upstream-4xx-or-5xx / unknown all use the same heuristics
+      // as the wrapper-stage catch.
       streamHadError = true
       streamErrorKind = isLeakAbort
         ? 'leak'
         : isMarkdownAbort
           ? 'markdown'
-          : isTimeout
-            ? 'timeout'
-            : 'unknown'
+          : classifyStreamError(error)
+      // Sprint 11 — enriched breadcrumb so a fired "Response complete nahi
+      // hua" surfaces in Sentry with enough context to diagnose the next
+      // morning: was RAG slow, did any tokens stream, was upstream 4xx.
+      const sdkStatus =
+        (error as { status?: number; statusCode?: number } | null)?.status ??
+        (error as { statusCode?: number } | null)?.statusCode
       Sentry.captureException(error, {
         tags: {
           context: 'streaming_abort',
           leak_abort: String(isLeakAbort),
           markdown_abort: String(isMarkdownAbort),
-          timeout: String(isTimeout),
+          error_kind: String(streamErrorKind),
+          first_token_received: String(firstTokenReceived),
+        },
+        extra: {
+          rag_chunks_count: retrieved.length,
+          rag_retrieval_ms: ragRetrievalMs,
+          stream_buffer_length: streamBuffer.length,
+          sdk_error_name: error instanceof Error ? error.name : typeof error,
+          sdk_error_status: typeof sdkStatus === 'number' ? sdkStatus : null,
         },
       })
       if (!isLeakAbort && !isMarkdownAbort) {
@@ -714,19 +736,46 @@ if (hasInjection) {
         }
         // Mark as errored so the fallback branch below picks it up.
         streamHadError = true
-        if (streamErrorKind === null) streamErrorKind = 'unknown'
+        // Sprint 11 — classify here too so wrapper-stage failures land in
+        // the same kind taxonomy as onError (timeout / upstream / unknown).
+        if (streamErrorKind === null) streamErrorKind = classifyStreamError(err)
       }
-      // Buyer-facing fallback selection. Leak/markdown got the existing
-      // STREAM_ABORT_FALLBACK; timeout / unknown errors get the gentler
-      // "response slow" copy so the buyer knows to retry instead of
-      // staring at "Kuch problem hui" with no guidance.
-      if (streamAbortedByLeak || streamAbortedByMarkdown) {
-        controller.enqueue(encoder.encode(STREAM_ABORT_FALLBACK))
-      } else if (streamHadError) {
-        const fallback =
-          streamErrorKind === 'timeout' ? STREAM_TIMEOUT_FALLBACK : STREAM_ABORT_FALLBACK
-        controller.enqueue(encoder.encode(fallback))
+      // Sprint 11 — empty-stream detection. If the reader exhausted without
+      // any text-delta firing AND nothing else flagged an error, the model
+      // returned zero tokens. Treat as 'empty' so the buyer gets the
+      // sharper STREAM_EMPTY_FALLBACK instead of the generic abort copy.
+      if (
+        !streamHadError &&
+        !streamAbortedByLeak &&
+        !streamAbortedByMarkdown &&
+        streamBuffer.length === 0
+      ) {
+        streamHadError = true
+        streamErrorKind = 'empty'
+        try {
+          Sentry.captureMessage('[STREAM_EMPTY] Model returned zero tokens', {
+            level: 'warning',
+            tags: {
+              context: 'streaming_abort',
+              error_kind: 'empty',
+              first_token_received: String(firstTokenReceived),
+            },
+            extra: {
+              rag_chunks_count: retrieved.length,
+              rag_retrieval_ms: ragRetrievalMs,
+            },
+          })
+        } catch { /* Sentry breadcrumb best-effort */ }
       }
+      // Sprint 11 — fallback selection now lives in selectStreamFallback.
+      // Returns null on the happy path; otherwise the kind-specific copy.
+      const fallback = selectStreamFallback({
+        abortedByLeak: streamAbortedByLeak,
+        abortedByMarkdown: streamAbortedByMarkdown,
+        hadError: streamHadError,
+        errorKind: streamErrorKind,
+      })
+      if (fallback) controller.enqueue(encoder.encode(fallback))
       controller.close()
     },
   })
