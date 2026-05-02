@@ -94,8 +94,8 @@ Notes:
 These are contract, not suggestion. Full text in `.claude/AGENTS.md` §4.
 
 - **Commits** — one logical change per commit. Conventional prefix
-  (`feat:`, `fix:`, `perf:`, `chore:`). Body explains the *why*.
-  Trailer: `Co-Authored-By: Claude <model> <noreply@anthropic.com>`.
+  (`feat:`, `fix:`, `perf:`, `chore:`). Body explains the *why*, not
+  the *what*. No co-authorship trailers.
 
 - **File edits** — `Edit` for targeted diffs; `Write` only for brand-new
   files or full rewrites. Never touch files outside your declared scope.

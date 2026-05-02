@@ -122,7 +122,7 @@ Agents MUST follow these. They are contract, not suggestion.
 
 **Commits.** One logical change per commit. Conventional prefix
 (`feat:`, `fix:`, `perf:`, `chore:`). Body explains the *why*, not the
-*what*. Trailer: `Co-Authored-By: Claude <model> <noreply@anthropic.com>`.
+*what*. No co-authorship trailers.
 
 **File edits.** Use `Edit` for targeted diffs, `Write` only for brand-new
 files or full rewrites. Never edit files outside your declared scope.
