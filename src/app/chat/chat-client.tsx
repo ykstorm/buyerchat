@@ -12,6 +12,7 @@ import type { ProjectType, ArtifactType, Artifact, PersistedArtifact } from '@/l
 import type { BuilderAIContext } from '@/lib/types/builder-ai-context'
 import { hydrateArtifacts } from '@/lib/artifact-hydrate'
 import { shouldRenderStageACapture } from '@/lib/stage-a-capture'
+import { isArtifactStale } from '@/lib/artifact-staleness'
 
 // Sidebar stays lazy — closed by default, its framer-motion swipe logic
 // (useMotionValue/animate) is idle until the user opens it. RightPanel is
@@ -63,6 +64,14 @@ export default function ChatClient({
   const artifactHistoryRef = useRef<Artifact[]>([])
   const artifactIndexRef = useRef<number>(-1)
   const sessionLoadingRef = useRef(false)
+  // Sprint 11.5 — staleness signal for the right panel. lastQueryAt is
+  // set when the buyer dispatches a new message; lastArtifactAt is set
+  // when the dispatcher pushes a fresh CARD-derived artifact. When the
+  // former is greater than the latter and a stream is in flight, the
+  // visible artifact is from a prior turn — render the staleness caption
+  // so the buyer doesn't read the new prose against an old card.
+  const [lastQueryAt, setLastQueryAt] = useState<number | null>(null)
+  const [lastArtifactAt, setLastArtifactAt] = useState<number | null>(null)
 
   useEffect(() => { if (artifact) setShowArtifact(true) }, [artifact])
 
@@ -265,6 +274,9 @@ export default function ChatClient({
     setMessages(prev => [...prev, userMsg])
     setIsLoading(true)
     setLastFailedMsg(null)
+    // Sprint 11.5 — mark a fresh query so the right panel can flag any
+    // pre-existing artifact as stale until a CARD lands for this turn.
+    setLastQueryAt(Date.now())
 
     try {
       const history = messages.map(m => ({ role: m.role, content: m.content }))
@@ -520,6 +532,8 @@ export default function ChatClient({
           setArtifactIndex(newHist.length - 1)
           setCurrentArtifact(artifact)
           setShowArtifact(true)
+          // Sprint 11.5 — fresh CARD landed; clear staleness on the right panel.
+          setLastArtifactAt(Date.now())
         }
       }
 
@@ -863,6 +877,12 @@ export default function ChatClient({
           setCurrentArtifact(artifactHistoryRef.current[index])
           setShowArtifact(true)
         }}
+        isStale={isArtifactStale({
+          hasArtifact: artifact !== null,
+          lastQueryAt,
+          lastArtifactAt,
+          isStreaming: isLoading,
+        })}
       />
     </div>
     </LazyMotion>

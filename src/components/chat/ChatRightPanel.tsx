@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic'
 import { m, AnimatePresence, useReducedMotion } from 'framer-motion'
 import type { ProjectType, Artifact } from '@/lib/types/chat'
 import type { BuilderAIContext } from '@/lib/types/builder-ai-context'
+import { ARTIFACT_STALENESS_CAPTION } from '@/lib/artifact-staleness'
 
 // Lazy-load all artifact renderers — each pulls framer-motion + chart/date
 // utilities that we don't need until an artifact actually mounts. ssr:false
@@ -54,6 +55,7 @@ export default function ChatRightPanel({
   artifactTotal,
   artifactHistory,
   onSelectArtifact,
+  isStale,
 }: {
   artifact: Artifact | null
   builders?: BuilderAIContext[]
@@ -65,6 +67,10 @@ export default function ChatRightPanel({
   artifactTotal?: number
   artifactHistory?: Artifact[]
   onSelectArtifact?: (index: number) => void
+  // Sprint 11.5 — true when the buyer has dispatched a new query
+  // and no fresh CARD has landed yet. Caption signals continuity
+  // without hiding the prior artifact (buyers want continuity).
+  isStale?: boolean
 }) {
   // Resolve a builder for a builder_trust artifact: prefer artifact.builder attached
   // at parse time, fall back to name lookup in the builders prop.
@@ -142,6 +148,14 @@ export default function ChatRightPanel({
                     </div>
                   )}
                 </div>
+              )}
+              {isStale && (
+                <p
+                  className="text-[10px] mb-2 font-mono uppercase tracking-wider"
+                  style={{ color: 'var(--text-muted)' }}
+                >
+                  {ARTIFACT_STALENESS_CAPTION}
+                </p>
               )}
               {artifact.type === 'visit_booking' ? (
                 <>

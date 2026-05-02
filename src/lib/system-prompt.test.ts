@@ -247,6 +247,54 @@ describe('v3 system prompt — PART invariants', () => {
     expect(prompt).toMatch(/Project-name validation/i)
     expect(prompt).toContain('venus group properties')
   })
+
+  // Sprint 11.5 (2026-05-02): comparison CARD shape regression. EXAMPLE 7
+  // had been emitting `leftProjectId/rightProjectId` since the V2 prompt
+  // — the dispatcher checks `card.projectIdA && card.projectIdB`, so the
+  // mismatched shape was silently rejected, leaving the right panel
+  // showing a stale prior artifact. Tests pin the correct field names
+  // and prevent re-introduction of the wrong shape.
+  it('PART 16 EXAMPLE 7: comparison CARD uses projectIdA/projectIdB shape', () => {
+    const prompt = buildSystemPrompt(baseCtx)
+    expect(prompt).toContain('EXAMPLE 7')
+    expect(prompt).toMatch(/"type":"comparison","projectIdA"/)
+    expect(prompt).toMatch(/"projectIdB"/)
+  })
+  it('PART 16 EXAMPLE 7: comparison CARD does NOT use leftProjectId/rightProjectId (regression guard)', () => {
+    const prompt = buildSystemPrompt(baseCtx)
+    // The wrong shape is referenced ONLY in the [WRONG SHAPE — silently
+    // dropped] negative-example block of EXAMPLE 23 (with the ❌ marker).
+    // It must not appear in any actual emitted CARD example.
+    const cardEmissions = prompt.match(/<!--CARD:\{[^}]+\}-->/g) ?? []
+    for (const card of cardEmissions) {
+      expect(card).not.toContain('leftProjectId')
+      expect(card).not.toContain('rightProjectId')
+    }
+  })
+
+  // Sprint 11.5 — comparison CARD enforcement. The PART 16 spec entry now
+  // says "MUST emit a comparison CARD whenever the buyer asks to compare
+  // two projects" so the model can't fall back to prose-only responses.
+  it('PART 16 comparison spec: MUST-emit enforcement language present', () => {
+    const prompt = buildSystemPrompt(baseCtx)
+    expect(prompt).toMatch(/MUST emit a comparison CARD/i)
+  })
+
+  // Sprint 11.5 — EXAMPLE 23 added to PART 16. New comparison example
+  // showcases the correct projectIdA/projectIdB shape and explicitly
+  // names the wrong shape in its WRONG-SHAPE annotation block so the
+  // model has both positive and negative reinforcement.
+  it('PART 16 EXAMPLE 23: comparison emission example present (flag-off)', () => {
+    const prompt = buildSystemPrompt(baseCtx)
+    expect(prompt).toContain('EXAMPLE 23')
+    expect(prompt).toMatch(/comparison.*MUST emit/i)
+    expect(prompt).toMatch(/projectIdA/)
+  })
+  it('PART 16 EXAMPLE 23: comparison emission example present (flag-on)', () => {
+    const prompt = buildSystemPrompt(flagOnCtx)
+    expect(prompt).toContain('EXAMPLE 23')
+    expect(prompt).toMatch(/projectIdA/)
+  })
 })
 
 // Sprint 1 (2026-04-29): STAGE_B_ENABLED flag-gating coverage.
