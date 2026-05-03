@@ -163,7 +163,18 @@ const ChatBubble = memo(function ChatBubble({ msg, isGrouped, onAction }: { msg:
     <div className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'} ${isGrouped ? 'mt-0.5' : 'mt-4'}`}>
       {msg.role === 'assistant' && !isGrouped && (
         <div className="w-6 h-6 rounded-full flex-shrink-0 flex items-center justify-center bg-[#1C1917] self-start mb-0.5">
-          <span className="text-white text-[8px] font-bold tracking-tight">BC</span>
+          <span
+            className="font-bold tracking-tight"
+            style={{
+              fontFamily: 'var(--font-serif), "Cormorant Garamond", Georgia, serif',
+              fontStyle: 'italic',
+              fontWeight: 500,
+              fontSize: '14px',
+              color: '#C49B50',
+              letterSpacing: '-0.02em',
+              lineHeight: 1,
+            }}
+          >H</span>
         </div>
       )}
       <div
@@ -569,7 +580,18 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
           {isLoading && (
             <div className="flex justify-start items-end gap-2 mt-4">
               <div className="w-6 h-6 rounded-full bg-[#1C1917] flex items-center justify-center flex-shrink-0">
-                <span className="text-white text-[8px] font-bold">BC</span>
+                <span
+                  className="font-bold"
+                  style={{
+                    fontFamily: 'var(--font-serif), "Cormorant Garamond", Georgia, serif',
+                    fontStyle: 'italic',
+                    fontWeight: 500,
+                    fontSize: '14px',
+                    color: '#C49B50',
+                    letterSpacing: '-0.02em',
+                    lineHeight: 1,
+                  }}
+                >H</span>
               </div>
               <div className="rounded-2xl rounded-bl-md px-4 py-3 shadow-[0_1px_4px_rgba(0,0,0,0.06)]" style={{ background: 'var(--bg-message-ai)', border: '1px solid var(--border)' }}>
                 <div className="relative w-2 h-2">
