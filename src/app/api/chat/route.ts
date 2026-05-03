@@ -89,7 +89,33 @@ export async function POST(req: NextRequest) {
   const body = await req.json()
   const parsed = ChatRequestSchema.safeParse(body)
   if (!parsed.success) {
-    return NextResponse.json({ error: 'Invalid request', details: parsed.error.flatten() }, { status: 400 })
+    // Sprint 11.6 (2026-05-02) — Zod schema 400s previously returned literal
+    // "Invalid request" JSON. Smoke test T9 ("85L budget mein 3BHK Shela mein
+    // dikhao") hit this 3x consecutively — root cause unknown. Capture the
+    // ZodError with flattened field paths so we can diagnose which request
+    // shapes are failing in prod.
+    try {
+      Sentry.captureException(parsed.error, {
+        tags: {
+          context: 'chat_request_validation',
+          status: '400',
+        },
+        extra: {
+          field_errors: parsed.error.flatten().fieldErrors,
+          form_errors: parsed.error.flatten().formErrors,
+          body_keys: body && typeof body === 'object'
+            ? Object.keys(body)
+            : ['<non-object body>'],
+        },
+      })
+    } catch { /* Sentry best-effort */ }
+    return new Response(
+      'Request format mein issue hai — page reload karein aur dubara try karein. (Persist hota hai toh support ko bataye.)',
+      {
+        status: 400,
+        headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+      }
+    )
   }
   const messages = parsed.data.messages
   const incomingSessionId: string | null = parsed.data.sessionId ?? null
