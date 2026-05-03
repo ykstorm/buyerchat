@@ -109,12 +109,17 @@ export async function POST(req: NextRequest) {
         },
       })
     } catch { /* Sentry best-effort */ }
-    return new Response(
-      'Request format mein issue hai — page reload karein aur dubara try karein. (Persist hota hai toh support ko bataye.)',
+    // Sprint 11.6.1 (2026-05-02) — preserve NextResponse.json shape so
+    // chat-client.tsx res.json() in the 400 branch picks up the Hinglish
+    // copy via errData.error. Plain-text response (Sprint 11.6 original)
+    // caused silent JSON.parse throw client-side, so buyer never saw the
+    // recovery message.
+    return NextResponse.json(
       {
-        status: 400,
-        headers: { 'Content-Type': 'text/plain; charset=utf-8' },
-      }
+        error: 'Request format mein issue hai — page reload karein aur dubara try karein. (Persist hota hai toh support ko bataye.)',
+        details: parsed.error.flatten(),
+      },
+      { status: 400 }
     )
   }
   const messages = parsed.data.messages
