@@ -480,7 +480,7 @@ const sidebar = (
       <div className="hidden lg:block h-full">{sidebar}</div>
       {/* Mobile overlay */}
       {open && (
-        <div className="lg:hidden fixed inset-0 z-50 flex">
+        <div className="lg:hidden fixed inset-0 z-[60] flex">
           <div className="flex-1 bg-black/40" onClick={onClose} />
           <div className="absolute left-0 top-0 h-full">{sidebar}</div>
         </div>

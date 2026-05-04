@@ -305,6 +305,30 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
     }
   }, [showArtifactMenu])
 
+  // Sprint 11.9 (2026-05-04) — body scroll lock while artifact modal is
+  // open on narrow viewports. Prevents the auto-scroll-to-bottom +
+  // sticky-input layout shift that buyers perceive as a "page zoom"
+  // during comparison/cost-breakdown queries on narrow Chrome windows
+  // or mobile.
+  const scrollPosRef = useRef<number | null>(null)
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const isNarrow = window.innerWidth < 1024
+    if (artifact && showArtifact && isNarrow) {
+      scrollPosRef.current = window.scrollY
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+      if (scrollPosRef.current !== null) {
+        window.scrollTo(0, scrollPosRef.current)
+        scrollPosRef.current = null
+      }
+    }
+    return () => {
+      document.body.style.overflow = ''
+    }
+  }, [artifact, showArtifact])
+
   useEffect(() => {
     // RAF-gated scroll: during streaming, `messages` mutates every animation
     // frame. Without a gate, each change queues a fresh scrollIntoView and the
