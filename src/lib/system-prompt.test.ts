@@ -295,6 +295,25 @@ describe('v3 system prompt — PART invariants', () => {
     expect(prompt).toContain('EXAMPLE 23')
     expect(prompt).toMatch(/projectIdA/)
   })
+
+  // Sprint 11.8 — cost_breakdown CARD enforcement. Same emission-drift class
+  // Sprint 11.5 fixed for comparison: prose-only cost replies left the right
+  // panel showing a stale prior artifact. PART 16 cost_breakdown spec entry
+  // now carries MUST-emit language and EXAMPLE 24 demos the correct shape.
+  it('PART 16 cost_breakdown spec: MUST-emit enforcement language present', () => {
+    const prompt = buildSystemPrompt(baseCtx)
+    expect(prompt).toMatch(/MUST emit a cost_breakdown CARD/i)
+  })
+  it('PART 16 EXAMPLE 24: cost_breakdown emission example present (flag-off)', () => {
+    const prompt = buildSystemPrompt(baseCtx)
+    expect(prompt).toContain('EXAMPLE 24')
+    expect(prompt).toMatch(/cost_breakdown.*MUST emit/i)
+  })
+  it('PART 16 EXAMPLE 24: cost_breakdown emission example present (flag-on)', () => {
+    const prompt = buildSystemPrompt(flagOnCtx)
+    expect(prompt).toContain('EXAMPLE 24')
+    expect(prompt).toMatch(/"type":"cost_breakdown","projectId"/)
+  })
 })
 
 // Sprint 1 (2026-04-29): STAGE_B_ENABLED flag-gating coverage.

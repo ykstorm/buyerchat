@@ -24,6 +24,9 @@ export default function StageACapture({ sessionId, onComplete }: Props) {
   const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
   const [saving, setSaving] = useState(false)
+  // Sprint 11.8 — separate skipping state so the button label reads
+  // "Continuing…" (not "Saving…") when the buyer explicitly opted out.
+  const [skipping, setSkipping] = useState(false)
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -66,8 +69,8 @@ export default function StageACapture({ sessionId, onComplete }: Props) {
   )
 
   const handleSkip = useCallback(async () => {
-    if (saving || saved) return
-    setSaving(true)
+    if (saving || skipping || saved) return
+    setSkipping(true)
     try {
       // Fire-and-forget PATCH — even if it fails, we hide the card client-side
       // so the buyer is never re-prompted in this tab. captureStage will be
@@ -81,7 +84,7 @@ export default function StageACapture({ sessionId, onComplete }: Props) {
     } finally {
       onComplete()
     }
-  }, [saving, saved, sessionId, onComplete])
+  }, [saving, skipping, saved, sessionId, onComplete])
 
   if (saved) {
     return (
@@ -208,7 +211,7 @@ export default function StageACapture({ sessionId, onComplete }: Props) {
         <button
           type="button"
           onClick={handleSkip}
-          disabled={saving}
+          disabled={saving || skipping}
           className="px-3 py-2 rounded-lg text-[12.5px] font-medium border transition-opacity disabled:opacity-50"
           style={{
             background: 'transparent',
@@ -216,9 +219,24 @@ export default function StageACapture({ sessionId, onComplete }: Props) {
             borderColor: 'var(--border)',
           }}
         >
-          Continue without
+          {skipping ? 'Continuing…' : 'Continue without saving'}
         </button>
       </div>
+      {/* Sprint 11.8 — inline confirmation during skip transition so the
+          card doesn't vanish silently. Without this, the buyer sees
+          "Continuing…" then the card disappears with no signal that the
+          opt-out succeeded. */}
+      {skipping && (
+        <p
+          className="text-[11px] mt-2"
+          style={{
+            color: 'var(--text-muted)',
+            fontFamily: 'var(--font-mono), monospace',
+          }}
+        >
+          Continuing without saving — your chat stays in this tab only.
+        </p>
+      )}
     </form>
   )
 }
