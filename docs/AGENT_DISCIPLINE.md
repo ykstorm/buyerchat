@@ -358,6 +358,71 @@ or single-session sprints — they're not worth the overhead.
 
 ---
 
+## 17. PRE-FLIGHT CHECK ENHANCEMENTS
+
+The standard pre-flight CHECK 1-9 the operator runs before firing
+any sprint. Three enhancements added 2026-05-04 from incidents on
+2026-05-02:
+
+### CHECK 1 — Parallel-shell scan
+
+Before any sprint fires, immediately after `git status`, run:
+
+```bash
+git fetch origin && git log --oneline origin/main..HEAD
+```
+
+If output is non-empty, surface to operator. A parallel shell may
+have shipped commits the current shell doesn't know about. Don't
+proceed until the operator confirms awareness of those commits.
+
+**Past incident:** Sprint 11.5 was caught having shipped from a
+parallel shell mid-session 2026-05-02. Without this check, we
+re-fired the same work. Caught by agent discipline, but 5 min of
+wasted pre-flight.
+
+### CHECK 6 — Client-side error-handling shape audit
+
+When changing an API response shape, audit downstream client
+consumers BEFORE committing:
+
+```bash
+grep -rn "<route_path>\|res\.json()\|res\.text()" \
+  src/app src/components 2>/dev/null
+```
+
+For every consumer: verify the new response shape matches what the
+consumer expects (`.json()` vs `.text()` vs streaming).
+
+**Past incident:** Sprint 11.6 changed Zod 400 from JSON to plain
+text. `chat-client.tsx:92` still called `res.json()`, threw
+silently, buyer never saw Hinglish recovery. Sprint 11.6.1 follow-up
+needed within hours. Audit at change-time would've caught it.
+
+### CHECK 9 (NEW) — Push verification
+
+After a successful commit + pre-commit hook pass, confirm push to
+remote BEFORE declaring sprint shipped:
+
+```bash
+git push origin main 2>&1 | tail -5
+git fetch origin && git log --oneline origin/main..HEAD
+```
+
+Expect empty output (local fully synced to remote). Sprint report
+MUST include push trail, e.g.:
+
+```
+Push trail: 8560cb3..be8c8a9 main -> main
+```
+
+**Past incident:** Sprint 11.6 + 11.6.1 + 11.7 sat local-only for
+hours on 2026-05-02. Operator believed they were in prod when they
+weren't. "Commit landed" ≠ "deployed." Distinct verifications,
+both required before report.
+
+---
+
 ## ESCAPE HATCH
 
 If a task is too small to warrant the full checklist (e.g., typo fix,
