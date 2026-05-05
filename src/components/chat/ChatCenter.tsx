@@ -487,6 +487,12 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
                 <m.button
                   key={s}
                   type="button"
+                  // Sprint 11.Y BUG-10: chips silently no-op'd when clicked
+                  // during streaming because sendMessage's isLoading guard
+                  // swallowed the click. Disabling at the UI layer makes the
+                  // unavailable state visible (cursor + opacity) so the
+                  // buyer doesn't think the click was ignored.
+                  disabled={isLoading}
                   initial={prefersReduced ? false : { opacity: 0, y: 4 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={
@@ -494,10 +500,10 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
                       ? { duration: 0 }
                       : { type: 'spring', damping: 22, stiffness: 280, delay: 0.18 + i * 0.04 }
                   }
-                  onClick={() => append({ role: 'user', content: s })}
-                  className="group text-left cursor-pointer flex items-baseline gap-1.5 transition-colors"
+                  onClick={() => { if (!isLoading) append({ role: 'user', content: s }) }}
+                  className="group text-left flex items-baseline gap-1.5 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                   style={{ color: '#A8A8A8' }}
-                  onMouseEnter={e => (e.currentTarget.style.color = 'var(--text-primary)')}
+                  onMouseEnter={e => { if (!isLoading) (e.currentTarget.style.color = 'var(--text-primary)') }}
                   onMouseLeave={e => (e.currentTarget.style.color = '#A8A8A8')}
                 >
                   <span className="text-[13px] leading-snug">{s}</span>
@@ -589,12 +595,14 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
                       <m.button
                         key={chip}
                         type="button"
+                        // Sprint 11.Y BUG-10 — see starter-chip note above.
+                        disabled={isLoading}
                         variants={prefersReduced ? undefined : {
                           hidden: { opacity: 0, y: 4 },
                           show: { opacity: 1, y: 0 },
                         }}
-                        onClick={() => append({ role: 'user', content: chip })}
-                        className="text-[11px] px-3 py-1.5 rounded-full border hover:scale-[1.04] active:scale-[0.96] transition-transform"
+                        onClick={() => { if (!isLoading) append({ role: 'user', content: chip }) }}
+                        className="text-[11px] px-3 py-1.5 rounded-full border hover:scale-[1.04] active:scale-[0.96] transition-transform disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                         style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)', background: 'var(--bg-surface)' }}
                       >
                         {chip}

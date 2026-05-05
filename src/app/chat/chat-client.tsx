@@ -265,11 +265,31 @@ export default function ChatClient({
 
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
-  const sendMessage = useCallback(async (userContent: string) => {
+  const sendMessage = useCallback(async (
+    userContent: string,
+    opts?: { source?: 'manual' | 'chip' | 'event' },
+  ) => {
     if (!userContent.trim() || isLoading) return
 
     const userMsg: Message = { id: uid(), role: 'user', content: userContent }
     const assistantId = uid()
+
+    // Sprint 11.Y (2026-05-05) — BUG-10 observability. Tag every chat
+    // submission with its source so a chip-click vs manual-type ratio
+    // skew shows up in Sentry. Default 'manual' for back-compat call sites.
+    try {
+      const SentryMod = await import('@sentry/nextjs').catch(() => null)
+      SentryMod?.addBreadcrumb({
+        category: 'chat',
+        message: 'sendMessage',
+        level: 'info',
+        data: {
+          submission_source: opts?.source ?? 'manual',
+          message_length: userContent.length,
+          message_preview: userContent.slice(0, 80),
+        },
+      })
+    } catch { /* breadcrumb best-effort */ }
 
     setMessages(prev => [...prev, userMsg])
     setIsLoading(true)
@@ -567,16 +587,21 @@ export default function ChatClient({
     const val = input.trim()
     if (!val) return
     setInput('')
-    sendMessage(val)
+    sendMessage(val, { source: 'manual' })
   }, [input, sendMessage])
 
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setInput(e.target.value)
   }, [])
 
+  // Sprint 11.Y (2026-05-05) — BUG-10. append() is the chip-click path.
+  // Tag with source: 'chip' so Sentry breadcrumbs distinguish chip vs
+  // manual submissions; chips also get an isLoading guard at the UI
+  // level (ChatCenter) so silent click-during-stream is visible to the
+  // buyer (disabled visual state) instead of swallowed by sendMessage.
   const append = useCallback(({ role, content }: { role: 'user'; content: string }) => {
     void role
-    sendMessage(content)
+    sendMessage(content, { source: 'chip' })
   }, [sendMessage])
 
   // P2-CRITICAL-8 Bug #5 — book-visit ALSO triggers a chat message so the AI
@@ -589,7 +614,7 @@ export default function ChatClient({
       const project = projects.find(p => p.id === projectId)
       if (!project) return
       const msg = `Visit book karna hai — ${project.projectName ?? 'this project'}`
-      sendMessage(msg)
+      sendMessage(msg, { source: 'event' })
     }
     window.addEventListener('book-visit', handler)
     return () => window.removeEventListener('book-visit', handler)
@@ -604,7 +629,7 @@ export default function ChatClient({
       const detail = (e as CustomEvent).detail as { message?: string } | undefined
       const msg = detail?.message?.trim()
       if (!msg) return
-      sendMessage(msg)
+      sendMessage(msg, { source: 'event' })
     }
     window.addEventListener('compose-message', handler)
     return () => window.removeEventListener('compose-message', handler)
@@ -622,7 +647,7 @@ export default function ChatClient({
     })
     const msg = lastFailedMsg
     setLastFailedMsg(null)
-    sendMessage(msg)
+    sendMessage(msg, { source: 'manual' })
   }, [lastFailedMsg, sendMessage])
 
   const goArtifactBack = () => {
@@ -688,7 +713,7 @@ export default function ChatClient({
     if (message) {
       setInput(message)
       setTimeout(() => {
-        sendMessage(message)
+        sendMessage(message, { source: 'event' })
         setInput('')
         router.replace('/chat')
       }, 400)
@@ -806,7 +831,7 @@ export default function ChatClient({
           if (!msg.captureB) return
           const original = msg.captureB.originalUserContent
           setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, captureB: undefined } : m))
-          sendMessage(original)
+          sendMessage(original, { source: 'event' })
         }}
         onSelectArtifact={(index) => {
           artifactIndexRef.current = index

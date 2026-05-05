@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from 'react'
 import { m, useMotionValue, useTransform, animate, useReducedMotion } from 'framer-motion'
 import { signIn } from 'next-auth/react'
 import type { ProjectType } from '@/lib/types/chat'
+import { useUserVisits, findActiveVisitForProject } from '@/lib/hooks/use-user-visits'
 
 const emi = (allIn: number) => Math.round(allIn * 0.00729 * Math.pow(1.00729, 240) / (Math.pow(1.00729, 240) - 1))
 
@@ -20,6 +21,17 @@ export default function ProjectCardV2({ project }: { project: ProjectType }) {
   const [showSignInPrompt, setShowSignInPrompt] = useState(false)
   const [showSavedToast, setShowSavedToast] = useState(false)
   const prefersReduced = useReducedMotion()
+
+  // Sprint 11.Y (2026-05-05) — BUG-11. Surface "View visit token"
+  // affordance on cards where the user already has an active visit
+  // for this project. Token persists in DB; hook fetches once per
+  // session via the existing GET /api/visit-requests endpoint, so
+  // back-navigation no longer loses access to the commission-
+  // protection token.
+  const { visits: userVisits } = useUserVisits()
+  const activeVisit = findActiveVisitForProject(userVisits, project.id)
+  const [showVisitToken, setShowVisitToken] = useState(false)
+  const [tokenCopied, setTokenCopied] = useState(false)
 
   // Trust-score counter — number races the bar 0 → trustScore over 0.8s.
   const trustMV = useMotionValue(0)
@@ -391,6 +403,57 @@ export default function ProjectCardV2({ project }: { project: ProjectType }) {
                 style={{ background: project.trustScore >= 80 ? '#0F6E56' : project.trustScore >= 65 ? '#1B4F8A' : '#F59E0B' }}
               />
             </div>
+          </div>
+        )}
+
+        {/* Sprint 11.Y BUG-11 — Visit-token affordance. Renders only
+            when the auth'd user has an active (non-completed) visit
+            with a token issued for this project. Click toggles inline
+            display; copy-to-clipboard for builder-side verification.
+            Affordance is silent (returns null) when no active visit. */}
+        {activeVisit?.visitToken && (
+          <div
+            className="mb-3 p-2.5 rounded-lg border"
+            style={{ borderColor: '#34D399', background: 'rgba(52, 211, 153, 0.08)' }}
+          >
+            <button
+              type="button"
+              onClick={() => setShowVisitToken((s) => !s)}
+              className={`w-full flex items-center justify-between text-[12px] font-semibold ${FOCUS_RING}`}
+              style={{ color: '#15803D' }}
+            >
+              <span>✓ Visit booked — {showVisitToken ? 'Hide' : 'View'} token</span>
+              <span aria-hidden="true">{showVisitToken ? '▲' : '▼'}</span>
+            </button>
+            {showVisitToken && (
+              <div className="mt-2 flex items-center gap-2">
+                <code
+                  className="flex-1 p-2 rounded font-mono text-[11px] tracking-wide break-all"
+                  style={{ background: 'rgba(0,0,0,0.04)', color: 'var(--text-primary)' }}
+                >
+                  {activeVisit.visitToken}
+                </code>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    try {
+                      await navigator.clipboard.writeText(activeVisit.visitToken!)
+                      setTokenCopied(true)
+                      setTimeout(() => setTokenCopied(false), 1800)
+                    } catch { /* clipboard unavailable */ }
+                  }}
+                  className={`px-2.5 py-1.5 rounded-md text-[11px] font-medium ${FOCUS_RING}`}
+                  style={{ background: '#15803D', color: '#fff' }}
+                >
+                  {tokenCopied ? 'Copied ✓' : 'Copy'}
+                </button>
+              </div>
+            )}
+            {showVisitToken && (
+              <p className="mt-1.5 text-[10px]" style={{ color: 'var(--text-secondary)' }}>
+                Show this at builder office to confirm Homesty AI booking.
+              </p>
+            )}
           </div>
         )}
 
