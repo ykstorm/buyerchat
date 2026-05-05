@@ -657,5 +657,53 @@ export function checkResponse(
     }
   }
 
+  // CHECK 20 — FIRST_PERSON_HINDI (audit-only, Sprint 13.1.B, 2026-05-05).
+  // PART 0 Rule E forbids first-person Hindi pronouns/verbs ("main",
+  // "mujhe", "maine", "samajhta hoon", "karunga", "bolta hoon"). PART 14
+  // emotional Scripts B/D/E/F historically violated this openly; reconciled
+  // in same sprint. This checker enforces that no future prompt edit
+  // re-introduces first-person Hindi at runtime.
+  //
+  // Regex strategy — conservative to avoid Sentry flood:
+  //   - Verb forms: matches the unambiguous "...ta/ti hoon" present-tense
+  //     first-person verb endings AND modal "karunga/karungi" futures.
+  //   - Bare pronouns "mujhe" / "maine": unambiguously first-person.
+  //   - "main" only when followed by a clear Hindi verb form (skips English
+  //     "main idea" / "main thing" false positives).
+  //
+  // Deliberately EXCLUDES "mera/mere" because the prompt itself instructs
+  // the AI to use "mere paas nahi hai" as the canonical missing-data
+  // honesty fallback (PART 8 Rule 5 + Rule 6 + WRONG/RIGHT table). That
+  // contradiction with Rule E exists in the spec — separate audit finding
+  // (logged as future C6) — not for this sprint to widen-then-flood.
+  const FIRST_PERSON_HINDI_VERB =
+    /\b(samajhta|samajhti|bolta|bolti|kahta|kahti|deta|deti|leta|leti|sochta|sochti|maanta|maanti|chahta|chahti|janta|janti|dekhta|dekhti|sunta|sunti|likhta|likhti|padhta|padhti)\s+hoon\b|\bkarunga\b|\bkarungi\b/i
+  const FIRST_PERSON_HINDI_PRONOUN = /\b(mujhe|maine)\b/i
+  const FIRST_PERSON_MAIN_VERB =
+    /\bmain\s+(samajhta|samajhti|bolta|bolti|kahta|kahti|deta|deti|leta|leti|sochta|sochti|maanta|maanti|chahta|chahti|janta|janti|dekhta|dekhti|sunta|sunti|likhta|likhti|padhta|padhti|karunga|karungi|hoon|hun)\b/i
+  const fpVerbMatch = aiResponse.match(FIRST_PERSON_HINDI_VERB)
+  const fpPronounMatch = aiResponse.match(FIRST_PERSON_HINDI_PRONOUN)
+  const fpMainMatch = aiResponse.match(FIRST_PERSON_MAIN_VERB)
+  if (fpVerbMatch || fpPronounMatch || fpMainMatch) {
+    const offending = [fpVerbMatch?.[0], fpPronounMatch?.[0], fpMainMatch?.[0]]
+      .filter(Boolean)
+      .join(', ')
+    violations.push(
+      `FIRST_PERSON_HINDI: response uses "${offending}" — PART 0 Rule E forbids first-person Hindi (use Homesty AI third-person or no self-reference)`
+    )
+    try {
+      Sentry.captureMessage('[FIRST_PERSON_HINDI] AI used first-person Hindi pronoun/verb', {
+        level: 'warning',
+        tags: {
+          audit_violation: 'true',
+          rule: 'FIRST_PERSON_HINDI',
+          match: offending.slice(0, 60),
+        },
+      })
+    } catch {
+      // Sentry init may be absent in test/local env — never throw from the checker.
+    }
+  }
+
   return { passed: violations.length === 0, violations }
 }

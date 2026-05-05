@@ -706,3 +706,115 @@ describe('PRICE_FABRICATION check (Sprint 4, 2026-04-30)', () => {
     expect(res.violations.some(v => v.startsWith('PRICE_FABRICATION'))).toBe(false)
   })
 })
+
+// Sprint 13.1.B (2026-05-05) — CHECK 20 FIRST_PERSON_HINDI.
+// Closes audit C3: PART 0 Rule E forbids first-person Hindi but the
+// rule was structurally unenforceable until now (PART 14 emotional
+// scripts violated it openly + zero checker detection). With CHECK 20
+// in place, future regressions surface in Sentry within seconds.
+//
+// Pattern strategy is conservative — catches unambiguous verb forms
+// (X-ta hoon, karunga/karungi) + bare pronouns (mujhe/maine) +
+// "main + verb" combinations. Deliberately skips bare "mera/mere"
+// because the prompt itself instructs "mere paas nahi hai" as the
+// canonical missing-data deflection — separate audit (C6) — flooding
+// Sentry on every honest fallback would defeat the signal.
+describe('CHECK 20 — FIRST_PERSON_HINDI (Sprint 13.1.B)', () => {
+  it('catches "main samajhta hoon" (the most common offender)', () => {
+    const res = checkResponse('Main samajhta hoon aap kya chahte hain.', [], cq())
+    expect(res.violations.some(v => v.startsWith('FIRST_PERSON_HINDI'))).toBe(true)
+  })
+
+  it('catches bare "samajhta hoon" without preceding "main"', () => {
+    const res = checkResponse('Samajhta hoon family pressure hai.', [], cq())
+    expect(res.violations.some(v => v.startsWith('FIRST_PERSON_HINDI'))).toBe(true)
+  })
+
+  it('catches "bolta hoon"', () => {
+    const res = checkResponse('Seedha bolta hoon — option A better hai.', [], cq())
+    expect(res.violations.some(v => v.startsWith('FIRST_PERSON_HINDI'))).toBe(true)
+  })
+
+  it('catches "karunga" future tense', () => {
+    const res = checkResponse('Visit verify karunga aapke liye.', [], cq())
+    expect(res.violations.some(v => v.startsWith('FIRST_PERSON_HINDI'))).toBe(true)
+  })
+
+  it('catches "karungi" future tense (feminine)', () => {
+    const res = checkResponse('Detail share karungi.', [], cq())
+    expect(res.violations.some(v => v.startsWith('FIRST_PERSON_HINDI'))).toBe(true)
+  })
+
+  it('catches "mujhe" pronoun', () => {
+    const res = checkResponse('Mujhe lagta hai yeh option better hai.', [], cq())
+    expect(res.violations.some(v => v.startsWith('FIRST_PERSON_HINDI'))).toBe(true)
+  })
+
+  it('catches "maine" pronoun', () => {
+    const res = checkResponse('Maine 250+ projects analyze kiye hain.', [], cq())
+    expect(res.violations.some(v => v.startsWith('FIRST_PERSON_HINDI'))).toBe(true)
+  })
+
+  it('PASSES "Homesty AI" third-person reference', () => {
+    const res = checkResponse('Homesty AI aapko honest analysis deta hai.', [], cq())
+    expect(res.violations.some(v => v.startsWith('FIRST_PERSON_HINDI'))).toBe(false)
+  })
+
+  it('PASSES no-self-reference imperative form (the rewrite pattern)', () => {
+    const res = checkResponse('Honest review: Riviera Bliss premium hai but possession 2029 mein hai.', [], cq())
+    expect(res.violations.some(v => v.startsWith('FIRST_PERSON_HINDI'))).toBe(false)
+  })
+
+  it('PASSES English-only response (no Hindi at all)', () => {
+    const res = checkResponse('Welcome to Homesty AI — honest property intelligence for South Bopal.', [], cq())
+    expect(res.violations.some(v => v.startsWith('FIRST_PERSON_HINDI'))).toBe(false)
+  })
+
+  it('PASSES sanctioned "mere paas nahi hai" honesty fallback (Rule 5/6)', () => {
+    // The prompt instructs this as the canonical missing-data answer —
+    // CHECK 20 deliberately does NOT match "mera/mere" to avoid Sentry
+    // flooding on every honest fallback. (Future audit C6 may reconcile.)
+    const res = checkResponse('Yeh data mere paas nahi hai. Site visit pe directly puchho.', [], cq())
+    expect(res.violations.some(v => v.startsWith('FIRST_PERSON_HINDI'))).toBe(false)
+  })
+
+  it('PASSES third-person verb forms (X-ta hai/hain, not hoon)', () => {
+    const res = checkResponse('Builder commission leta hai — aap ko kuch nahi dena.', [], cq())
+    expect(res.violations.some(v => v.startsWith('FIRST_PERSON_HINDI'))).toBe(false)
+  })
+
+  it('does NOT match English "main" (e.g., "main thing")', () => {
+    const res = checkResponse('The main thing to verify is RERA approval.', [], cq())
+    expect(res.violations.some(v => v.startsWith('FIRST_PERSON_HINDI'))).toBe(false)
+  })
+})
+
+// Sprint 13.1.B PART 14 cleanliness — assert system-prompt has no
+// first-person Hindi remaining in Scripts B/D/E/F (regression guard
+// for the 6 rewritten lines). Mirrors response-checker pattern but at
+// the source level — caught at test time, not just runtime.
+describe('Sprint 13.1.B — PART 14 Scripts post-rewrite cleanliness', () => {
+  it('PART 14 emotional scripts contain no first-person Hindi verb forms', async () => {
+    const { buildSystemPrompt } = await import('./system-prompt')
+    const prompt = buildSystemPrompt({
+      projects: [],
+      localities: [],
+      infrastructure: [],
+      dataAsOf: '2026-05-05',
+    })
+    // Locate Script A start to end of "WHY THIS WORKS" — that's the
+    // window where Scripts A-F live. Assert no offending phrases remain.
+    const start = prompt.indexOf('Script A — Wife / Partner Preference Case')
+    const end = prompt.indexOf('STEP 5 — VISIT PUSH')
+    expect(start).toBeGreaterThan(-1)
+    expect(end).toBeGreaterThan(start)
+    const window = prompt.slice(start, end)
+    expect(window).not.toContain('Main samajhta hoon')
+    expect(window).not.toContain('seedha bolta hoon')
+    expect(window).not.toContain('Seedha bolta hoon')
+    expect(window).not.toContain('push nahi karunga')
+    // Replacement phrases ARE present.
+    expect(window).toContain('Seedhi baat')
+    expect(window).toContain('Aap kya chahte hain — yeh clear hai')
+  })
+})
