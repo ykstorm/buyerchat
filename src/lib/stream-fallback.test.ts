@@ -150,3 +150,151 @@ describe('classifyStreamError (Sprint 11 — error kind heuristics)', () => {
     expect(classifyStreamError(null)).toBe('unknown')
   })
 })
+
+// Sprint 11.X (2026-05-05) — BUG-1 partial-rescue.
+// When errorKind='unknown' AND the stream produced real content
+// before blowing up, deliver the partial buffer instead of the
+// generic STREAM_ABORT_FALLBACK blame copy. Other error kinds
+// (leak/markdown/timeout/upstream) still fallback unconditionally
+// because their failure semantics make partial content unsafe
+// (leak) or genuinely incomplete/wrong (timeout/upstream).
+describe('Sprint 11.X — partial-rescue on unknown errorKind', () => {
+  it('unknown errorKind + bufferHasContent=true → null (deliver buffer)', () => {
+    expect(
+      selectStreamFallback({
+        abortedByLeak: false,
+        abortedByMarkdown: false,
+        hadError: true,
+        errorKind: 'unknown',
+        bufferHasContent: true,
+      })
+    ).toBeNull()
+  })
+
+  it('unknown errorKind + bufferHasContent=false → STREAM_ABORT_FALLBACK (truly empty)', () => {
+    expect(
+      selectStreamFallback({
+        abortedByLeak: false,
+        abortedByMarkdown: false,
+        hadError: true,
+        errorKind: 'unknown',
+        bufferHasContent: false,
+      })
+    ).toBe(STREAM_ABORT_FALLBACK)
+  })
+
+  it('null errorKind + bufferHasContent=true → null (deliver buffer)', () => {
+    // null is the "classifier never ran" case; treat same as unknown.
+    expect(
+      selectStreamFallback({
+        abortedByLeak: false,
+        abortedByMarkdown: false,
+        hadError: true,
+        errorKind: null,
+        bufferHasContent: true,
+      })
+    ).toBeNull()
+  })
+
+  it('leak errorKind + bufferHasContent=true → STILL STREAM_ABORT_FALLBACK (partial content unsafe)', () => {
+    // Leak abort already fired the partial-content protection; we never
+    // deliver leaked content even if some chars made it through.
+    expect(
+      selectStreamFallback({
+        abortedByLeak: true,
+        abortedByMarkdown: false,
+        hadError: true,
+        errorKind: 'leak',
+        bufferHasContent: true,
+      })
+    ).toBe(STREAM_ABORT_FALLBACK)
+  })
+
+  it('markdown errorKind + bufferHasContent=true → STILL STREAM_ABORT_FALLBACK', () => {
+    // Markdown abort means format is broken; partial content would render
+    // mangled. Don't deliver.
+    expect(
+      selectStreamFallback({
+        abortedByLeak: false,
+        abortedByMarkdown: true,
+        hadError: true,
+        errorKind: 'markdown',
+        bufferHasContent: true,
+      })
+    ).toBe(STREAM_ABORT_FALLBACK)
+  })
+
+  it('timeout errorKind + bufferHasContent=true → STILL STREAM_TIMEOUT_FALLBACK (partial is genuinely incomplete)', () => {
+    expect(
+      selectStreamFallback({
+        abortedByLeak: false,
+        abortedByMarkdown: false,
+        hadError: true,
+        errorKind: 'timeout',
+        bufferHasContent: true,
+      })
+    ).toBe(STREAM_TIMEOUT_FALLBACK)
+  })
+
+  it('upstream errorKind + bufferHasContent=true → STILL STREAM_UPSTREAM_FALLBACK', () => {
+    // 4xx/5xx mid-stream means upstream killed the response — partial is
+    // not a complete answer, fallback explains the issue.
+    expect(
+      selectStreamFallback({
+        abortedByLeak: false,
+        abortedByMarkdown: false,
+        hadError: true,
+        errorKind: 'upstream',
+        bufferHasContent: true,
+      })
+    ).toBe(STREAM_UPSTREAM_FALLBACK)
+  })
+
+  it('omitted bufferHasContent (undefined) treated as false — backwards compat', () => {
+    // Existing call sites that don't pass the new field must keep the old
+    // STREAM_ABORT_FALLBACK behavior on unknown.
+    expect(
+      selectStreamFallback({
+        abortedByLeak: false,
+        abortedByMarkdown: false,
+        hadError: true,
+        errorKind: 'unknown',
+      })
+    ).toBe(STREAM_ABORT_FALLBACK)
+  })
+})
+
+// Sprint 11.X — PART C copy tone enforcement. All 4 fallback strings
+// share neutral, action-oriented tone (no buyer-blame language).
+// Brand-bible no-broker-pressure principle: a stream hiccup is our
+// fault, not the buyer's question being insufficiently specific.
+describe('Sprint 11.X — fallback copy tone (PART C)', () => {
+  it('STREAM_ABORT_FALLBACK uses neutral retry hint, not "be more specific" blame', () => {
+    expect(STREAM_ABORT_FALLBACK).toContain('Ek second')
+    expect(STREAM_ABORT_FALLBACK).toContain('thoda incomplete laga')
+    // Old blame language must be gone.
+    expect(STREAM_ABORT_FALLBACK).not.toContain('sawaal thoda specific batayein')
+    expect(STREAM_ABORT_FALLBACK).not.toContain('Response complete nahi hua')
+  })
+
+  it('STREAM_EMPTY_FALLBACK uses neutral retry hint, no blame', () => {
+    expect(STREAM_EMPTY_FALLBACK).toContain('Response generate nahi hua')
+    expect(STREAM_EMPTY_FALLBACK).toContain('thoda alag tarah se puchein')
+    // Old blame language must be gone.
+    expect(STREAM_EMPTY_FALLBACK).not.toContain('aur specific batayein')
+  })
+
+  it('STREAM_TIMEOUT_FALLBACK uses refresh hint, no blame', () => {
+    expect(STREAM_TIMEOUT_FALLBACK).toContain('time le raha hai')
+    expect(STREAM_TIMEOUT_FALLBACK).toContain('refresh karke')
+    // Old blame language must be gone.
+    expect(STREAM_TIMEOUT_FALLBACK).not.toContain('thoda specific batayein')
+  })
+
+  it('STREAM_UPSTREAM_FALLBACK acknowledges service issue, no blame', () => {
+    expect(STREAM_UPSTREAM_FALLBACK).toContain('temporary issue')
+    expect(STREAM_UPSTREAM_FALLBACK).toContain('kuch seconds baad')
+    // Old blame language must be gone.
+    expect(STREAM_UPSTREAM_FALLBACK).not.toContain('thoda alag tareeke se puchein')
+  })
+})

@@ -816,8 +816,28 @@ if (hasInjection) {
         // duplicate when onError already saw the error; only capture for
         // truly novel wrapper-stage failures (which set neither flag).
         if (!streamAbortedByLeak && !streamAbortedByMarkdown && !streamHadError) {
+          // Sprint 11.X (2026-05-05) — PART B observability. Wrapper-stage
+          // capture previously had only tags, no extra context. Now carries
+          // response_length_chars + word_count + conversation_message_count
+          // + last_user_message_preview + was_short_followup so future
+          // tuning is data-driven, not hypothesis-driven.
+          const lastUserMsgRaw = sanitizedMsg ?? ''
           Sentry.captureException(err, {
-            tags: { context: 'streaming_abort', stage: 'stream_wrapper' },
+            tags: {
+              context: 'streaming_abort',
+              stage: 'stream_wrapper',
+              first_token_received: String(firstTokenReceived),
+            },
+            extra: {
+              response_length_chars: streamBuffer.length,
+              response_word_count: streamBuffer.trim().split(/\s+/).filter(Boolean).length,
+              conversation_message_count: cappedMessages.length,
+              last_user_message_preview: lastUserMsgRaw.slice(0, 80),
+              was_short_followup:
+                cappedMessages.length >= 3 && lastUserMsgRaw.length <= 30,
+              rag_chunks_count: retrieved.length,
+              rag_retrieval_ms: ragRetrievalMs,
+            },
           })
         }
         // Mark as errored so the fallback branch below picks it up.
@@ -839,6 +859,10 @@ if (hasInjection) {
         streamHadError = true
         streamErrorKind = 'empty'
         try {
+          // Sprint 11.X — PART B observability. Same enriched context as
+          // wrapper-stage capture so both error sites are diagnosable
+          // from a single Sentry filter.
+          const lastUserMsgRaw = sanitizedMsg ?? ''
           Sentry.captureMessage('[STREAM_EMPTY] Model returned zero tokens', {
             level: 'warning',
             tags: {
@@ -847,6 +871,12 @@ if (hasInjection) {
               first_token_received: String(firstTokenReceived),
             },
             extra: {
+              response_length_chars: streamBuffer.length,
+              response_word_count: 0,
+              conversation_message_count: cappedMessages.length,
+              last_user_message_preview: lastUserMsgRaw.slice(0, 80),
+              was_short_followup:
+                cappedMessages.length >= 3 && lastUserMsgRaw.length <= 30,
               rag_chunks_count: retrieved.length,
               rag_retrieval_ms: ragRetrievalMs,
             },
@@ -854,13 +884,41 @@ if (hasInjection) {
         } catch { /* Sentry breadcrumb best-effort */ }
       }
       // Sprint 11 — fallback selection now lives in selectStreamFallback.
-      // Returns null on the happy path; otherwise the kind-specific copy.
+      // Sprint 11.X (2026-05-05) — partial-rescue: pass bufferHasContent so
+      // unknown-error branch can deliver the partial buffer instead of the
+      // generic STREAM_ABORT_FALLBACK blame copy. Returns null when (a) the
+      // stream was clean OR (b) partial-rescue applies.
       const fallback = selectStreamFallback({
         abortedByLeak: streamAbortedByLeak,
         abortedByMarkdown: streamAbortedByMarkdown,
         hadError: streamHadError,
         errorKind: streamErrorKind,
+        bufferHasContent: streamBuffer.length > 0,
       })
+      // Tag partial-rescue events distinctly so we can chart how often the
+      // unknown-error branch saved a buyer from a fallback. Only fires when
+      // hadError + unknown + bufferHasContent — i.e. real partial-rescue.
+      if (
+        streamHadError &&
+        (streamErrorKind === 'unknown' || streamErrorKind === null) &&
+        streamBuffer.length > 0
+      ) {
+        try {
+          Sentry.captureMessage('[STREAM_PARTIAL_RESCUE] Delivered partial buffer in unknown-error branch', {
+            level: 'info',
+            tags: {
+              context: 'streaming_abort',
+              error_kind: 'unknown',
+              rescue: 'partial_unknown',
+            },
+            extra: {
+              response_length_chars: streamBuffer.length,
+              response_word_count: streamBuffer.trim().split(/\s+/).filter(Boolean).length,
+              conversation_message_count: cappedMessages.length,
+            },
+          })
+        } catch { /* Sentry breadcrumb best-effort */ }
+      }
       if (fallback) controller.enqueue(encoder.encode(fallback))
       controller.close()
     },
