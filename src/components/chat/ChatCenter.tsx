@@ -252,13 +252,25 @@ type Props = {
 // specific projects (triggers comparison card), (c) names a specific
 // builder (triggers builder_trust card or prose), or (d) is emotional
 // prose-friendly. Avoid generic "show me X" / "which is better" phrasing.
+// Sprint 12.5 (2026-05-05): Mama-compact 3-intent lock applied. Chip #1
+// already matched ("3BHK family ke liye, 85L budget Shela mein" = compact's
+// "3BHK family ke liye Shela mein — budget ₹85-90L"), kept verbatim.
+// Chip #3 ("honest review wala project") replaced with compact's verbatim
+// "Best projects under ₹1Cr — honest review chahiye" (broader project
+// discovery, primes Honest Concern surface). Chip #6 (generic "honest
+// concern wala project dikhao", least CARD-specific) replaced with
+// compact's #2 ADAPTED to "South Bopal vs Shela — 3BHK family ke liye
+// kaunsa?" — preserves the area-comparison primer intent but uses
+// "vs" + "kaunsa" Sprint 11.5 keywords so the comparison CARD fires
+// instead of regressing into MARKDOWN_ABORT bullet output. Total chip
+// count held at 6 to preserve P2-CHIPS-DASHBOARD coverage.
 const STARTERS = [
   '3BHK family ke liye, 85L budget Shela mein',
   'Riviera Bliss ka all-in breakdown dikhao',
-  'Riviera Bliss ka honest review chahiye',
+  'Best projects under ₹1Cr — honest review chahiye',
   'Riviera Bliss aur Shaligram Pride compare karo',
   'Goyal & Co ka trust score kitna hai?',
-  'Honest concern wala project dikhao',
+  'South Bopal vs Shela — 3BHK family ke liye kaunsa?',
 ]
 
 export default function ChatCenter({ messages, input, handleInputChange, handleSubmit, isLoading, append, loadingSession, artifact, builders = [], showArtifact, onToggleArtifact, canGoBack, canGoForward, onArtifactBack, onArtifactForward, artifactCurrent, artifactTotal, artifactHistory, onSelectArtifact, compareToast, buyerStage, onMessageAction, userId, userName, userImage, captureCard, sessionId, onStageBVerified }: Props) {
@@ -466,33 +478,30 @@ export default function ChatCenter({ messages, input, handleInputChange, handleS
               Honest analysis Homesty AI karega.
             </m.p>
 
-            {/* Starter cards — P2-DASHBOARD-SITE-REVAMP: spring-scale entry
-                + gold-tint hover (scale 1.02, gold bg). Each chip staggers
-                4% behind the prior. */}
-            <div className="grid grid-cols-2 gap-3 w-full mb-8">
+            {/* Starter prompts — Sprint 12.5 (2026-05-05): Mama-compact restyle.
+                Plain text, no borders, no backdrop. 13px #A8A8A8 muted.
+                Arrow → hidden by default, fades in on hover. Spring/stagger
+                entry animation preserved from P2-DASHBOARD-SITE-REVAMP. */}
+            <div className="grid grid-cols-2 gap-x-6 gap-y-3 w-full mb-8">
               {STARTERS.map((s, i) => (
                 <m.button
                   key={s}
                   type="button"
-                  initial={prefersReduced ? false : { opacity: 0, scale: 0.96 }}
-                  animate={{ opacity: 1, scale: 1 }}
+                  initial={prefersReduced ? false : { opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
                   transition={
                     prefersReduced
                       ? { duration: 0 }
                       : { type: 'spring', damping: 22, stiffness: 280, delay: 0.18 + i * 0.04 }
                   }
-                  whileHover={prefersReduced ? undefined : { scale: 1.02, backgroundColor: 'rgba(184,134,11,0.08)' }}
-                  whileTap={prefersReduced ? undefined : { scale: 0.97 }}
                   onClick={() => append({ role: 'user', content: s })}
-                  className="text-left px-4 py-4 rounded-2xl backdrop-blur-sm cursor-pointer group"
-                  style={{
-                    background: 'color-mix(in srgb, var(--bg-surface) 85%, transparent)',
-                    border: '1px solid color-mix(in srgb, var(--border) 60%, transparent)',
-                  }}
-                  onMouseEnter={e => (e.currentTarget.style.borderColor = 'rgba(196,155,80,0.3)')}
-                  onMouseLeave={e => (e.currentTarget.style.borderColor = 'color-mix(in srgb, var(--border) 60%, transparent)')}
+                  className="group text-left cursor-pointer flex items-baseline gap-1.5 transition-colors"
+                  style={{ color: '#A8A8A8' }}
+                  onMouseEnter={e => (e.currentTarget.style.color = 'var(--text-primary)')}
+                  onMouseLeave={e => (e.currentTarget.style.color = '#A8A8A8')}
                 >
-                  <p className="text-[12.5px] font-medium leading-snug transition-colors" style={{ color: 'var(--text-secondary)' }}>{s}</p>
+                  <span className="text-[13px] leading-snug">{s}</span>
+                  <span className="text-[13px] opacity-0 group-hover:opacity-100 transition-opacity" aria-hidden="true">→</span>
                 </m.button>
               ))}
             </div>

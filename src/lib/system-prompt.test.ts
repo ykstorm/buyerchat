@@ -79,12 +79,15 @@ describe('v3 system prompt — PART invariants', () => {
     expect(prompt).not.toMatch(/parking allocation confirm karna/i)
   })
 
-  it('PART 2: emits the canonical Hinglish opener verbatim', () => {
+  it('PART 2: emits the OPENING MESSAGE PROTOCOL with professional English opener (Sprint 12.5)', () => {
     const prompt = buildSystemPrompt(baseCtx)
+    expect(prompt).toContain('OPENING MESSAGE PROTOCOL')
     expect(prompt).toContain(
-      'Namaste! Main Homesty AI hoon — South Bopal aur Shela ke projects ka honest property analysis karta hoon.',
+      'Welcome to Homesty AI — honest property intelligence for South Bopal and Shela, Ahmedabad.',
     )
-    expect(prompt).toContain('Aap kya dhundh rahe hain — 2BHK, 3BHK, family home ya investment?')
+    expect(prompt).toContain('Are you looking for a family home or an investment property?')
+    expect(prompt).toContain('professional English')
+    expect(prompt).not.toMatch(/Namaste! Main Homesty AI hoon/)
   })
 
   it('PART 3: caps qualification questions to "maximum 1-2 per message"', () => {
