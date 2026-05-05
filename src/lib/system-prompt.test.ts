@@ -444,6 +444,110 @@ describe('Sprint 11.17.1 — formatRetrievedChunks helper (PART B)', () => {
   })
 })
 
+// Sprint 13.1.D (2026-05-05) — Audit duplication cleanup. Three rule
+// classes had 2-4 duplicate statements across the prompt; cumulative
+// ~230 tokens of redundancy per buyer message. Canonical statements
+// kept in single PARTs; duplicates replaced with one-line cross-refs.
+// These tests pin (a) canonical statements still present and complete,
+// (b) cross-refs in place where duplicates were, (c) old duplicate
+// language removed.
+describe('Sprint 13.1.D — D1 bullet-ban dedup', () => {
+  it('PART 0 RULE A canonical bullet-ban text intact', () => {
+    const prompt = buildSystemPrompt(baseCtx)
+    expect(prompt).toContain('RULE A — OUTPUT FORMAT')
+    expect(prompt).toContain('You NEVER use bullet points')
+    expect(prompt).toContain('aborts your stream mid-response')
+  })
+
+  it('PART 9 Rule 9 cross-refs PART 0 RULE A (full WRONG/RIGHT examples removed)', () => {
+    const prompt = buildSystemPrompt(baseCtx)
+    expect(prompt).toContain('Rule 9: ZERO BULLETS EVER — see PART 0 RULE A')
+    // Old WRONG example markers removed.
+    expect(prompt).not.toContain('"1. Vishwanath Sarathya West')
+    expect(prompt).not.toContain('Pehla option Sarathya hai. Doosra option Riviera hai.')
+    // Unique English+Hinglish reinforcement preserved.
+    expect(prompt).toContain('This rule applies in BOTH English and Hinglish')
+  })
+
+  it('PART 12 ADDITIONAL HARD BANS cross-refs PART 0 RULE A', () => {
+    const prompt = buildSystemPrompt(baseCtx)
+    expect(prompt).toContain('Markdown bold / headers / bullets / numbered lists — see PART 0 RULE A')
+    // Old verbose ban text removed.
+    expect(prompt).not.toContain('NEVER use markdown bold (**text**) or markdown headers')
+  })
+
+  it('FINAL REMINDER [1] still reinforces bullet-ban', () => {
+    const prompt = buildSystemPrompt(baseCtx)
+    expect(prompt).toContain('REPLACE the bulleted list with one short prose sentence')
+    expect(prompt).toContain('(PART 0 Rule A)')
+  })
+})
+
+describe('Sprint 13.1.D — D2 visit-holding dedup', () => {
+  it('PART 7 Step 3 canonical holding-message script intact (flag-on)', () => {
+    const prompt = buildSystemPrompt(flagOnCtx)
+    expect(prompt).toContain('Step 3 — HOLDING MESSAGE (when buyer gives name + phone)')
+    expect(prompt).toContain('[Buyer name] ka visit request note ho gaya.')
+    expect(prompt).toContain('Homesty AI team aapko WhatsApp pe shortly confirm karega.')
+  })
+
+  it('PART 0 RULE B (flag-on) cross-refs PART 7 Step 3 (script body removed)', () => {
+    const prompt = buildSystemPrompt(flagOnCtx)
+    expect(prompt).toContain('the holding-message script defined in PART 7\nStep 3 (canonical)')
+    // Old verbatim-script duplicate removed from RULE B.
+    expect(prompt).not.toContain('"[Name] ka visit request note ho gaya. Project: [Project Name]. Preferred\nslot: [Day, Time]. Homesty AI team WhatsApp pe shortly confirm karega."')
+  })
+
+  it('PART 0 RULE B (flag-off) intact — DIFFERENT content, NOT a dedup target', () => {
+    const prompt = buildSystemPrompt(baseCtx) // baseCtx = flag off
+    expect(prompt).toContain('RULE B — VISIT BOOKING (Stage B is OFF)')
+    // Flag-off path's unique content survives — it's not a duplicate.
+    expect(prompt).toContain('Aapne naam aur number share kiya')
+  })
+})
+
+describe('Sprint 13.1.D — D6 max-2-projects dedup', () => {
+  it('PART 4 Rule 1 canonical max-2-projects rule intact', () => {
+    const prompt = buildSystemPrompt(baseCtx)
+    expect(prompt).toContain('Rule 1: MAXIMUM 2 projects per response')
+    expect(prompt).toContain('Cap also applies to project_card CARD blocks')
+  })
+
+  it('PART 0 RULE F cross-refs PART 4 Rule 1 for the cap (other RULE F content preserved)', () => {
+    const prompt = buildSystemPrompt(baseCtx)
+    expect(prompt).toContain('for the per-response cap see PART 4 Rule 1')
+    // Other RULE F content (CARD CONTRACT body) preserved.
+    expect(prompt).toContain('Every time you name a specific project as a recommendation, emit')
+    expect(prompt).toContain('your prose should NOT repeat any of those numbers')
+    // Old standalone cap sentence removed.
+    expect(prompt).not.toContain('One card per project, max two cards per response. The card')
+  })
+
+  it('PART 16 RULES 1 cross-refs PART 4 Rule 1 (single-line dedup)', () => {
+    const prompt = buildSystemPrompt(baseCtx)
+    expect(prompt).toContain('CARD-block cap per response — see PART 4 Rule 1 (max 2)')
+  })
+
+  it('FINAL REMINDER [6] still reinforces 3-project failure mode', () => {
+    const prompt = buildSystemPrompt(baseCtx)
+    expect(prompt).toContain('REMOVE the weakest option. Maximum is 2 per response.')
+    expect(prompt).toContain('(PART 4 Rule 1)')
+  })
+})
+
+describe('Sprint 13.1.D — token reduction sanity check', () => {
+  it('post-dedup prompt is shorter than the pre-dedup baseline char count', () => {
+    // Pre-dedup baseline was ~60,200 chars (measured at HEAD dfffb15).
+    // Post-dedup actual: ~59,831 — about 370 chars / ~90 tokens removed
+    // from the always-rendered (flag-off) path. Larger savings (~150-200
+    // tokens) land on the flag-on path where RULE_B_FLAG_ON dedup also
+    // applies. This guard pins the structural reduction so future edits
+    // that re-introduce the duplicates trip a clear test signal.
+    const prompt = buildSystemPrompt(baseCtx)
+    expect(prompt.length).toBeLessThan(60_000)
+  })
+})
+
 describe('Sprint 11.17.1 — PART 17 always-render empty-state (PART C)', () => {
   it('PART 17 header present when retrievedChunks is undefined', () => {
     const prompt = buildSystemPrompt(baseCtx)
