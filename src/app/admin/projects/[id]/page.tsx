@@ -182,6 +182,14 @@ export default function ProjectEditPage() {
   const [reraFetching, setReraFetching] = useState(false)
   const [reraNotice, setReraNotice] = useState<string | null>(null)
   const [pdfFile, setPdfFile] = useState<File | null>(null)
+  // Sprint 11.13 (2026-05-05) — Mama Page 2 §11.1 paste-text mode.
+  // Default to 'text' per compact: faster + cheaper for the common case
+  // (Mama Ctrl+A from PDF reader → paste). 'pdf' tab keeps existing
+  // streaming flow via PdfStreamProgress + /api/pdf-extract.
+  const [extractMode, setExtractMode] = useState<'text' | 'pdf'>('text')
+  const [pasteText, setPasteText] = useState('')
+  const [pasteExtracting, setPasteExtracting] = useState(false)
+  const [pasteError, setPasteError] = useState<string | null>(null)
 
   useEffect(() => {
     if (!isNew && !id) {
@@ -516,48 +524,148 @@ export default function ProjectEditPage() {
             </div>
           )}
 
-          {/* Step 2: Brochure AI Extract */}
+          {/* Step 2: Brochure AI Extract — Sprint 11.13 (2026-05-05) tab toggle.
+              Two modes: paste-text (default, faster + cheaper, no Vercel
+              4.5MB body cap) and PDF upload (existing streaming flow via
+              /api/pdf-extract preserved). New unified /api/extract route
+              backs the text mode; PDF tab still uses streaming SSE for
+              progress UX continuity. */}
           {step === 2 && (
             <div className="rounded-xl p-4" style={{ background: '#111827', border: '1px solid rgba(255,255,255,0.07)' }}>
               <p className="text-[12px] font-medium text-white mb-1">Step 2 — Brochure AI Extract</p>
-              <p className="text-[11px] text-[#9CA3AF] mb-4">Upload PDF → Claude API reads and fills carpet areas, amenities, floors automatically</p>
-              {/* PDF Extract */}
-              <div className="rounded-2xl p-4 mb-4" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
-                <p className="text-[12px] font-semibold text-white mb-1">📄 Auto-fill from PDF</p>
-                <p className="text-[11px] mb-3" style={{ color: '#6B7280' }}>Upload RERA brochure — carpet areas, amenities, floors auto-filled</p>
-                <div className="flex gap-2 items-center">
-                  <input type="file" accept=".pdf" id="pdf-upload" className="hidden"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0]
-                      if (!file) return
-                      setError(null)
-                      setPdfFile(file)
-                    }}
-                  />
-                  <label htmlFor="pdf-upload" className="cursor-pointer px-4 py-2 rounded-lg text-[12px] font-medium transition-colors"
-                    style={{ background: 'rgba(96,165,250,0.1)', color: '#60A5FA', border: '1px solid rgba(96,165,250,0.2)' }}>
-                    {pdfFile ? 'Replace PDF →' : 'Choose PDF →'}
-                  </label>
-                  <span className="text-[11px]" style={{ color: '#4B5563' }}>Carpet, SBU, amenities, floors auto-filled</span>
-                </div>
-                <PdfStreamProgress
-                  file={pdfFile}
-                  onComplete={(data) => {
-                    if (data.carpet_3bhk) set('carpetSqftMin', data.carpet_3bhk)
-                    if (data.sbu_3bhk) set('sbaSqftMin', data.sbu_3bhk)
-                    if (data.loading_factor) set('loadingFactor', data.loading_factor)
-                    if (data.total_floors) set('availableUnits', data.total_floors * 4)
-                    if (data.amenities)
-                      set('amenities', data.amenities.split(',').map((a: string) => a.trim()).join(', '))
-                    if (data.configurations) set('configurations', data.configurations)
-                    if (data.possession_date) {
-                      try { set('possessionDate', new Date(data.possession_date).toISOString().split('T')[0]) } catch {}
-                    }
-                  }}
-                  onError={(msg) => setError(msg)}
-                  onSwitchToManual={() => setPdfFile(null)}
-                />
+              <p className="text-[11px] text-[#9CA3AF] mb-3">Paste text from any PDF reader OR upload PDF — Claude fills carpet areas, amenities, floors automatically</p>
+
+              {/* Tab toggle */}
+              <div className="flex gap-1 mb-4 p-1 rounded-lg w-fit" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
+                <button type="button" onClick={() => setExtractMode('text')}
+                  className="px-3 py-1.5 rounded-md text-[12px] font-medium transition-colors"
+                  style={{
+                    background: extractMode === 'text' ? '#185FA5' : 'transparent',
+                    color: extractMode === 'text' ? 'white' : '#9CA3AF',
+                  }}>
+                  Paste text
+                </button>
+                <button type="button" onClick={() => setExtractMode('pdf')}
+                  className="px-3 py-1.5 rounded-md text-[12px] font-medium transition-colors"
+                  style={{
+                    background: extractMode === 'pdf' ? '#185FA5' : 'transparent',
+                    color: extractMode === 'pdf' ? 'white' : '#9CA3AF',
+                  }}>
+                  Upload PDF
+                </button>
               </div>
+
+              {extractMode === 'text' ? (
+                <div className="rounded-2xl p-4" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
+                  <p className="text-[12px] font-semibold text-white mb-1">📋 Paste brochure text</p>
+                  <p className="text-[11px] mb-3" style={{ color: '#6B7280' }}>
+                    Open the PDF in any reader, select all (Ctrl+A), copy, then paste here. AI extracts in 5–8 seconds. Bypasses 10 MB upload cap entirely.
+                  </p>
+                  <textarea
+                    value={pasteText}
+                    onChange={(e) => setPasteText(e.target.value)}
+                    rows={10}
+                    placeholder="Paste brochure text here…"
+                    className="w-full rounded-lg px-3 py-2 text-[12px] text-white outline-none resize-y mb-3"
+                    style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', minHeight: 200 }}
+                  />
+                  <div className="flex items-center gap-3">
+                    <button type="button"
+                      disabled={pasteExtracting || pasteText.trim().length < 50}
+                      onClick={async () => {
+                        setPasteError(null)
+                        setPasteExtracting(true)
+                        try {
+                          const res = await fetch('/api/extract', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ mode: 'text', text: pasteText, source: 'brochure' }),
+                          })
+                          const json = await res.json()
+                          if (!res.ok || !json.ok) {
+                            setPasteError(json.error ?? `Extract failed (${res.status})`)
+                            return
+                          }
+                          // Map common extracted fields onto form. Mirrors PDF
+                          // onComplete shape but with the new schema field names
+                          // (configurations[].carpetSqft etc per PROMPT_BROCHURE).
+                          const d = json.data as Record<string, unknown>
+                          if (typeof d.amenities === 'object' && Array.isArray(d.amenities)) {
+                            set('amenities', (d.amenities as string[]).join(', '))
+                          } else if (typeof d.amenities === 'string') {
+                            set('amenities', d.amenities)
+                          }
+                          if (Array.isArray(d.configurations)) {
+                            const threeBhk = (d.configurations as Array<{ bhk?: number; carpetSqft?: number; sbaSqft?: number }>)
+                              .find(c => c.bhk === 3)
+                            if (threeBhk?.carpetSqft) set('carpetSqftMin', threeBhk.carpetSqft)
+                            if (threeBhk?.sbaSqft) set('sbaSqftMin', threeBhk.sbaSqft)
+                          }
+                          if (typeof d.builder === 'string' && d.builder) set('builder', d.builder)
+                        } catch (err) {
+                          setPasteError(err instanceof Error ? err.message : 'Extract failed')
+                        } finally {
+                          setPasteExtracting(false)
+                        }
+                      }}
+                      className="px-4 py-2 rounded-lg text-[12px] font-medium transition-colors disabled:opacity-50"
+                      style={{ background: '#185FA5', color: 'white' }}>
+                      {pasteExtracting ? 'Extracting…' : 'Extract →'}
+                    </button>
+                    <span className="text-[11px]" style={{ color: '#6B7280' }}>
+                      {pasteText.trim().length < 50
+                        ? `Paste at least 50 characters (currently ${pasteText.trim().length})`
+                        : `${pasteText.length} characters ready`}
+                    </span>
+                  </div>
+                  {pasteError && (
+                    <p className="mt-3 text-[11px]" style={{ color: '#F87171' }}>
+                      {pasteError} —{' '}
+                      <button type="button" onClick={() => setExtractMode('pdf')}
+                        className="underline hover:text-white">
+                        switch to PDF upload
+                      </button>
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <div className="rounded-2xl p-4" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
+                  <p className="text-[12px] font-semibold text-white mb-1">📄 Auto-fill from PDF</p>
+                  <p className="text-[11px] mb-3" style={{ color: '#6B7280' }}>Upload RERA brochure — carpet areas, amenities, floors auto-filled. Max 10 MB.</p>
+                  <div className="flex gap-2 items-center">
+                    <input type="file" accept=".pdf" id="pdf-upload" className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0]
+                        if (!file) return
+                        setError(null)
+                        setPdfFile(file)
+                      }}
+                    />
+                    <label htmlFor="pdf-upload" className="cursor-pointer px-4 py-2 rounded-lg text-[12px] font-medium transition-colors"
+                      style={{ background: 'rgba(96,165,250,0.1)', color: '#60A5FA', border: '1px solid rgba(96,165,250,0.2)' }}>
+                      {pdfFile ? 'Replace PDF →' : 'Choose PDF →'}
+                    </label>
+                    <span className="text-[11px]" style={{ color: '#4B5563' }}>Carpet, SBU, amenities, floors auto-filled</span>
+                  </div>
+                  <PdfStreamProgress
+                    file={pdfFile}
+                    onComplete={(data) => {
+                      if (data.carpet_3bhk) set('carpetSqftMin', data.carpet_3bhk)
+                      if (data.sbu_3bhk) set('sbaSqftMin', data.sbu_3bhk)
+                      if (data.loading_factor) set('loadingFactor', data.loading_factor)
+                      if (data.total_floors) set('availableUnits', data.total_floors * 4)
+                      if (data.amenities)
+                        set('amenities', data.amenities.split(',').map((a: string) => a.trim()).join(', '))
+                      if (data.configurations) set('configurations', data.configurations)
+                      if (data.possession_date) {
+                        try { set('possessionDate', new Date(data.possession_date).toISOString().split('T')[0]) } catch {}
+                      }
+                    }}
+                    onError={(msg) => setError(msg)}
+                    onSwitchToManual={() => setPdfFile(null)}
+                  />
+                </div>
+              )}
             </div>
           )}
 

@@ -1,3 +1,11 @@
+// DEPRECATED (Sprint 11.13, 2026-05-05) — superseded by /api/extract.
+// This streaming SSE endpoint is still wired to the admin /[id]/page.tsx
+// "Upload PDF" tab for progress-UX continuity (PdfStreamProgress consumer).
+// New work should target /api/extract instead — it accepts both PDF (via
+// Cloudinary URL) and pasted text, returns plain JSON, no SSE plumbing.
+// Migration path: switch PdfStreamProgress to /api/extract once a non-
+// streaming UX is acceptable, OR extend /api/extract to stream like this.
+
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import Anthropic from '@anthropic-ai/sdk'
