@@ -275,6 +275,21 @@ export default function ProjectEditPage() {
   const set = (field: keyof ProjectForm, value: any) =>
     setForm(p => ({ ...p, [field]: value }))
 
+  // Sprint 11.14.1 (2026-05-05) — paste-extract handlers (11.13 brochure +
+  // 11.14 RERA) populate ProjectForm fields from AI-returned JSON. The AI
+  // may emit field names not in ProjectForm (e.g. PROMPT_BROCHURE returns
+  // 'builder', PROMPT_RERA returns totalProjectArea/escrowBank/promoters/
+  // approvalAuthority/projectType/activeComplaintsCount). This helper
+  // type-narrows on the form key + drops undefined silently so future
+  // schema additions on the AI side can't slip a non-form key into set()
+  // and break next-build at deploy time (which is what broke 260c8d6 +
+  // 5eb4f5d). Unmappable AI fields will surface in Admin-2.1 when the
+  // project_extracted_data JSONB column lands.
+  function setIfMappable<K extends keyof ProjectForm>(key: K, value: ProjectForm[K] | undefined | null) {
+    if (value === undefined || value === null) return
+    set(key, value)
+  }
+
   const handleSave = async () => {
     if (!isNew && !id) {
       setError('Missing project id — refresh the page.')
@@ -687,7 +702,9 @@ export default function ProjectEditPage() {
                             if (threeBhk?.carpetSqft) set('carpetSqftMin', threeBhk.carpetSqft)
                             if (threeBhk?.sbaSqft) set('sbaSqftMin', threeBhk.sbaSqft)
                           }
-                          if (typeof d.builder === 'string' && d.builder) set('builder', d.builder)
+                          // AI extract emits 'builder' (per PROMPT_BROCHURE in /api/extract);
+                          // form key is 'builderName'. Map across the boundary via setIfMappable.
+                          if (typeof d.builder === 'string' && d.builder) setIfMappable('builderName', d.builder)
                         } catch (err) {
                           setPasteError(err instanceof Error ? err.message : 'Extract failed')
                         } finally {
