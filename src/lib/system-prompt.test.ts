@@ -7,7 +7,8 @@
 // see route.ts for the version flag wiring.
 
 import { describe, it, expect } from 'vitest'
-import { buildSystemPrompt } from './system-prompt'
+import { buildSystemPrompt, formatRetrievedChunks } from './system-prompt'
+import type { RetrievedChunk } from '@/lib/rag/retriever'
 
 const baseCtx = {
   projects: [
@@ -365,5 +366,90 @@ describe('Stage B flag-aware prompt sections (Sprint 1)', () => {
     expect(prompt).toContain('[Buyer name] ka visit request note ho gaya')
     // EXAMPLE 18 flag-on shows the legitimate holding-message form
     expect(prompt).toContain('Rohit Patel ka visit request note ho gaya. Project: The Planet')
+  })
+})
+
+// Sprint 11.17.1 (2026-05-05) — RAG observability + diagnosability.
+// PART B (formatRetrievedChunks helper) + PART C (empty-state always-render)
+// pin the contract so future edits to PART 17 don't silently strip source/
+// similarity annotations or revert to silent omission on empty chunks.
+describe('Sprint 11.17.1 — formatRetrievedChunks helper (PART B)', () => {
+  it('renders source + similarity in chunk header', () => {
+    const chunks: RetrievedChunk[] = [
+      { sourceType: 'location_data', sourceId: 'loc-1', content: 'Hospital nearby.', similarity: 0.84 },
+    ]
+    const out = formatRetrievedChunks(chunks)
+    expect(out).toContain('(source=location_data, similarity=0.84)')
+  })
+
+  it('formats similarity to 2 decimals', () => {
+    const chunks: RetrievedChunk[] = [
+      { sourceType: 'project', sourceId: 'p1', content: 'x', similarity: 0.7123456 },
+    ]
+    const out = formatRetrievedChunks(chunks)
+    expect(out).toContain('similarity=0.71')
+    expect(out).not.toContain('0.7123456')
+  })
+
+  it('preserves chunk content verbatim', () => {
+    const longContent = 'Riviera Bliss is in Shela. ' + 'a'.repeat(400)
+    const chunks: RetrievedChunk[] = [
+      { sourceType: 'project', sourceId: 'p1', content: longContent, similarity: 0.5 },
+    ]
+    const out = formatRetrievedChunks(chunks)
+    expect(out).toContain(longContent)
+  })
+
+  it('separates multiple chunks by blank line, indexed [1]/[2]', () => {
+    const chunks: RetrievedChunk[] = [
+      { sourceType: 'project', sourceId: 'p1', content: 'first', similarity: 0.9 },
+      { sourceType: 'builder', sourceId: 'b1', content: 'second', similarity: 0.6 },
+    ]
+    const out = formatRetrievedChunks(chunks)
+    expect(out).toContain('[1] (source=project')
+    expect(out).toContain('[2] (source=builder')
+    expect(out).toContain('first\n\n[2]')
+  })
+})
+
+describe('Sprint 11.17.1 — PART 17 always-render empty-state (PART C)', () => {
+  it('PART 17 header present when retrievedChunks is undefined', () => {
+    const prompt = buildSystemPrompt(baseCtx)
+    expect(prompt).toContain('PART 17 — RETRIEVED KNOWLEDGE BASE CONTEXT')
+  })
+
+  it('PART 17 header present when retrievedChunks is empty []', () => {
+    const prompt = buildSystemPrompt(baseCtx, undefined, null, [])
+    expect(prompt).toContain('PART 17 — RETRIEVED KNOWLEDGE BASE CONTEXT')
+  })
+
+  it('empty-state instructs "Do NOT fabricate" when no chunks', () => {
+    const prompt = buildSystemPrompt(baseCtx, undefined, null, [])
+    expect(prompt).toContain('No relevant context retrieved from knowledge base')
+    expect(prompt).toContain('Do NOT fabricate')
+  })
+
+  it('empty-state language NOT present when chunks have items', () => {
+    const chunks: RetrievedChunk[] = [
+      { sourceType: 'location_data', sourceId: 'loc-1', content: 'CIMS Hospital is 1.2km from Riviera Bliss.', similarity: 0.88 },
+      { sourceType: 'project', sourceId: 'p1', content: 'Riviera Bliss has 3BHK at ₹85L.', similarity: 0.72 },
+    ]
+    const prompt = buildSystemPrompt(baseCtx, undefined, null, chunks)
+    expect(prompt).toContain('PART 17 — RETRIEVED KNOWLEDGE BASE CONTEXT')
+    expect(prompt).toContain('(source=location_data, similarity=0.88)')
+    expect(prompt).toContain('(source=project, similarity=0.72)')
+    expect(prompt).not.toContain('No relevant context retrieved from knowledge base')
+    // Note: "Do NOT fabricate" appears in PART 0 absolute rules unconditionally,
+    // so we can't assert its absence here. The empty-state-specific marker is
+    // "No relevant context retrieved from knowledge base" — pinned above.
+  })
+
+  it('TRUST HIERARCHY clause present when chunks have items (governs precedence vs PART 15)', () => {
+    const chunks: RetrievedChunk[] = [
+      { sourceType: 'project', sourceId: 'p1', content: 'something', similarity: 0.6 },
+    ]
+    const prompt = buildSystemPrompt(baseCtx, undefined, null, chunks)
+    expect(prompt).toContain('TRUST HIERARCHY')
+    expect(prompt).toContain('trust project_json')
   })
 })

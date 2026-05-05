@@ -29,6 +29,24 @@
 import type { RetrievedChunk } from '@/lib/rag/retriever'
 import type { Persona } from '@/lib/intent-classifier'
 
+// Sprint 11.17.1 (2026-05-05) — RAG observability + diagnosability.
+// Annotate each PART 17 chunk with its sourceType (project/builder/
+// locality/infra/faq/location_data) and similarity score (2 decimals)
+// so the model can distinguish high-confidence location_data (drive
+// proximity claims) from mid-similarity project chunks. Likely root
+// cause of the vague-hospital-answer canary: model couldn't tell
+// which retrieved chunks were high-confidence location_data.
+export function formatRetrievedChunks(chunks: RetrievedChunk[]): string {
+  return chunks
+    .map((c, i) => {
+      const sourceLabel = c.sourceType ?? 'unknown'
+      const scoreLabel =
+        typeof c.similarity === 'number' ? c.similarity.toFixed(2) : 'n/a'
+      return `[${i + 1}] (source=${sourceLabel}, similarity=${scoreLabel}):\n${c.content}`
+    })
+    .join('\n\n')
+}
+
 // ─── Stage B flag-aware blocks (Sprint 1, 2026-04-29) ─────────────────────
 // PART 5/6/7 + EXAMPLE 18 + RULE B's body are conditionally injected based
 // on STAGE_B_ENABLED. Default OFF — AI never sees the Stage B trigger
@@ -450,20 +468,29 @@ ID: ${p.id}
   const _cardStr = decisionCard ? JSON.stringify(decisionCard, null, 2) : ''
   const cardBlock = _cardStr.length > 3000 ? _cardStr.slice(0, 3000) + '\n... [truncated]' : _cardStr
 
-  // PART 17 — rendered only when retrieval returned chunks. Empty string otherwise
-  // so downstream prompt surface stays byte-identical to the no-RAG path.
-  const ragBlock = retrievedChunks && retrievedChunks.length > 0
-    ? `
+  // PART 17 — Sprint 11.17.1 (2026-05-05): always render. Previously
+  // omitted entirely on empty retrieval, conflating "no relevant data"
+  // with "no RAG plumbing." Now empty-state renders a behavioral
+  // instruction so the model knows it has no specific data and must
+  // hedge instead of fabricating distances/names. Chunk format includes
+  // source + similarity annotation per Sprint 11.17.1 PART B.
+  const hasChunks = !!(retrievedChunks && retrievedChunks.length > 0)
+  const ragBlock = `
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 PART 17 — RETRIEVED KNOWLEDGE BASE CONTEXT
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-The following snippets were retrieved from the Homesty knowledge base by semantic similarity to the buyer's current question. Use them as SUPPORTING context only — they are not authoritative.
+${
+  hasChunks
+    ? `The following snippets were retrieved from the Homesty knowledge base by semantic similarity to the buyer's current question. Use them as SUPPORTING context only — they are not authoritative.
+
+Each snippet is annotated with its source (project/builder/locality/infra/faq/location_data) and similarity score (0.00–1.00). Higher similarity = stronger signal. Use source to route claims: location_data drives proximity/distance/amenity-name claims; project drives spec/price claims; builder drives trust/track-record claims.
 
 TRUST HIERARCHY: If a snippet contradicts project_json (PART 15), trust project_json (it's authoritative). Snippets may be stale, partial, or scoped to a narrower topic than the current query. Never quote a snippet verbatim — paraphrase and integrate only facts that clearly align with PART 15.
 
-${retrievedChunks.map((c, i) => `[${i + 1}] ${c.content}`).join('\n\n')}
+${formatRetrievedChunks(retrievedChunks!)}`
+    : `No relevant context retrieved from knowledge base for this query. Use static PROJECT_JSON (PART 15); if buyer asks for specifics not in PROJECT_JSON (exact distances in km, hospital names, school proximity, infrastructure detail), acknowledge naturally that you can confirm only at site visit. Do NOT fabricate distances, names, or infrastructure details — hedge honestly instead.`
+}
 `
-    : ''
 
   // PART 18 — persona-specific overlay. Rendered only when the classifier
   // detected a confident persona signal in the buyer's latest message.

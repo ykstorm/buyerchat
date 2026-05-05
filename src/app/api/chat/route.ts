@@ -5,7 +5,7 @@ import { rateLimit } from '@/lib/rate-limit'
 import { buildContextPayload, buildLocationGuardList } from '@/lib/context-builder'
 import { buildSystemPrompt } from '@/lib/system-prompt'
 import { SYSTEM_PROMPT_V2_LEGACY } from '@/lib/system-prompt-v2-archive'
-import { retrieveChunks } from '@/lib/rag/retriever'
+import { retrieveChunks, type RetrievedChunk } from '@/lib/rag/retriever'
 import { classifyIntent, detectHardCaptureIntent, STAGE_B_TRIGGER_SCRIPTS } from '@/lib/intent-classifier'
 import { buildDecisionCard } from '@/lib/decision-engine/decision-card-builder'
 import { checkResponse, CONTACT_LEAK_PATTERN, BUSINESS_LEAK_PATTERN, MARKDOWN_PATTERN } from '@/lib/response-checker'
@@ -252,8 +252,24 @@ if (hasInjection) {
   // unapplied migration / missing pgvector). Chat flow continues on empty.
   // Sprint 11 — time the retrieval so onError can correlate stream aborts
   // with slow/zero-chunk RAG calls in Sentry breadcrumbs.
+  // Sprint 11.17.1 (2026-05-05) — replace silent .catch(() => []) with
+  // explicit try/catch + Sentry capture. Previously a retrieve failure
+  // looked identical to "no relevant chunks" — impossible to diagnose.
+  // Now: errors hit Sentry under tag context=rag_retrieve, body falls
+  // through to empty array (graceful degradation preserved).
   const ragStart = performance.now()
-  const retrieved = await retrieveChunks(sanitizedMsg, 6).catch(() => [])
+  let retrieved: RetrievedChunk[] = []
+  try {
+    retrieved = await retrieveChunks(sanitizedMsg, 6)
+  } catch (err) {
+    Sentry.captureException(err, {
+      tags: { context: 'rag_retrieve' },
+      extra: {
+        query: sanitizedMsg.slice(0, 120),
+        k: 6,
+      },
+    })
+  }
   const ragRetrievalMs = Math.round(performance.now() - ragStart)
   if (retrieved.length > 0) {
     console.log(`[RAG] Retrieved ${retrieved.length} chunks in ${ragRetrievalMs}ms`)
