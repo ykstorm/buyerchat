@@ -16,6 +16,7 @@ import {
   type StreamErrorKind,
 } from '@/lib/stream-fallback'
 import { sanitizeAdminInput } from '@/lib/sanitize'
+import { detectEmissionMisses } from '@/lib/emission-miss-check'
 import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth'
@@ -648,7 +649,45 @@ if (hasInjection) {
         } catch (err) {
           console.error('artifactHistory persist error:', err)
         }
-    
+
+        // Sprint 9.5 (2026-05-05) — emission-drift observability.
+        // Sprints 11.5 + 11.8 added prompt-side MUST-emit rules for
+        // comparison + cost_breakdown CARDs. This adds the measurement
+        // layer. Pure helper does pattern matching; we surface results
+        // to Sentry with discriminator tags.
+        // Audit-only: does NOT abort response, does NOT change buyer
+        // output. Establishes baseline for tuning prompt enforcement.
+        try {
+          const emittedTypes: string[] = []
+          for (const m of text.matchAll(/<!--CARD:(.*?)-->/g)) {
+            try {
+              const payload = JSON.parse(m[1])
+              if (payload && typeof payload === 'object' && typeof payload.type === 'string') {
+                emittedTypes.push(payload.type)
+              }
+            } catch { /* malformed already logged above */ }
+          }
+          const misses = detectEmissionMisses(sanitizedMsg, emittedTypes)
+          for (const miss of misses) {
+            Sentry.captureMessage('[CARD_EMISSION_MISS]', {
+              level: 'warning',
+              tags: {
+                audit_violation: 'true',
+                rule: 'CARD_EMISSION_MISS',
+                expected_type: miss.type,
+              },
+              extra: {
+                query: sanitizedMsg.slice(0, 120),
+                rag_chunks_count: Array.isArray(retrieved) ? retrieved.length : null,
+                response_length: text.length,
+                response_preview: text.slice(0, 200),
+                all_emitted_card_types: emittedTypes,
+                pattern_matched: miss.pattern_matched,
+              },
+            })
+          }
+        } catch { /* Sentry best-effort */ }
+
         // Extract buyer signals and update session metadata
         const budgetMatch = sanitizedMsg.match(/(\d+)\s*(lakh|L|Cr|crore)/i)
         const configMatch = sanitizedMsg.match(/([2345])\s*bhk/i)
