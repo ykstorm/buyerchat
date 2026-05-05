@@ -1,3 +1,13 @@
+// DEPRECATED (Sprint 11.14, 2026-05-05) — superseded by /api/extract
+// with mode='text', source='rera'. Per Mama Page 2 §5.1, Puppeteer
+// scraping is unreliable: Cloudflare blocks non-Indian IPs (see
+// RERA_GEO_BLOCKED soft-fail handling), portal HTML changes without
+// notice, and parser fragility on field-label variants surfaces as
+// silent partial-fills. Paste-and-extract is the spec'd permanent
+// solution, not interim. This file kept for backwards compatibility
+// with the Step 1 "Fetch from portal" button (operator-toggleable
+// soft fallback). Slated for removal in Sprint 12.X repo cleanup.
+
 import { NextRequest, NextResponse } from 'next/server'
 import { Prisma } from '@prisma/client'
 import * as Sentry from '@sentry/nextjs'

@@ -181,6 +181,13 @@ export default function ProjectEditPage() {
   const [step, setStep] = useState(1)
   const [reraFetching, setReraFetching] = useState(false)
   const [reraNotice, setReraNotice] = useState<string | null>(null)
+  // Sprint 11.14 (2026-05-05) — Mama Page 2 §5.1 paste-and-extract for
+  // RERA. Cloudflare blocks non-Indian IPs + portal HTML drift makes
+  // Puppeteer unreliable; paste-text → /api/extract source='rera' is
+  // the spec'd permanent path. Puppeteer button kept as soft fallback.
+  const [reraPasteText, setReraPasteText] = useState('')
+  const [reraPasteExtracting, setReraPasteExtracting] = useState(false)
+  const [reraPasteError, setReraPasteError] = useState<string | null>(null)
   const [pdfFile, setPdfFile] = useState<File | null>(null)
   // Sprint 11.13 (2026-05-05) — Mama Page 2 §11.1 paste-text mode.
   // Default to 'text' per compact: faster + cheaper for the common case
@@ -448,6 +455,85 @@ export default function ProjectEditPage() {
                   <p>{reraNotice}</p>
                 </div>
               )}
+
+              {/* Sprint 11.14 (2026-05-05) — RERA paste-and-extract surface.
+                  Mama Page 2 §5.1 spec'd this as permanent answer (not
+                  fallback). Open GujRERA portal → Ctrl+A → paste here →
+                  AI extracts 12 RERA-specific fields via /api/extract
+                  source='rera'. */}
+              <div className="mt-3 rounded-2xl p-4" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
+                <p className="text-[12px] font-semibold text-white mb-1">📋 Paste from RERA portal</p>
+                <p className="text-[11px] mb-3" style={{ color: '#6B7280' }}>
+                  Open <span className="font-mono">gujrera.gujarat.gov.in</span> in a new tab, find your project, select all visible text (Ctrl+A, Ctrl+C), then paste below. AI extracts in 5–8 seconds. Bypasses Cloudflare geo-block.
+                </p>
+                <textarea
+                  value={reraPasteText}
+                  onChange={(e) => setReraPasteText(e.target.value)}
+                  rows={10}
+                  placeholder="Paste GujRERA portal text here…"
+                  className="w-full rounded-lg px-3 py-2 text-[12px] text-white outline-none resize-y mb-3"
+                  style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', minHeight: 200 }}
+                />
+                <div className="flex items-center gap-3">
+                  <button type="button"
+                    disabled={reraPasteExtracting || reraPasteText.trim().length < 50}
+                    onClick={async () => {
+                      setReraPasteError(null)
+                      setReraPasteExtracting(true)
+                      try {
+                        const res = await fetch('/api/extract', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ mode: 'text', text: reraPasteText, source: 'rera' }),
+                        })
+                        const json = await res.json()
+                        if (!res.ok || !json.ok) {
+                          setReraPasteError(json.error ?? `Extract failed (${res.status})`)
+                          return
+                        }
+                        // Map RERA-specific fields onto form. PROMPT_RERA emits 12
+                        // fields; map the ones the form has slots for. Unknown
+                        // fields stay in json.data for future schema migration
+                        // (Admin-2.1) where project_rera_source column will
+                        // persist raw paste text + full extracted payload.
+                        const d = json.data as Record<string, unknown>
+                        if (typeof d.reraNumber === 'string' && d.reraNumber) set('reraNumber', d.reraNumber)
+                        if (typeof d.projectNameOfficial === 'string' && d.projectNameOfficial) set('projectName', d.projectNameOfficial)
+                        if (typeof d.builderLegalEntity === 'string' && d.builderLegalEntity) set('builderName', d.builderLegalEntity)
+                        if (typeof d.possessionDate === 'string' && d.possessionDate) {
+                          try { set('possessionDate', new Date(d.possessionDate).toISOString().split('T')[0]) } catch {}
+                        }
+                        if (typeof d.status === 'string') {
+                          set('constructionStatus', d.status.toLowerCase().includes('complete') ? 'Ready to Move' : 'Under Construction')
+                        }
+                        if (typeof d.totalUnitsPlanned === 'number') set('availableUnits', d.totalUnitsPlanned)
+                        else if (typeof d.totalUnitsPlanned === 'string') {
+                          const n = parseInt(d.totalUnitsPlanned.replace(/\D/g, '')) || 0
+                          if (n > 0) set('availableUnits', n)
+                        }
+                      } catch (err) {
+                        setReraPasteError(err instanceof Error ? err.message : 'Extract failed')
+                      } finally {
+                        setReraPasteExtracting(false)
+                      }
+                    }}
+                    className="px-4 py-2 rounded-lg text-[12px] font-medium transition-colors disabled:opacity-50"
+                    style={{ background: '#185FA5', color: 'white' }}>
+                    {reraPasteExtracting ? 'Extracting…' : 'Extract →'}
+                  </button>
+                  <span className="text-[11px]" style={{ color: '#6B7280' }}>
+                    {reraPasteText.trim().length < 50
+                      ? `Paste at least 50 characters (currently ${reraPasteText.trim().length})`
+                      : `${reraPasteText.length} characters ready`}
+                  </span>
+                </div>
+                {reraPasteError && (
+                  <p className="mt-3 text-[11px]" style={{ color: '#F87171' }}>
+                    RERA text format mismatch — {reraPasteError}. Aap manually fields fill kar sakte hain (niche &quot;Manual entry&quot; expand karein).
+                  </p>
+                )}
+              </div>
+
               {!isNew && id && form.reraNumber && (
                 <RERAVerifyPill projectId={id} reraNumber={form.reraNumber} />
               )}
