@@ -82,13 +82,19 @@ function hinglishDensity(text: string): number {
   return hits / words.length
 }
 
-// Persona-aware word cap thresholds. Default from PART 6 rule
-// ("~100 WORDS MAX") with headroom for natural variance; premium buyers
-// tolerate longer spec-heavy replies, value buyers want terse.
+// Persona-aware word cap thresholds. Sprint 13.1.C (2026-05-05) —
+// Audit C4 reconciliation: previously cited deprecated PART 6 rule
+// (~100 words) but enforced 110-160, leaving prompt + checker out
+// of sync. Now matches PART 9 Rule 7 spirit — recommendation 80,
+// comparison 100, with persona variance:
+//   - default 100 (PART 9 Rule 7 comparison cap, most common turn)
+//   - premium 120 (slight headroom for richness, NOT 160 drift)
+//   - value    80 (PART 9 Rule 7 recommendation cap, terse buyers)
+// Brand-bible discipline preserved; persona variance retained.
 function wordCapFor(persona: ClassifiedQuery['persona']): number {
-  if (persona === 'premium') return 160
-  if (persona === 'value') return 110
-  return 130
+  if (persona === 'premium') return 120
+  if (persona === 'value') return 80
+  return 100
 }
 
 // Parse CARD JSON payloads out of the response. Silently skips malformed

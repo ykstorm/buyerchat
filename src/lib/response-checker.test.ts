@@ -142,26 +142,105 @@ describe('LANGUAGE_MATCH check', () => {
 })
 
 describe('WORD_CAP check', () => {
-  // 100-word prose fixture.
+  // Sprint 13.1.C (2026-05-05) — Audit C4 reconciliation. Caps tightened
+  // to match PART 9 Rule 7 spirit: default 100 / premium 120 / value 80
+  // (was 130/160/110 — drifted from deprecated PART 6 reference).
   const prose100 = Array.from({ length: 100 }, (_, i) => `word${i}`).join(' ')
   const prose140 = Array.from({ length: 140 }, (_, i) => `word${i}`).join(' ')
   const prose120 = Array.from({ length: 120 }, (_, i) => `word${i}`).join(' ')
 
-  it('100 words passes under default threshold (130)', () => {
+  it('100 words passes under default threshold (100)', () => {
     const res = checkResponse(prose100, [], cq())
     expect(res.violations.some(v => v.startsWith('WORD_CAP'))).toBe(false)
   })
-  it('140 words is flagged under default threshold', () => {
+  it('140 words is flagged under default threshold (100)', () => {
     const res = checkResponse(prose140, [], cq())
     expect(res.violations.some(v => v.startsWith('WORD_CAP'))).toBe(true)
   })
-  it('140 words passes for premium persona (cap 160)', () => {
+  it('140 words is flagged for premium persona (cap tightened to 120)', () => {
+    // Was passing under old cap=160. Sprint 13.1.C tightened to 120; now flags.
     const res = checkResponse(prose140, [], cq('premium'))
-    expect(res.violations.some(v => v.startsWith('WORD_CAP'))).toBe(false)
+    expect(res.violations.some(v => v.startsWith('WORD_CAP'))).toBe(true)
   })
-  it('120 words is flagged for value persona (cap 110)', () => {
+  it('120 words is flagged for value persona (cap tightened to 80)', () => {
+    // Was flagging under old cap=110. Still flags under new cap=80 — direction preserved.
     const res = checkResponse(prose120, [], cq('value'))
     expect(res.violations.some(v => v.startsWith('WORD_CAP'))).toBe(true)
+  })
+
+  // Sprint 13.1.C boundary tests — pin the exact persona cap values so
+  // future drift is caught at test time (the original drift went unnoticed
+  // for months because no tests pinned the boundaries).
+  const prose80 = Array.from({ length: 80 }, (_, i) => `word${i}`).join(' ')
+  const prose105 = Array.from({ length: 105 }, (_, i) => `word${i}`).join(' ')
+  const prose85 = Array.from({ length: 85 }, (_, i) => `word${i}`).join(' ')
+  const prose125 = Array.from({ length: 125 }, (_, i) => `word${i}`).join(' ')
+
+  it('boundary: 100 words at default cap passes (cap inclusive)', () => {
+    const res = checkResponse(prose100, [], cq())
+    expect(res.violations.some(v => v.startsWith('WORD_CAP'))).toBe(false)
+  })
+  it('boundary: 105 words exceeds default cap of 100', () => {
+    const res = checkResponse(prose105, [], cq())
+    expect(res.violations.some(v => v.startsWith('WORD_CAP'))).toBe(true)
+  })
+  it('boundary: 120 words at premium cap passes (cap inclusive)', () => {
+    const res = checkResponse(prose120, [], cq('premium'))
+    expect(res.violations.some(v => v.startsWith('WORD_CAP'))).toBe(false)
+  })
+  it('boundary: 125 words exceeds premium cap of 120', () => {
+    const res = checkResponse(prose125, [], cq('premium'))
+    expect(res.violations.some(v => v.startsWith('WORD_CAP'))).toBe(true)
+  })
+  it('boundary: 80 words at value cap passes (cap inclusive)', () => {
+    const res = checkResponse(prose80, [], cq('value'))
+    expect(res.violations.some(v => v.startsWith('WORD_CAP'))).toBe(false)
+  })
+  it('boundary: 85 words exceeds value cap of 80', () => {
+    const res = checkResponse(prose85, [], cq('value'))
+    expect(res.violations.some(v => v.startsWith('WORD_CAP'))).toBe(true)
+  })
+})
+
+// Sprint 13.1.C — Audit C5 reconciliation. PART 9 Rule 5 +
+// PART 12 Rule 4 + EXAMPLE 16 all use the same canonical RERA-portal
+// deflection phrase ("RERA portal pe verify karein"). Previously each
+// used a slightly different wording (GRERA vs RERA, passive "ho sakta
+// hai" vs imperative "verify karein") which the model pattern-matched
+// inconsistently.
+describe('Sprint 13.1.C — RERA-portal canonical phrasing (C5)', () => {
+  it('PART 9 Rule 5 contains intent-condition clause + canonical phrase', async () => {
+    const { buildSystemPrompt } = await import('./system-prompt')
+    const prompt = buildSystemPrompt({
+      projects: [], localities: [], infrastructure: [], dataAsOf: '2026-05-05',
+    })
+    expect(prompt).toContain('Rule 5: In-Chat Everything (intent-conditioned')
+    expect(prompt).toContain('RERA portal pe verify karein')
+    // The intent-condition spelled out so model knows when the deflection IS allowed.
+    expect(prompt).toContain('When data is GENUINELY MISSING')
+  })
+
+  it('EXAMPLE 16 uses canonical phrase (no GRERA, imperative form)', async () => {
+    const { buildSystemPrompt } = await import('./system-prompt')
+    const prompt = buildSystemPrompt({
+      projects: [], localities: [], infrastructure: [], dataAsOf: '2026-05-05',
+    })
+    const ex16Start = prompt.indexOf('EXAMPLE 16 — Buyer asks for unverifiable stat')
+    expect(ex16Start).toBeGreaterThan(-1)
+    const ex16Window = prompt.slice(ex16Start, ex16Start + 800)
+    expect(ex16Window).toContain('RERA portal pe verify karein')
+    // Old divergent phrasings gone.
+    expect(ex16Window).not.toContain('GRERA portal pe verify ho sakta hai')
+  })
+
+  it('PART 12 Rule 4 RERA fallback uses canonical phrase', async () => {
+    const { buildSystemPrompt } = await import('./system-prompt')
+    const prompt = buildSystemPrompt({
+      projects: [], localities: [], infrastructure: [], dataAsOf: '2026-05-05',
+    })
+    expect(prompt).toContain('RERA portal pe verify karein, exact data confirm karne ke liye')
+    // Old phrasing removed.
+    expect(prompt).not.toContain('RERA portal pe seedha check kar sakte ho')
   })
 })
 
