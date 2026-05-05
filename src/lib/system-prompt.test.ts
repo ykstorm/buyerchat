@@ -71,6 +71,24 @@ describe('v3 system prompt — PART invariants', () => {
     expect(ex18).toBeLessThan(ex1)
   })
 
+  // Sprint 13.1.A (2026-05-05) — audit conflict C2: EXAMPLE 17 RIGHT shape
+  // previously had AI responding in Hinglish on turn 1 ("Aapke budget aur
+  // Shela family requirement..."), contradicting PART 2 OPENING PROTOCOL.
+  // Rewritten as multi-turn flow: turn-1 English opener, turn-2 confirms
+  // and emits CARDs. CARD-emission lesson preserved on turn 2.
+  it('EXAMPLE 17 RIGHT: turn-1 AI response is English per OPENING PROTOCOL (Sprint 13.1.A)', () => {
+    const prompt = buildSystemPrompt(baseCtx)
+    // Turn-1 AI response opens with the English protocol header.
+    expect(prompt).toContain('Turn 1 — User opens in Hinglish, AI opens professional English')
+    // Specific English opener phrase from PART 2 OPENING PROTOCOL.
+    expect(prompt).toContain('Welcome to Homesty AI — honest property intelligence for South Bopal and Shela, Ahmedabad.')
+    // Turn 2 carries the CARD emission lesson.
+    expect(prompt).toContain('Turn 2 — User confirms')
+    expect(prompt).toContain('<!--CARD:{"type":"project_card","projectId":"cmn0jn3kp0000zwfy4r5mf5s1"}-->')
+    // Negative: the old Hinglish turn-1 AI response must be gone.
+    expect(prompt).not.toContain('Aapke budget aur Shela family requirement ke hisaab se do strong options match karte hain')
+  })
+
   it('PART 7 (flag-on): visit-checklist no longer says "parking allocation" as a thing to confirm', () => {
     const prompt = buildSystemPrompt(flagOnCtx)
     // The phrase "parking allocation confirm karna" was the source of the
@@ -156,6 +174,20 @@ describe('v3 system prompt — PART invariants', () => {
     expect(prompt).toContain('Stage 2 — Comfort')
     expect(prompt).toContain('Stage 3 — Interest')
     expect(prompt).toContain('Stage 4 — Decision')
+  })
+
+  // Sprint 13.1.A (2026-05-05) — audit conflict C1: PART 14 Stage 1 example
+  // cell previously contradicted PART 2 OPENING MESSAGE PROTOCOL by showing
+  // a Hinglish phrase ("Aap kya dhundh rahe hain?"). Reconciled to the
+  // English opener so prose rule + few-shot table cell agree.
+  it('PART 14 Stage 1: example cell uses English opener (Sprint 13.1.A)', () => {
+    const prompt = buildSystemPrompt(baseCtx)
+    expect(prompt).toContain('Welcome to Homesty AI — honest property intelligence for South Bopal and Shela, Ahmedabad. Are you looking for a family home or an investment property?')
+    expect(prompt).toContain('Professional EN (per PART 2 OPENING PROTOCOL)')
+    // Negative: the old conflicting Hinglish phrase MUST NOT remain in the
+    // Stage 1 cell. (Other parts of the prompt may legitimately use other
+    // Hinglish phrases — this guards the specific old offender.)
+    expect(prompt).not.toContain('Aap kya dhundh rahe hain?')
   })
 
   it('PART 15: injects PROJECT_JSON, locality data, and GUARD_LIST when ctx populated', () => {
