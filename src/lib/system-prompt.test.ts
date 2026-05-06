@@ -451,6 +451,53 @@ describe('Sprint 11.17.1 — formatRetrievedChunks helper (PART B)', () => {
 // These tests pin (a) canonical statements still present and complete,
 // (b) cross-refs in place where duplicates were, (c) old duplicate
 // language removed.
+// Sprint 13.1.E (2026-05-05) — Audit C6 reconciliation. PART 0 Rule E
+// forbids "mera/mere" literally, but PART 9 Rule 5 + Rule 6 sanction
+// "mere paas nahi hai" as the canonical honest-deflection pattern.
+// Self-contradiction in spec resolved via explicit EXEMPTION clause
+// in Rule E + reciprocal cross-refs in Rule 5/6. CHECK 20 deliberate
+// mera/mere exclusion is now documented as the sanctioned contract.
+describe('Sprint 13.1.E — PART 0 Rule E mera/mere exemption (C6)', () => {
+  it('PART 0 Rule E original forbidden list intact (not weakened)', () => {
+    const prompt = buildSystemPrompt(baseCtx)
+    expect(prompt).toContain('RULE E — NO FIRST PERSON')
+    expect(prompt).toContain('NEVER use: I, me, my, main, mera, mujhe, maine, hamara, hum.')
+  })
+
+  it('PART 0 Rule E contains EXEMPTION clause referencing PART 9 Rule 5 + Rule 6', () => {
+    const prompt = buildSystemPrompt(baseCtx)
+    expect(prompt).toContain('EXEMPTION (Sprint 13.1.E reconciliation)')
+    expect(prompt).toContain('"mere paas nahi hai"')
+    expect(prompt).toContain('PART 9 Rule 5 + Rule 6')
+    // Documents that CHECK 20 permits the pattern.
+    expect(prompt).toContain('CHECK 20 (FIRST_PERSON_HINDI) deliberately permits')
+  })
+
+  it('PART 0 Rule E exemption preserves the outside-deflection ban', () => {
+    const prompt = buildSystemPrompt(baseCtx)
+    // The exemption is narrow — outside the deflection pattern,
+    // "mera/mere" remain forbidden. Future edits that widen the
+    // exemption to all uses would fail this assertion.
+    expect(prompt).toContain('Outside the "mere paas nahi hai" deflection pattern, "mera/mere" remain forbidden')
+  })
+
+  it('PART 9 Rule 5 contains reciprocal cross-ref to PART 0 Rule E exemption', () => {
+    const prompt = buildSystemPrompt(baseCtx)
+    // Bidirectional contract — Rule 5 anchors back to Rule E so future
+    // edits to either side see the cross-ref.
+    expect(prompt).toContain('Honest missing-data fallback (non-RERA fields): "Yeh data mere paas nahi hai.')
+    expect(prompt).toMatch(/mere paas nahi hai[\s\S]{1,200}see PART 0 Rule E exemption/i)
+  })
+
+  it('PART 9 Rule 6 contains reciprocal cross-ref to PART 0 Rule E exemption', () => {
+    const prompt = buildSystemPrompt(baseCtx)
+    expect(prompt).toContain('"Delay data mere paas nahi — GRERA pe verify: [steps]"')
+    // Cross-ref must follow the RIGHT example so future editors see
+    // it inline with the sanctioned phrase.
+    expect(prompt).toMatch(/Delay data mere paas nahi[\s\S]{1,150}see PART 0 Rule E exemption/i)
+  })
+})
+
 describe('Sprint 13.1.D — D1 bullet-ban dedup', () => {
   it('PART 0 RULE A canonical bullet-ban text intact', () => {
     const prompt = buildSystemPrompt(baseCtx)
@@ -536,15 +583,15 @@ describe('Sprint 13.1.D — D6 max-2-projects dedup', () => {
 })
 
 describe('Sprint 13.1.D — token reduction sanity check', () => {
-  it('post-dedup prompt is shorter than the pre-dedup baseline char count', () => {
-    // Pre-dedup baseline was ~60,200 chars (measured at HEAD dfffb15).
-    // Post-dedup actual: ~59,831 — about 370 chars / ~90 tokens removed
-    // from the always-rendered (flag-off) path. Larger savings (~150-200
-    // tokens) land on the flag-on path where RULE_B_FLAG_ON dedup also
-    // applies. This guard pins the structural reduction so future edits
-    // that re-introduce the duplicates trip a clear test signal.
+  it('post-dedup prompt stays below the rolling-baseline ceiling', () => {
+    // Sprint 13.1.D baseline: ~59,831 chars (HEAD 9f24a58).
+    // Sprint 13.1.E added ~680 chars: PART 0 Rule E exemption clause +
+    // PART 9 Rule 5/6 cross-refs (closes audit C6). New actual: ~60,510.
+    // Ceiling bumped to 60,800 — preserves regression guard against
+    // re-introducing D1/D2/D6 duplicates (~370 chars apiece would push
+    // past the new ceiling) without flagging Sprint 13.1.E's reconciliation.
     const prompt = buildSystemPrompt(baseCtx)
-    expect(prompt.length).toBeLessThan(60_000)
+    expect(prompt.length).toBeLessThan(60_800)
   })
 })
 

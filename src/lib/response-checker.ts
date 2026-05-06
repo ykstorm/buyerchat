@@ -664,11 +664,18 @@ export function checkResponse(
   }
 
   // CHECK 20 — FIRST_PERSON_HINDI (audit-only, Sprint 13.1.B, 2026-05-05).
+  // Sprint 13.1.E (2026-05-05) — closes audit C6 by formalizing the
+  // mera/mere exclusion as a documented EXEMPTION (not an oversight).
+  //
   // PART 0 Rule E forbids first-person Hindi pronouns/verbs ("main",
-  // "mujhe", "maine", "samajhta hoon", "karunga", "bolta hoon"). PART 14
-  // emotional Scripts B/D/E/F historically violated this openly; reconciled
-  // in same sprint. This checker enforces that no future prompt edit
-  // re-introduces first-person Hindi at runtime.
+  // "mujhe", "maine", "samajhta hoon", "karunga", "bolta hoon") EXCEPT
+  // for the sanctioned "mere paas nahi hai" honest-deflection pattern
+  // from PART 9 Rule 5 + Rule 6 (also seen at PART 6 DATA INTEGRITY
+  // RULES and PART 12 banned-patterns RIGHT cell). PART 14 emotional
+  // Scripts B/D/E/F historically violated Rule E openly; reconciled in
+  // Sprint 13.1.B. This checker enforces that no future prompt edit
+  // re-introduces first-person Hindi at runtime — outside the sanctioned
+  // mere-paas exemption.
   //
   // Regex strategy — conservative to avoid Sentry flood:
   //   - Verb forms: matches the unambiguous "...ta/ti hoon" present-tense
@@ -677,11 +684,14 @@ export function checkResponse(
   //   - "main" only when followed by a clear Hindi verb form (skips English
   //     "main idea" / "main thing" false positives).
   //
-  // Deliberately EXCLUDES "mera/mere" because the prompt itself instructs
-  // the AI to use "mere paas nahi hai" as the canonical missing-data
-  // honesty fallback (PART 8 Rule 5 + Rule 6 + WRONG/RIGHT table). That
-  // contradiction with Rule E exists in the spec — separate audit finding
-  // (logged as future C6) — not for this sprint to widen-then-flood.
+  // Deliberately EXCLUDES "mera/mere" — the sanctioned exemption above
+  // means flagging every "mere paas nahi hai" honest-deflection would
+  // flood Sentry on every legitimate humility moment. Sprint 13.1.E
+  // formalizes this as a bidirectional contract with PART 0 Rule E
+  // exemption clause + PART 9 Rule 5/6 reciprocal cross-refs. If model
+  // regresses to "mera/mere" outside the deflection pattern, surface
+  // through manual review; future tightening (e.g. "mera/mere not
+  // followed by 'paas'") could be added if Sentry data shows drift.
   const FIRST_PERSON_HINDI_VERB =
     /\b(samajhta|samajhti|bolta|bolti|kahta|kahti|deta|deti|leta|leti|sochta|sochti|maanta|maanti|chahta|chahti|janta|janti|dekhta|dekhti|sunta|sunti|likhta|likhti|padhta|padhti)\s+hoon\b|\bkarunga\b|\bkarungi\b/i
   const FIRST_PERSON_HINDI_PRONOUN = /\b(mujhe|maine)\b/i
