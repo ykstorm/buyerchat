@@ -145,10 +145,15 @@ describe('v3 system prompt — PART invariants', () => {
     expect(prompt).toContain('Rule 9: ZERO BULLETS EVER')
   })
 
-  it('PART 8: includes the canonical commission (Option Z) script', () => {
+  it('PART 8: cross-refs PART 15 CANONICAL COMMISSION ANSWERS (Sprint 13.1.G dedup)', () => {
+    // Sprint 13.1.G replaced the verbose PART 8 commission script with a
+    // one-line cross-ref to PART 15 canonical (which has full English +
+    // Hinglish + per-builder variants). Test pins both: cross-ref present
+    // at the PART 8 site, full canonical block intact at PART 15.
     const prompt = buildSystemPrompt(baseCtx)
-    expect(prompt).toContain('Builder se commission — aapse nahi.')
-    expect(prompt).toContain('Aapko Homesty AI use karne ke liye kuch pay nahi karna.')
+    expect(prompt).toContain('Commission question — see PART 15 CANONICAL COMMISSION ANSWERS')
+    // PART 15 canonical block carries the actual scripts.
+    expect(prompt).toContain('Builder se commission leta hai — aapko kuch nahi dena.')
   })
 
   it('PART 9 Rule 4: bans first-person pronouns', () => {
@@ -463,6 +468,102 @@ describe('Sprint 11.17.1 — formatRetrievedChunks helper (PART B)', () => {
 // comments + L1/L2 preservation so future audits can't accidentally
 // remove the verified-alive rules + future cleanup sprints can see
 // the dormancy markers inline.
+// Sprint 13.1.G (2026-05-05) — audit duplications D3-D8 cleanup.
+// Verify-then-act surfaced 4 partial duplicates (D3/D4/D7/D8 — surgical
+// dedup with cross-refs) and 1 audit-was-wrong (D5 — both CHECKs
+// intentionally distinct, audit-mark added in checker). Tests pin the
+// dedup state + cross-ref text + retained-but-marked sites so future
+// edits can't silently regress.
+describe('Sprint 13.1.G — D3 commission script dedup', () => {
+  it('PART 8 commission script replaced with cross-ref to PART 15 canonical', () => {
+    const prompt = buildSystemPrompt(baseCtx)
+    expect(prompt).toContain('Commission question — see PART 15 CANONICAL COMMISSION ANSWERS')
+    expect(prompt).toContain('Sprint 13.1.G dedup')
+    // Old PART 8 verbose script gone.
+    expect(prompt).not.toContain('Commission question (Option Z — canonical answer):\nBuilder se commission — aapse nahi.')
+  })
+
+  it('PART 15 CANONICAL COMMISSION ANSWERS block intact', () => {
+    const prompt = buildSystemPrompt(baseCtx)
+    expect(prompt).toContain('CANONICAL COMMISSION ANSWERS')
+    expect(prompt).toContain('Builder se commission leta hai — aapko kuch nahi dena.')
+    expect(prompt).toContain('Per-builder commission rates are confidential')
+  })
+
+  it('EXAMPLE 2/2B/2C scenario-distinct commission demos intact (audit was wrong on consolidation)', () => {
+    const prompt = buildSystemPrompt(baseCtx)
+    expect(prompt).toContain('EXAMPLE 2 — Injection attempt')
+    expect(prompt).toContain('EXAMPLE 2B — Honest commission question (NOT a leak)')
+    expect(prompt).toContain('EXAMPLE 2C — Hinglish commission question')
+  })
+})
+
+describe('Sprint 13.1.G — D4 OTP-ban dedup (PART 7_FLAG_ON Step 3)', () => {
+  it('PART 7_FLAG_ON Step 3 OTP banned-words list cross-refs PART 0 RULE C', () => {
+    const prompt = buildSystemPrompt(flagOnCtx)
+    expect(prompt).toContain('OTP-language ban — see PART 0 RULE C for the canonical banned-phrases list')
+    // Old verbose 5-line OTP banned list at this site is gone.
+    expect(prompt).not.toContain('- "OTP bheja hai" / "OTP sent" / "OTP <digits> pe"\n- "Enter karein" / "Enter the OTP" / "verify karein" (in OTP context)\n- "Wrong OTP" / "OTP galat hai"')
+  })
+
+  it('PART 7_FLAG_ON Step 3 retains the visit-specific bans (pre-confirmation)', () => {
+    const prompt = buildSystemPrompt(flagOnCtx)
+    // The visit-specific bans aren't in PART 0 RULE C (which is OTP-only)
+    // — they must survive at this site.
+    expect(prompt).toContain('"Visit confirmed" / "Visit booked" / "Slot locked"')
+  })
+
+  it('PART 0 RULE C canonical OTP banned-phrases list intact', () => {
+    const prompt = buildSystemPrompt(baseCtx)
+    expect(prompt).toContain('RULE C — OTP PROHIBITION')
+    expect(prompt).toContain('"OTP bheja hai", "OTP sent", "Enter the OTP"')
+  })
+})
+
+describe('Sprint 13.1.G — D7 EXAMPLE 21+22 WRONG SHAPE dedup', () => {
+  it('EXAMPLE 21 WRONG SHAPE block replaced with cross-ref to EXAMPLE 17', () => {
+    const prompt = buildSystemPrompt(baseCtx)
+    expect(prompt).toContain('See EXAMPLE 17 for the canonical bullet anti-pattern + MARKDOWN_ABORT explanation')
+    // EXAMPLE 21 RIGHT shape (topic-specific) preserved.
+    expect(prompt).toContain('EXAMPLE 21 — Amenity query')
+    expect(prompt).toContain('Riviera Aspire ke amenities mein swimming pool, gym')
+  })
+
+  it('EXAMPLE 22 WRONG SHAPE block replaced with cross-ref to EXAMPLE 17', () => {
+    const prompt = buildSystemPrompt(baseCtx)
+    expect(prompt).toContain('bullet/em-dash/numbered list shapes are forbidden for locality queries too')
+    // EXAMPLE 22 RIGHT shape (topic-specific) preserved.
+    expect(prompt).toContain('EXAMPLE 22 — Locality query')
+    expect(prompt).toContain('Riviera Bliss ke aas-paas DPS Bopal aur Shanti Asiatic School')
+  })
+
+  it('EXAMPLE 17 (canonical bullet anti-pattern) intact', () => {
+    const prompt = buildSystemPrompt(baseCtx)
+    expect(prompt).toContain('EXAMPLE 17 — Hinglish budget+config query')
+    expect(prompt).toContain('MARKDOWN_ABORT')
+  })
+})
+
+describe('Sprint 13.1.G — D8 PART 6_FLAG_ON Honest Concern dedup', () => {
+  it('PART 6_FLAG_ON standalone Honest Concern shape cross-refs PART 4 canonical', () => {
+    const prompt = buildSystemPrompt(flagOnCtx)
+    expect(prompt).toContain('see PART 4 Rule 2/3 + Honest Concern Rules for canonical format')
+  })
+
+  it('PART 4 Honest Concern Rules canonical block intact', () => {
+    const prompt = buildSystemPrompt(baseCtx)
+    expect(prompt).toContain('Honest Concern Rules:')
+    expect(prompt).toContain('Rule 2: Every recommendation MUST include Honest Concern')
+  })
+
+  it('PART 8 template-usage Honest Concern sites preserved (not over-deduped)', () => {
+    const prompt = buildSystemPrompt(baseCtx)
+    // L719 + L737 are USAGES not REDEFINITIONS — retained.
+    expect(prompt).toContain('⚠️ Honest Concern: [What to verify before final booking]')
+    expect(prompt).toContain('⚠️ Honest Concern: [Specific gap or concern with data]')
+  })
+})
+
 describe('Sprint 13.1.F — audit dead-rule verification markers', () => {
   it('L3 Re-entry loop script intact + DORMANT audit-mark present', () => {
     const prompt = buildSystemPrompt(baseCtx)
@@ -661,9 +762,12 @@ describe('Sprint 13.1.D — token reduction sanity check', () => {
     // Sprint 13.1.F added ~1,270 chars (4 dormant audit-mark HTML
     //   comments + L7 numbering-gap explanation comment, closes
     //   audit dead-rule tier verification). Actual: ~61,781.
-    // Ceiling bumped to 62,200 — preserves regression guard against
-    // re-introducing D1/D2/D6 duplicates (~370 chars apiece would
-    // push past) without flagging Sprint 13.1.E + 13.1.F additions.
+    // Sprint 13.1.G saved ~490 chars (D3+D4+D7+D8 cross-refs replacing
+    //   verbose duplicates) — net flag-off path actual: ~61,290. Ceiling
+    //   HELD at 62,200 (not tightened to 61,800) per operator decision —
+    //   preserves headroom for flag-state path variance buffer. Re-evaluate
+    //   ceiling tightening when flag-state assumptions are formally
+    //   locked (separate sprint).
     const prompt = buildSystemPrompt(baseCtx)
     expect(prompt.length).toBeLessThan(62_200)
   })

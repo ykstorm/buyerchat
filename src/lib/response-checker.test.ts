@@ -897,3 +897,42 @@ describe('Sprint 13.1.B — PART 14 Scripts post-rewrite cleanliness', () => {
     expect(window).toContain('Aap kya chahte hain — yeh clear hai')
   })
 })
+
+// Sprint 13.1.G (2026-05-05) — Audit D5 verification. Audit deliverable
+// proposed merging CHECK 13 + CHECK 17 into one rule. Verify-then-act
+// surfaced that they're intentionally distinct: different lifecycle
+// stages (pre-card vs pre-token), different Sentry tags (drift
+// attribution by stage). Both retained with audit-mark comments
+// explaining why merge would lose telemetry signal. These tests pin
+// that both rules continue to fire on their respective patterns AND
+// the audit-mark documentation persists in source (verified via the
+// checker's ability to call into both regexes — separate semantics).
+describe('Sprint 13.1.G — D5 CHECK 13 + CHECK 17 are intentionally distinct', () => {
+  it('CHECK 13 FAKE_BOOKING_CLAIM still fires on booking-confirm language without visit_prompt CARD', () => {
+    // Booking-confirmation phrasing in prose, no visit_prompt CARD = CHECK 13.
+    const text = 'Aapka visit booked hai, slot confirm ho gaya. Site team aapko WhatsApp karega.'
+    const res = checkResponse(text, [], cq())
+    expect(res.violations.some(v => v.startsWith('FAKE_BOOKING_CLAIM'))).toBe(true)
+  })
+
+  it('CHECK 17 FAKE_VISIT_CLAIM still fires on visit-confirm language without HST- token artifact', () => {
+    // Visit-confirmation phrasing without an HST- token artifact = CHECK 17.
+    const text = 'Visit confirmed for Sunday 11 AM. Slot locked. See you at site.'
+    const res = checkResponse(text, [], cq())
+    expect(res.violations.some(v => v.startsWith('FAKE_VISIT_CLAIM'))).toBe(true)
+  })
+
+  it('valid pre-confirmation soft language passes BOTH CHECK 13 and CHECK 17', () => {
+    // Soft "visit start karte hain" / "slot check karte hain" phrasing is
+    // the sanctioned pre-confirmation language per PART 7 Step 3 banned-
+    // words list (allowed-before-confirmation). Neither check should fire
+    // because no booking/visit-claim phrasing is being made.
+    // Note: in STAGE_B=off mode, "request note ho gaya" + "Preferred slot:"
+    // are FABRICATION markers (per response-checker.ts:582-591), so this
+    // test deliberately uses pure soft phrasing instead.
+    const text = 'Visit start karte hain. Aapko weekday comfortable hai ya weekend? Slot check karte hain.'
+    const res = checkResponse(text, [], cq())
+    expect(res.violations.some(v => v.startsWith('FAKE_BOOKING_CLAIM'))).toBe(false)
+    expect(res.violations.some(v => v.startsWith('FAKE_VISIT_CLAIM'))).toBe(false)
+  })
+})

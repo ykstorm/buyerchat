@@ -260,9 +260,21 @@ PART 8 "Commission question" script (Hinglish only). PART 15 CANONICAL
 COMMISSION ANSWERS (English + Hinglish + per-builder variant). Plus
 EXAMPLE 2, 2B, 2C all demonstrate commission scenarios.
 
-Recommendation: keep PART 15 CANONICAL block (most complete). Remove PART
-8 commission script. Reduce EXAMPLE 2/2B/2C to one combined example with
-both English + Hinglish in the same shape.
+**Status: PARTIAL DUPLICATE** (Sprint 13.1.G, sha=TBD).
+
+**Resolution**: PART 8 L711-714 short Hinglish-only script replaced
+with one-line cross-ref to PART 15 CANONICAL COMMISSION ANSWERS.
+EXAMPLE 2/2B/2C **retained** — verify-then-act surfaced they teach
+**scenario-distinct** lessons, not just language wrappings:
+EXAMPLE 2 = injection-attempt scenario, EXAMPLE 2B = English honest
+question, EXAMPLE 2C = Hinglish honest question. Audit's "combine
+2/2B/2C" recommendation would have erased the injection-attempt
+teaching. Same class as L1+L2 from Sprint 13.1.F where audit
+overstated.
+
+**Verification evidence**: `system-prompt.ts:711` (PART 8 short
+script, removed), `system-prompt.ts:1211` (PART 15 canonical, kept),
+`system-prompt.ts:1409/1413/1417` (EXAMPLE 2/2B/2C scenarios, kept).
 
 ### D4 — OTP-ban stated 6+ times
 
@@ -271,9 +283,23 @@ see PART 0 Rule C"). PART 7_FLAG_ON banned-words list (5 items). PART
 15 hard lock #2 (full Banned Phrases list). FINAL REMINDER [2]. Plus
 checker CHECK 17a OTP_FABRICATION + CHECK 18 PHONE_REQUEST_IN_PROSE.
 
-Recommendation: keep PART 0 Rule C + PART 15 #2 (one rule + one
-authoritative list). Remove duplicate banned-word lists from PART
-7_FLAG_ON. Keep FINAL REMINDER [2] for end-of-prompt reinforcement.
+**Status: PARTIAL DUPLICATE** (Sprint 13.1.G, sha=TBD).
+
+**Resolution**: PART 7_FLAG_ON Step 3 banned-words list (5 items)
+replaced with cross-ref to PART 0 RULE C canonical. PART 5_FLAG_ON
+L122 was already a cross-ref ("NO OTP language — see PART 0 Rule
+C") — no edit needed. PART_5_FLAG_OFF L137 has different content
+(flag-off HARD RULES) — NOT a duplicate, retained. The visit-specific
+bans at PART 7 Step 3 ("Visit confirmed" / "Visit booked" / "Slot
+locked") are NOT in PART 0 RULE C (which is OTP-only); retained
+inline. PART 15 hard lock #2 + FINAL REMINDER [2] unchanged
+(end-of-prompt reinforcement preserved).
+
+**Verification evidence**: `system-prompt.ts:556` (PART 0 RULE C
+canonical, kept), `system-prompt.ts:122` (PART 5_FLAG_ON cross-ref
+already in place), `system-prompt.ts:277` (PART 7 Step 3 OTP banned
+list, replaced with cross-ref), `system-prompt.ts:282` (visit-specific
+bans, retained).
 
 ### D5 — Fake-visit-claim ban stated 3 times in checker
 
@@ -282,9 +308,27 @@ CHECK 13 FAKE_BOOKING_CLAIM (no visit_prompt CARD). CHECK 17 FAKE_VISIT_CLAIM
 gaya" pattern in FLAG_OFF mode. Combined with the prompt-side PART 15 #1
 + PART 15 #10, this is 4 enforcement layers for the same intent.
 
-Recommendation: merge CHECK 13 + CHECK 17 into one rule with two
-sub-classes (booking-claim-without-prompt-card, visit-claim-without-
-confirmation-artifact). Removes one Sentry tag without losing coverage.
+**Status: AUDIT WAS WRONG** (Sprint 13.1.G, sha=TBD).
+
+**Resolution**: NO MERGE. Both CHECKs retained with audit-mark
+comments documenting the lifecycle-stage differentiation. Verify-then-
+act surfaced that CHECK 13 and CHECK 17 fire on **different lifecycle
+stages** with **different artifact gates**:
+  - CHECK 13: pre-card-emission stage. Fires on booking-confirmation
+    language WITHOUT visit_prompt CARD. Buyer hasn't even seen the
+    booking widget yet.
+  - CHECK 17: pre-token stage. Fires on visit-confirmation language
+    WITHOUT visit_confirmation artifact (HST-XXXX token). Buyer has
+    seen widget, not yet received token.
+Distinct Sentry tags (`rule:'FAKE_BOOKING_CLAIM'` vs
+`rule:'FAKE_VISIT_CLAIM'`) let admins attribute drift by stage.
+Merging would lose that telemetry signal — same class as L1/L2
+from Sprint 13.1.F where audit overstated.
+
+**Verification evidence**: `response-checker.ts:390` (CHECK 13,
+retained with audit-mark explaining differentiation),
+`response-checker.ts:554` (CHECK 17, retained with reciprocal
+audit-mark).
 
 ### D6 — Max-2-projects stated 4 times
 
@@ -306,10 +350,22 @@ shows bullet amenity response. EXAMPLE 22 WRONG SHAPE shows bullet
 locality response. All three demonstrate the same anti-pattern in slightly
 different topical contexts.
 
-Recommendation: keep EXAMPLE 17 (broadest applicability). Slim EXAMPLE 21
-and 22 to focus on their topic-specific RIGHT shapes; remove the bullet
-WRONG SHAPE from both — they only add tokens to reinforce the same
-anti-pattern.
+**Status: PARTIAL DUPLICATE** (Sprint 13.1.G, sha=TBD).
+
+**Resolution**: EXAMPLE 21 + EXAMPLE 22 verbose `[WRONG SHAPES]`
+blocks (~250 chars combined) replaced with one-line cross-refs to
+EXAMPLE 17 (canonical bullet anti-pattern + MARKDOWN_ABORT
+explanation). EXAMPLE 21 + 22 RIGHT shapes (topic-specific:
+amenity-prose, locality-prose with category tags + honest-deflection)
+fully retained — they teach topic-specific CORRECT patterns that
+EXAMPLE 17 doesn't cover. Per spec out-of-scope item: anti-pattern
+verified topic-shared (bullet shape), RIGHT shape verified
+topic-distinct.
+
+**Verification evidence**: `system-prompt.ts:1226` (EXAMPLE 17
+canonical, kept), `system-prompt.ts:1259` (EXAMPLE 21 WRONG SHAPE,
+deduped to cross-ref; RIGHT shape kept), `system-prompt.ts:1278`
+(EXAMPLE 22, same).
 
 ### D8 — Honest Concern format stated in PART 4 + PART 6 + EXAMPLE 1
 
@@ -317,8 +373,21 @@ PART 4 Honest Concern Rules + WRONG/RIGHT examples. PART 6_FLAG_ON
 Builder Info has `⚠️ Honest Concern: [Specific gap in data]`. EXAMPLE 1
 demonstrates the pattern.
 
-Recommendation: keep PART 4 (canonical with WRONG/RIGHT). Replace PART
-6_FLAG_ON Honest Concern reference with one-line cross-reference.
+**Status: PARTIAL DUPLICATE** (Sprint 13.1.G, sha=TBD).
+
+**Resolution**: PART 6_FLAG_ON L191 standalone Honest Concern shape
+replaced with one-line cross-ref to PART 4 canonical. PART 8 L719
+("Should I buy? — YES" script) and L737 ("Re-entry loop" script)
+retained — these are **template-USAGE sites** (instantiating the
+shape inside a script), not redefinitions. Pattern: definitions get
+cross-refs; usages don't (adding cross-refs to usage sites pollutes
+prompt with reference noise). Same principle as why scripts can
+say "[Project name]" without cross-refing to PROJECT_JSON every time.
+
+**Verification evidence**: `system-prompt.ts:668-688` (PART 4 Rules
++ WRONG/RIGHT, canonical kept), `system-prompt.ts:191`
+(PART 6_FLAG_ON standalone def, deduped to cross-ref),
+`system-prompt.ts:719` + `:737` (PART 8 USAGE sites, retained).
 
 ---
 

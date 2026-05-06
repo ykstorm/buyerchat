@@ -393,6 +393,22 @@ export function checkResponse(
   // the confirmation-language drift that caused the Apr-2026 fake-booking
   // incident. Post-stream only — per I18-final, only leak/safety justifies
   // mid-stream abort.
+  //
+  // Sprint 13.1.G audit-mark D5: NOT a duplicate of CHECK 17. Audit
+  // deliverable proposed merging CHECK 13 + CHECK 17 into one rule;
+  // verify-then-act caught that they fire on DIFFERENT lifecycle stages
+  // and DIFFERENT artifact gates:
+  //   - CHECK 13 (this): pre-card-emission stage. Fires on
+  //     booking-confirmation language WITHOUT visit_prompt CARD.
+  //     The buyer hasn't even seen the booking widget yet.
+  //   - CHECK 17 (below): pre-token stage. Fires on
+  //     visit-confirmation language WITHOUT visit_confirmation
+  //     artifact (HST-XXXX token). Buyer has seen widget, not yet
+  //     received token.
+  // Distinct Sentry tags (rule:'FAKE_BOOKING_CLAIM' vs
+  // rule:'FAKE_VISIT_CLAIM') let admins attribute drift by stage.
+  // Merging would lose that telemetry signal. Retained both by
+  // intentional design.
   const FAKE_BOOKING_PATTERNS: Array<{ re: RegExp; label: string }> = [
     { re: /(visit|appointment).{0,40}(scheduled|booked|confirmed|arranged|set up|set\s*up)/i, label: 'visit_claim' },
     { re: /otp.{0,30}(sent|on its way|will be sent|coming|dispatched)/i, label: 'otp_claim' },
@@ -556,6 +572,12 @@ export function checkResponse(
   // prose unless a VISIT_CONFIRMATION artifact with an HST-XXXX token has
   // been emitted in the SAME response. Pre-OTP/verify, only soft phrasing
   // ("visit start karte hain", "slot check karte hain") is allowed.
+  //
+  // Sprint 13.1.G audit-mark D5: NOT a duplicate of CHECK 13. See CHECK 13
+  // header for the lifecycle-stage differentiation rationale. CHECK 13
+  // gates on visit_prompt CARD (pre-emission); this gates on
+  // visit_confirmation artifact + HST-XXXX token (pre-token). Both
+  // retained by intentional design.
   //
   // Sprint 1 (2026-04-29): pattern is gated on STAGE_B_ENABLED. When Stage B
   // is dark in production (current state), "visit request note ho gaya" /
