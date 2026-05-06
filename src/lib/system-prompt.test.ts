@@ -457,6 +457,77 @@ describe('Sprint 11.17.1 — formatRetrievedChunks helper (PART B)', () => {
 // Self-contradiction in spec resolved via explicit EXEMPTION clause
 // in Rule E + reciprocal cross-refs in Rule 5/6. CHECK 20 deliberate
 // mera/mere exclusion is now documented as the sanctioned contract.
+// Sprint 13.1.F (2026-05-05) — Audit dead-rule cleanup. Verify-then-
+// remove on L1-L7 surfaced 0 confirmed dead, 4 dormant, 2 actually
+// alive (audit was wrong), 1 doc fix. These tests pin the audit-mark
+// comments + L1/L2 preservation so future audits can't accidentally
+// remove the verified-alive rules + future cleanup sprints can see
+// the dormancy markers inline.
+describe('Sprint 13.1.F — audit dead-rule verification markers', () => {
+  it('L3 Re-entry loop script intact + DORMANT audit-mark present', () => {
+    const prompt = buildSystemPrompt(baseCtx)
+    // Original rule text preserved.
+    expect(prompt).toContain('Aapka shortlist save hai.')
+    expect(prompt).toContain('Kal ya next week wapas aayein')
+    // Audit-mark documents dormancy reason + re-evaluation trigger.
+    expect(prompt).toContain('Sprint 13.1.F audit-mark L3: DORMANT')
+    expect(prompt).toContain('no "buyer leaving" detection signal')
+  })
+
+  it('L4 PART_6_FLAG_ON comparison table intact + DORMANT audit-mark present (flag-on path)', () => {
+    const prompt = buildSystemPrompt(flagOnCtx)
+    // Original pipe-table preserved.
+    expect(prompt).toContain('| Factor       | Project A      | Project B      |')
+    expect(prompt).toContain('| Possession   | Dec 2026       | Mar 2026       |')
+    // Audit-mark documents flag gating + reversibility intent.
+    expect(prompt).toContain('Sprint 13.1.F audit-mark L4: DORMANT')
+    expect(prompt).toContain('STAGE_B_ENABLED')
+  })
+
+  it('L5 PART 11 FOLLOW-UP BUTTONS table intact + DORMANT audit-mark present', () => {
+    const prompt = buildSystemPrompt(baseCtx)
+    // Original frequency rules preserved.
+    expect(prompt).toContain('PART 11 — FOLLOW-UP BUTTONS')
+    expect(prompt).toContain('Maximum 1 set of buttons per 3 messages')
+    expect(prompt).toContain('NEVER show buttons during: emotional moments')
+    // Audit-mark explains why retained (CTA-frequency guidance for prose).
+    expect(prompt).toContain('Sprint 13.1.F audit-mark L5: DORMANT')
+    expect(prompt).toContain('CTA-frequency drift')
+  })
+
+  it('L6 PART_5_FLAG_ON Stage B trigger scripts intact + DORMANT audit-mark present (flag-on path)', () => {
+    const prompt = buildSystemPrompt(flagOnCtx)
+    // Original capture strategy header preserved.
+    expect(prompt).toContain('PART 5 — CAPTURE STRATEGY')
+    expect(prompt).toContain('Stage A — Soft Capture')
+    expect(prompt).toContain('Stage B — Hard Capture (OTP required)')
+    // Audit-mark.
+    expect(prompt).toContain('Sprint 13.1.F audit-mark L6: DORMANT')
+  })
+
+  it('L1 PART 14 STEP 6 emotional extraction intact (audit was WRONG; rule actually alive)', () => {
+    const prompt = buildSystemPrompt(baseCtx)
+    // Original script preserved — audit deliverable corrected, no removal.
+    expect(prompt).toContain('STEP 6 — AFTER VISIT (Emotional Extraction)')
+    expect(prompt).toContain('dil se kaisa laga?')
+  })
+
+  it('L2 Scripts A/B/C uses-buyer-words pattern intact (audit was WRONG; capability concern not dead code)', () => {
+    const prompt = buildSystemPrompt(baseCtx)
+    // The "[their own words]" placeholder pattern preserved across Scripts.
+    expect(prompt).toContain('[their own words]')
+    expect(prompt).toContain('Aapne bataya tha')
+  })
+
+  it('L7 numbering-gap doc comment present near EXAMPLE 10/14 boundary', () => {
+    const prompt = buildSystemPrompt(baseCtx)
+    // Doc comment explains why gaps (EXAMPLE 11/12/13/19/20) are preserved.
+    expect(prompt).toContain('Sprint 13.1.F audit-mark L7: numbering gaps')
+    expect(prompt).toContain('INTENTIONAL')
+    expect(prompt).toContain('Resequencing would break those external references')
+  })
+})
+
 describe('Sprint 13.1.E — PART 0 Rule E mera/mere exemption (C6)', () => {
   it('PART 0 Rule E original forbidden list intact (not weakened)', () => {
     const prompt = buildSystemPrompt(baseCtx)
@@ -585,13 +656,16 @@ describe('Sprint 13.1.D — D6 max-2-projects dedup', () => {
 describe('Sprint 13.1.D — token reduction sanity check', () => {
   it('post-dedup prompt stays below the rolling-baseline ceiling', () => {
     // Sprint 13.1.D baseline: ~59,831 chars (HEAD 9f24a58).
-    // Sprint 13.1.E added ~680 chars: PART 0 Rule E exemption clause +
-    // PART 9 Rule 5/6 cross-refs (closes audit C6). New actual: ~60,510.
-    // Ceiling bumped to 60,800 — preserves regression guard against
-    // re-introducing D1/D2/D6 duplicates (~370 chars apiece would push
-    // past the new ceiling) without flagging Sprint 13.1.E's reconciliation.
+    // Sprint 13.1.E added ~680 chars (PART 0 Rule E exemption clause +
+    //   PART 9 Rule 5/6 cross-refs, closes audit C6). Actual: ~60,510.
+    // Sprint 13.1.F added ~1,270 chars (4 dormant audit-mark HTML
+    //   comments + L7 numbering-gap explanation comment, closes
+    //   audit dead-rule tier verification). Actual: ~61,781.
+    // Ceiling bumped to 62,200 — preserves regression guard against
+    // re-introducing D1/D2/D6 duplicates (~370 chars apiece would
+    // push past) without flagging Sprint 13.1.E + 13.1.F additions.
     const prompt = buildSystemPrompt(baseCtx)
-    expect(prompt.length).toBeLessThan(60_800)
+    expect(prompt.length).toBeLessThan(62_200)
   })
 })
 

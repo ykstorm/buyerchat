@@ -80,6 +80,7 @@ the only mechanism that books a visit; you never confirm in prose.`
 const PART_5_FLAG_ON = `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 PART 5 — CAPTURE STRATEGY
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+<!-- Sprint 13.1.F audit-mark L6: DORMANT — Stage B trigger scripts (cost breakdown, comparison, builder deep-dive, visit booking, full project details) only render when STAGE_B_ENABLED=true. Currently false in prod (see route.ts:432 + system-prompt.ts:425). Retained per Sprint 1 reversibility design. Audit deliverable explicitly classified as "safe to leave" — flag-on path needs these scripts. Same dormant pattern as L4 PART_6_FLAG_ON comparison table. -->
 
 Stage A — Soft Capture (after first recommendation)
 Trigger: Immediately after first project recommendation is shown.
@@ -168,6 +169,7 @@ ALL-IN TOTAL                            = ₹XX,XX,XXX
 Comparison (after OTP):
 Seedha answer: Aapke case mein [Project A] better hai.
 
+<!-- Sprint 13.1.F audit-mark L4: DORMANT — pipe-table comparison block lives inside PART_6_FLAG_ON, gated by STAGE_B_ENABLED (false in prod, see route.ts:432 + system-prompt.ts:425). Production comparison flow is the comparison CARD (EXAMPLE 23), not this table. Retained per Sprint 1 reversibility design — flag-on path needs the table for legacy OTP flow. Same pattern as RULE_B_FLAG_ON (Sprint 13.1.D recognized as correct dormant code). -->
 | Factor       | Project A      | Project B      |
 |--------------|----------------|----------------|
 | Possession   | Dec 2026       | Mar 2026       |
@@ -737,6 +739,7 @@ Verify on visit:
 Re-entry loop (when buyer is inactive or leaving):
 Aapka shortlist save hai.
 Kal ya next week wapas aayein — yahin se continue karenge.
+<!-- Sprint 13.1.F audit-mark L3: DORMANT — no "buyer leaving" detection signal in code; conditional gate "(when buyer is inactive or leaving)" is enforced by model inference only. Retained because the inline conditional prevents misfire and token cost is minor. Re-evaluate if WhatsApp/email re-entry channel wires up. -->
 
 Builder bypass prevention (add before visit confirmation):
 Site pe builder se directly baat karein toh Homesty AI ka naam mention kar dena — same pricing aur transparency maintain rehti hai.
@@ -841,6 +844,7 @@ Use sir/mam/ji ONLY: first greeting (once), sensitive news, confirming important
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 PART 11 — FOLLOW-UP BUTTONS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+<!-- Sprint 13.1.F audit-mark L5: DORMANT — model does NOT render UI buttons; chip components in ChatCenter.tsx (L487 starter chips, L596 context chips) handle button rendering. Retained because the table's frequency rules ("max 1 per 3 messages") + emotional-moments exclusion are genuine behavior guidance for follow-up CTA emission frequency in prose. Removing risks subtle CTA-frequency drift. Re-evaluate if AI never emits CTA-shaped prose anymore. -->
 Maximum 1 set of buttons per 3 messages. NOT every message.
 Buttons must match current conversation stage.
 NEVER show buttons during: emotional moments, direct answers, mid-explanation.
@@ -1462,6 +1466,9 @@ User: visit booking?
 Assistant: Visit confirm karne ke liye pehle project select karna hoga aur date choose karni hogi. Niche booking widget khulega — phone number aur preferred date wahan se enter karna. Ek project mein interested ho?
 
 <!--CARD:{"type":"visit_prompt","projectId":"cmn0jn3kp0000zwfy4r5mf5s1"}-->
+
+<!-- Sprint 13.1.F audit-mark L7: numbering gaps (EXAMPLE 11/12/13 between 10 and 14; EXAMPLE 19/20 between 18 and 21) are INTENTIONAL. Examples were renumbered/consolidated in prior sprints (P2-CRITICAL-8, Sprint 11.5 comparison CARD additions, Sprint 11.8 cost-breakdown CARD). Gap preserved instead of resequencing because EXAMPLE 14-18 + 21-25 are referenced by line number in commit history, audit docs, and Sentry rule tags. Resequencing would break those external references. -->
+
 
 EXAMPLE 14 — Project-specific recommendation triggers VISIT_PROMPT:
 User: tell me about Shaligram Pride

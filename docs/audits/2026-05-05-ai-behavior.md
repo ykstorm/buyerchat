@@ -402,63 +402,135 @@ code's PART 6_FLAG_ON inherited the same pipe-table shape.
 
 ## Likely-Dead Rules
 
+> **Sprint 13.1.F resolution (2026-05-05, sha=TBD)**: All 7 candidates
+> verified via grep-the-prompt + grep-feature-flags + grep-codepath.
+> **Result: 0 confirmed dead, 4 dormant (audit-mark added in source),
+> 2 actually alive (audit classification was wrong), 1 doc fix.**
+> The original "7 likely-dead" framing in this audit was an
+> overstatement — verify-then-remove caught it before any harmful
+> deletions. See per-entry status below.
+
+### Resolution status table
+
+| Entry | Original classification | Verified status | Sprint 13.1.F action |
+|---|---|---|---|
+| L1 | likely-dead | **ACTUALLY ALIVE** | Leave untouched; correct audit text below |
+| L2 | likely-dead | **ACTUALLY ALIVE** | Leave untouched; correct audit text below |
+| L3 | likely-dead | **DORMANT** | Audit-mark comment added in source |
+| L4 | dormant (already noted) | **DORMANT** (confirmed) | Audit-mark comment added in source |
+| L5 | likely-dead | **DORMANT** | Audit-mark comment added in source |
+| L6 | dormant (already noted) | **DORMANT** (confirmed) | Audit-mark comment added in source |
+| L7 | numbering gap | **DOC FIX** | Numbering-gap explanation comment added |
+
 ### L1 — PART 14 STEP 6 "After Visit (Emotional Extraction)"
 
 The script `"Seedha batao — dil se kaisa laga? ..."` is meant for
-**post-visit conversations**. There is no upstream signal in the system
-that flags a session as "post-visit". `ChatSession.buyerStage` includes a
-`post_visit` value but no production code path sets it. The model has no
-way to know it's in post-visit context, so this script likely never
-fires correctly. Either dead code or fires inappropriately on pre-visit
-turns.
+**post-visit conversations**.
+
+**Status: ACTUALLY ALIVE** (Sprint 13.1.F, sha=TBD).
+
+**Original audit claim**: "no upstream signal flags a session as
+post-visit; `ChatSession.buyerStage` includes a `post_visit` value but
+no production code path sets it."
+
+**Verification evidence**: `detectStage()` at
+`src/app/api/chat/route.ts:64` returns `'post_visit'` when buyer
+message matches `/visited|went to|site visit done|already visited|visit
+hua/i`. Persisted at `route.ts:718`. Audit was technically right that
+the model doesn't see `buyerStage` directly in the prompt (it's set
+post-stream and isn't fed back into the next turn's context), BUT the
+script fires from the model's own inference of the buyer's "visit hua"
+message text. The script remains relevant template guidance for
+emotional-extraction handling on post-visit turns. Removing would hurt
+behavior on legitimate post-visit messages.
 
 ### L2 — PART 14 Scripts A/B/C uses-buyer's-own-words pattern
 
 Scripts A, B, C all instruct: `"Aapne bataya tha [their own words]"`.
-This requires the model to actually quote a prior buyer message —
-something OpenAI is generally bad at without explicit memory anchors.
-Production conversations rarely have the kind of multi-turn signal
-discovery (wife/savings/parents) that these scripts target. The
-4-stage tone evolution may be implicitly clipped to Stages 1-3 only in
-prod usage.
+
+**Status: ACTUALLY ALIVE** (Sprint 13.1.F, sha=TBD).
+
+**Original audit claim**: "OpenAI is generally bad at quoting buyer
+messages without explicit memory anchors; production conversations
+rarely have the kind of multi-turn signal discovery these scripts
+target."
+
+**Verification evidence**: Confirmed at `system-prompt.ts:967, 968,
+1009`. Pattern is a **template instruction** directing the model to
+quote prior buyer messages when emotional context exists. The audit's
+concern is a **capability/quality observation** (does the model
+quote well?), NOT a **dead-code observation** (is the rule
+unreachable?). Scripts fire whenever Stage 4 emotional discovery
+triggers on a real buyer turn. Quality/quoting accuracy is a separate
+prompt-engineering concern — not in scope for dead-rule removal.
 
 ### L3 — PART 8 "Re-entry loop" script
 
-`"Aapka shortlist save hai. Kal ya next week wapas aayein..."` —
-designed for buyers leaving the chat. The chat surface has no detection
-of "buyer is leaving" intent, and the WhatsApp/email re-entry channel
-isn't wired (Sprint 0/Stage A capture handles save state via UI card,
-not prose). Likely never executed.
+`"Aapka shortlist save hai. Kal ya next week wapas aayein..."`.
+
+**Status: DORMANT** (Sprint 13.1.F, sha=TBD).
+
+**Verification evidence**: Confirmed at `system-prompt.ts:737-739`. No
+"buyer leaving" detection in codebase; WhatsApp/email re-entry channel
+not wired. BUT inline conditional gate `"(when buyer is inactive or
+leaving)"` keeps the model from misfiring. Token cost ~30 tokens.
+Audit-mark comment added in source at the rule site flagging the
+dormancy + re-evaluation trigger (when re-entry channel wires up).
 
 ### L4 — PART 6_FLAG_ON Comparison table
 
-Pipe-table format `| Factor | Project A | Project B |` ... — the
-production prompt only renders this when STAGE_B_ENABLED=true (currently
-false in prod). The comparison CARD (EXAMPLE 23) is the actual
-production flow. PART 6_FLAG_ON is dormant code waiting on a flag
-that may never flip.
+Pipe-table format `| Factor | Project A | Project B |`.
+
+**Status: DORMANT (confirmed)** (Sprint 13.1.F, sha=TBD).
+
+**Verification evidence**: PART_6_FLAG_ON gated by `STAGE_B_ENABLED` —
+see `system-prompt.ts:425` (`part6 = stageBEnabled ? PART_6_FLAG_ON :
+PART_6_FLAG_OFF`) and route.ts:432 wires flag from
+`process.env.STAGE_B_ENABLED`. Currently false in prod. Production
+comparison flow is the comparison CARD (EXAMPLE 23). Same dormant
+pattern as `RULE_B_FLAG_ON` which Sprint 13.1.D recognized as correct
+dormant code retained for reversibility. Audit-mark comment added in
+source.
 
 ### L5 — PART 11 FOLLOW-UP BUTTONS table
 
-The model isn't responsible for rendering follow-up buttons — those are
-UI affordances managed by `ChatCenter.tsx` chip components. PART 11 is
-informational/historical, not a behavior instruction. Could be removed
-without behavior change.
+**Status: DORMANT** (Sprint 13.1.F, sha=TBD).
+
+**Original audit claim**: "model isn't responsible for rendering
+follow-up buttons — those are UI affordances managed by ChatCenter.tsx
+chip components. PART 11 is informational/historical."
+
+**Verification evidence**: Confirmed at `system-prompt.ts:842-855`.
+Audit was correct that buttons are rendered by ChatCenter chips
+(starter L487, context L596), NOT by AI prose. BUT the table's
+frequency rules ("max 1 per 3 messages") + emotional-moments exclusion
+serve as **genuine behavior guidance for follow-up CTA emission
+frequency in prose**. Removing risks subtle CTA-frequency drift on
+the AI's natural-language follow-ups. Audit-mark comment added in
+source noting re-evaluation trigger (if AI never emits CTA-shaped
+prose anymore).
 
 ### L6 — PART 5_FLAG_ON Stage B trigger scripts
 
-`STAGE_B_ENABLED=false` in production. The 5 trigger scripts (cost
-breakdown, comparison, builder deep-dive, visit booking, full project
-details) never render. They exist for reversibility (Sprint 1 design) —
-not strictly dead, but dormant pending operator decision to flip the
-flag. Safe to leave; cost is just token bloat in test/dev with flag-on.
+**Status: DORMANT (confirmed)** (Sprint 13.1.F, sha=TBD).
 
-### L7 — Examples 11, 12, 13, 19, 20
+**Verification evidence**: Same gating as L4 — PART_5_FLAG_ON gated by
+`STAGE_B_ENABLED` (false in prod). Audit deliverable itself classified
+as "safe to leave" — flag-on path needs these scripts. Same dormant
+pattern as L4 + RULE_B_FLAG_ON. Audit-mark comment added in source.
 
-Missing from EXAMPLE numbering. Historical deletions or never written.
-The numbering gap is intentional but could be relabeled to be sequential
-for clarity, OR documented in a comment so future readers don't think
-they were lost.
+### L7 — Examples 11, 12, 13, 19, 20 numbering gaps
+
+**Status: DOC FIX** (Sprint 13.1.F, sha=TBD).
+
+**Verification evidence**: Confirmed sequence: EXAMPLE 10 → 14 → 18 →
+21. Numbering gaps are NOT dead rules — they are intentional gaps from
+prior renumbering/consolidation (P2-CRITICAL-8 sprint, Sprint 11.5
+comparison CARD additions, Sprint 11.8 cost-breakdown CARD additions).
+Examples 14-18 + 21-25 are referenced by line number in commit
+history, audit docs, and Sentry rule tags. **Resequencing would break
+external references.** Numbering-gap doc comment added near EXAMPLE 10
+in source explaining why gaps are preserved.
 
 ---
 
