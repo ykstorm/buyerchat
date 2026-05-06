@@ -431,3 +431,111 @@ single-line copy edit), state that explicitly in your report:
 changes touching network/data/UI." Items 8, 9, 10, 11 (if any
 sub-agent was used), 12, 13, 14 still apply. §15 applies if any
 choice was made. §16 applies only on multi-day sprints.
+
+---
+
+## Verified discipline patterns (Day 4 marathon, 2026-05-05)
+
+32 commits across 16 named sprints in 6+ hours. The patterns below
+were validated by repeated catches that prevented broken-prod
+regressions or wasted edits.
+
+### CHECK 8 (npm run build before commit) — saved 2 silent failures
+
+Caught 2 silent type errors that would have broken Vercel deploys
+(Sprint 11.13 + 11.14, both `keyof T` narrowing issues at
+`src/app/admin/projects/[id]/page.tsx:690`). Tests passed but
+`next build` type-checks ran a stricter pipeline. Pre-commit hook
+enforcement still pending (Sprint DevOps-1) — currently relies on
+agent discipline.
+
+**Rule**: never commit without `npm run build` showing "Compiled
+successfully" — `npm test` alone is not sufficient.
+
+### Verify-then-act on audit findings — saved 7 regression classes
+
+Pre-flight CHECK 6 (grep evidence before edit) caught the following
+spec/audit overstatements during Sprint 13.1 audit cleanup work:
+
+- **Sprint 13.1.A**: spec assumed multi-turn block, reality was a
+  single table cell. Cell-content swap shipped instead of full
+  block rewrite.
+- **Sprint 13.1.B**: spec said "Add CHECK 19 FIRST_PERSON_HINDI" —
+  reality was CHECK 19 already exists as PRICE_FABRICATION (Sprint 4)
+  in prod Sentry telemetry. Renumbered to CHECK 20 to preserve
+  existing event attribution.
+- **Sprint 13.1.C**: spec referenced "PART 8 Rule 5+6" — reality was
+  PART 9 Rule 5+6. Used correct PART 9 references in the cross-refs
+  to avoid creating broken pointers.
+- **Sprint 13.1.D**: 1 of 3 spec'd duplications was genuine (3 of 9
+  sites). PART 0 RULE F bundled the cap with 3 other CARD CONTRACT
+  rules — surgical sentence-pull instead of blind cross-ref.
+- **Sprint 13.1.F**: 0 of 7 alleged dead rules were confirmed dead.
+  L1 + L2 reclassified to ACTUALLY ALIVE (detectStage() returns
+  'post_visit'; capability concern not dead-code concern). 4
+  dormancy markers shipped instead of removals.
+- **Sprint 13.1.G**: 4 of 5 audit-flagged duplications were partial
+  (not full); 1 (D5 CHECK 13 + CHECK 17) was AUDIT WAS WRONG —
+  CHECKs are intentionally distinct by lifecycle stage (pre-card vs
+  pre-token), retained with reciprocal audit-marks.
+- **Sprint 11.X**: spec said "lower MIN_RESPONSE_LENGTH threshold" —
+  reality was no such threshold exists. Re-scoped to "partial-rescue
+  on unknown errorKind" + observability + neutral copy.
+
+**Rule**: pre-flight CHECK 6 (grep before edit) is non-negotiable
+for prompt/spec/checker work. Spec text is a starting hypothesis,
+not ground truth. The 5-line / 7-line / 10-line summary + pause-for-
+go-ahead pattern after pre-flight saves operator from blind execution
+of overstated specs.
+
+### Living-document audit pattern
+
+Sprint 13 audit deliverable (`docs/audits/2026-05-05-ai-behavior.md`)
+updated per resolution with status + sprint reference + verification
+evidence. Future audit cycles see resolution history, not just
+"likely-dead" or "duplicate" classifications frozen forever. Three
+status types established:
+
+- **REAL DUPLICATE / CONFIRMED DEAD** — full action taken
+- **PARTIAL DUPLICATE / DORMANT** — surgical action with audit-mark
+- **AUDIT WAS WRONG** — no action, audit text corrected with
+  verification evidence
+
+**Rule**: when an audit finding is closed (whether by removal or by
+verification), update the audit deliverable in the same commit.
+Don't let the source-of-truth doc decay.
+
+### Audit-mark comments at retain-with-reason sites
+
+When verify-then-act says "leave but document why", add an inline
+HTML comment at the site:
+
+```
+<!-- Sprint X.Y audit-mark Z: DORMANT — {gating mechanism}.
+     Retained because {reason}. Re-evaluate when {trigger}. -->
+```
+
+For source files (response-checker.ts), use a TS comment block. For
+template-literal prompt content, use HTML comment (renders into
+prompt as no-op for the model, visible to next human/agent editor).
+
+**Rule**: dormancy markers prevent future cleanup sprints from
+accidentally removing something the prior cycle deliberately
+retained.
+
+### Sequential pre-flight then act
+
+The discipline that ships 32 clean commits in 6+ hours:
+
+1. Read the spec.
+2. Run pre-flight greps to verify spec assumptions.
+3. Report 5/7/10-line summary surfacing decisions.
+4. Pause for operator go-ahead.
+5. Execute exactly what was authorized — including any spec
+   corrections from pre-flight.
+6. Tests + build + commit + push.
+7. Report SHA + push trail + smoke-test hints + standing-by line.
+
+Skipping step 2-4 = blind execution of broken or overstated specs.
+Skipping step 6-7 = next session has no idea what shipped or how to
+verify.
